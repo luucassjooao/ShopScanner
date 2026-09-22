@@ -1,0 +1,22 @@
+{
+  "code": 0,
+  "data": {
+    "avatar": {
+      "height": 720,
+      "url": "https://example.com/avatars/creator.demo.br.jpg",
+      "width": 720
+    },
+    "creator_user_open_id": "-00081xlxszbfxglpdg36qlvckqv8vd3gky60g5bafr3",
+    "permissions": [
+      "LIVE_STREAM_PERMISSION",
+      "ADD_AFFILIATE_PERMISSION"
+    ],
+    "register_region": "BR",
+    "selection_region": "BR",
+    "seller_type": "",
+    "user_type": "TIKTOK_SHOP_CREATOR",
+    "username": "creator.demo.br"
+  },
+  "message": "Success",
+  "request_id": "202635507158F4AE57448277A6FF3C10"
+}

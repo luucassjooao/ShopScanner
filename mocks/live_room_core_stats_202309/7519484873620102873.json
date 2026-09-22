@@ -1,0 +1,32 @@
+{
+  "code": 0,
+  "data": {
+    "stats": {
+      "accumulated_comment_count": 877,
+      "accumulated_new_follower_count": 193,
+      "accumulated_sharing_count": 121,
+      "avg_watching_duration": 111,
+      "buyer_count": 7,
+      "click_order_rate": "0.93",
+      "click_through_rate": "6.22",
+      "created_order_count": 8,
+      "current_visitor_count": 0,
+      "local_gmv": {
+        "amount": "834.00",
+        "currency": "BRL"
+      },
+      "local_unit_price": {
+        "amount": "83.40",
+        "currency": "BRL"
+      },
+      "paid_order_count": 8,
+      "peak_concurrent_user_count": 984,
+      "product_reach_count": 856,
+      "product_view_count": 9384,
+      "sales": 10,
+      "watch_pv": 13752
+    }
+  },
+  "message": "Success",
+  "request_id": "202660D655FFE438FB4B8E42C792A065"
+}

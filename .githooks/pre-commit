@@ -1,0 +1,34 @@
+#!/bin/sh
+# Bloqueia commit que mexe em código sem atualizar o DEVLOG.md.
+#
+# Instalação (uma vez, na raiz do repositório):
+#   git config core.hooksPath .githooks
+#
+# Para pular de propósito (ex.: só formatação):
+#   DEVLOG_SKIP=1 git commit -m "..."
+
+[ "$DEVLOG_SKIP" = "1" ] && exit 0
+
+staged=$(git diff --cached --name-only)
+[ -z "$staged" ] && exit 0
+
+# Arquivos que exigem entrada no devlog.
+relevante=$(printf '%s\n' "$staged" | grep -E '^(web/(src/|public/|package\.json|tsconfig|vite\.config|tailwind\.config)|mocks/|docs/)')
+[ -z "$relevante" ] && exit 0
+
+if printf '%s\n' "$staged" | grep -qx 'DEVLOG.md'; then
+  exit 0
+fi
+
+cat <<'MSG'
+
+Commit bloqueado: houve mudança em código, mas o DEVLOG.md não foi atualizado.
+
+Escreva a entrada do dia no topo do DEVLOG.md, no formato do CLAUDE.md, e inclua o arquivo no commit:
+  git add DEVLOG.md
+
+Se esta mudança realmente não merece registro (formatação, lint):
+  DEVLOG_SKIP=1 git commit -m "..."
+
+MSG
+exit 1

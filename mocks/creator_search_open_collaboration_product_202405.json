@@ -1,0 +1,421 @@
+{
+  "code": 0,
+  "data": {
+    "next_page_token": "",
+    "products": [
+      {
+        "category_chains": [
+          {
+            "id": "600001",
+            "is_leaf": false,
+            "local_name": "Casa e Jardim",
+            "parent_id": "0"
+          },
+          {
+            "id": "600377",
+            "is_leaf": true,
+            "local_name": "Utensílios de Cozinha",
+            "parent_id": "600001"
+          }
+        ],
+        "commission": {
+          "amount": "6.98",
+          "currency": "BRL",
+          "rate": 2000
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731530497476627894",
+        "has_inventory": true,
+        "id": "1731530497476627894",
+        "main_image_url": "https://example.com/products/1731530497476627894_1.jpg",
+        "original_price": {
+          "currency": "BRL",
+          "maximum_amount": "45.37",
+          "minimum_amount": "45.37"
+        },
+        "sale_region": "BR",
+        "sales_price": {
+          "currency": "BRL",
+          "maximum_amount": "34.90",
+          "minimum_amount": "34.90"
+        },
+        "shop": {
+          "name": "Cozinha Prática"
+        },
+        "title": "Air Fryer Forma de Silicone Kit 2",
+        "units_sold": 40210
+      },
+      {
+        "category_chains": [
+          {
+            "id": "800003",
+            "is_leaf": false,
+            "local_name": "Eletrodomésticos",
+            "parent_id": "0"
+          },
+          {
+            "id": "800512",
+            "is_leaf": true,
+            "local_name": "Pequenos Eletros",
+            "parent_id": "800003"
+          }
+        ],
+        "commission": {
+          "amount": "10.39",
+          "currency": "BRL",
+          "rate": 800
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731390494763408389",
+        "has_inventory": true,
+        "id": "1731390494763408389",
+        "main_image_url": "https://example.com/products/1731390494763408389_1.jpg",
+        "original_price": {
+          "currency": "BRL",
+          "maximum_amount": "168.87",
+          "minimum_amount": "168.87"
+        },
+        "sale_region": "BR",
+        "sales_price": {
+          "currency": "BRL",
+          "maximum_amount": "129.90",
+          "minimum_amount": "129.90"
+        },
+        "shop": {
+          "name": "Cozinha Prática"
+        },
+        "title": "Fone Bluetooth Esportivo",
+        "units_sold": 31200
+      },
+      {
+        "category_chains": [
+          {
+            "id": "700002",
+            "is_leaf": false,
+            "local_name": "Beleza e Cuidados Pessoais",
+            "parent_id": "0"
+          },
+          {
+            "id": "700341",
+            "is_leaf": true,
+            "local_name": "Skincare",
+            "parent_id": "700002"
+          }
+        ],
+        "commission": {
+          "amount": "9.88",
+          "currency": "BRL",
+          "rate": 2200
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731833602545659210",
+        "has_inventory": true,
+        "id": "1731833602545659210",
+        "main_image_url": "https://example.com/products/1731833602545659210_1.jpg",
+        "original_price": {
+          "currency": "BRL",
+          "maximum_amount": "58.37",
+          "minimum_amount": "58.37"
+        },
+        "sale_region": "BR",
+        "sales_price": {
+          "currency": "BRL",
+          "maximum_amount": "44.90",
+          "minimum_amount": "44.90"
+        },
+        "shop": {
+          "name": "Casa Aurora Oficial"
+        },
+        "title": "Máscara Capilar Reconstrução 500g",
+        "units_sold": 25310
+      },
+      {
+        "category_chains": [
+          {
+            "id": "700002",
+            "is_leaf": false,
+            "local_name": "Beleza e Cuidados Pessoais",
+            "parent_id": "0"
+          },
+          {
+            "id": "700341",
+            "is_leaf": true,
+            "local_name": "Skincare",
+            "parent_id": "700002"
+          }
+        ],
+        "commission": {
+          "amount": "6.38",
+          "currency": "BRL",
+          "rate": 1600
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731653226860592350",
+        "has_inventory": true,
+        "id": "1731653226860592350",
+        "main_image_url": "https://example.com/products/1731653226860592350_1.jpg",
+        "original_price": {
+          "currency": "BRL",
+          "maximum_amount": "51.87",
+          "minimum_amount": "51.87"
+        },
+        "sale_region": "BR",
+        "sales_price": {
+          "currency": "BRL",
+          "maximum_amount": "39.90",
+          "minimum_amount": "39.90"
+        },
+        "shop": {
+          "name": "TecnoLar Store"
+        },
+        "title": "Hidratante Corporal 400ml",
+        "units_sold": 22980
+      },
+      {
+        "category_chains": [
+          {
+            "id": "600001",
+            "is_leaf": false,
+            "local_name": "Casa e Jardim",
+            "parent_id": "0"
+          },
+          {
+            "id": "600377",
+            "is_leaf": true,
+            "local_name": "Utensílios de Cozinha",
+            "parent_id": "600001"
+          }
+        ],
+        "commission": {
+          "amount": "8.99",
+          "currency": "BRL",
+          "rate": 1200
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731501383426286124",
+        "has_inventory": true,
+        "id": "1731501383426286124",
+        "main_image_url": "https://example.com/products/1731501383426286124_1.jpg",
+        "original_price": {
+          "currency": "BRL",
+          "maximum_amount": "97.37",
+          "minimum_amount": "97.37"
+        },
+        "sale_region": "BR",
+        "sales_price": {
+          "currency": "BRL",
+          "maximum_amount": "74.90",
+          "minimum_amount": "74.90"
+        },
+        "shop": {
+          "name": "Bella Pele Cosméticos"
+        },
+        "title": "Garrafa Térmica 1L Aço Inox",
+        "units_sold": 18430
+      },
+      {
+        "category_chains": [
+          {
+            "id": "600001",
+            "is_leaf": false,
+            "local_name": "Casa e Jardim",
+            "parent_id": "0"
+          },
+          {
+            "id": "600154",
+            "is_leaf": true,
+            "local_name": "Organização",
+            "parent_id": "600001"
+          }
+        ],
+        "commission": {
+          "amount": "6.99",
+          "currency": "BRL",
+          "rate": 1400
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731587230427932245",
+        "has_inventory": true,
+        "id": "1731587230427932245",
+        "main_image_url": "https://example.com/products/1731587230427932245_1.jpg",
+        "original_price": {
+          "currency": "BRL",
+          "maximum_amount": "64.87",
+          "minimum_amount": "64.87"
+        },
+        "sale_region": "BR",
+        "sales_price": {
+          "currency": "BRL",
+          "maximum_amount": "49.90",
+          "minimum_amount": "49.90"
+        },
+        "shop": {
+          "name": "Cozinha Prática"
+        },
+        "title": "Tapete Antiderrapante Banheiro",
+        "units_sold": 15600
+      },
+      {
+        "category_chains": [
+          {
+            "id": "900004",
+            "is_leaf": false,
+            "local_name": "Moda Feminina",
+            "parent_id": "0"
+          },
+          {
+            "id": "900220",
+            "is_leaf": true,
+            "local_name": "Vestidos",
+            "parent_id": "900004"
+          }
+        ],
+        "commission": {
+          "amount": "17.98",
+          "currency": "BRL",
+          "rate": 1800
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731658773997255496",
+        "has_inventory": true,
+        "id": "1731658773997255496",
+        "main_image_url": "https://example.com/products/1731658773997255496_1.jpg",
+        "original_price": {
+          "currency": "BRL",
+          "maximum_amount": "129.87",
+          "minimum_amount": "129.87"
+        },
+        "sale_region": "BR",
+        "sales_price": {
+          "currency": "BRL",
+          "maximum_amount": "99.90",
+          "minimum_amount": "99.90"
+        },
+        "shop": {
+          "name": "TecnoLar Store"
+        },
+        "title": "Conjunto Fitness Feminino",
+        "units_sold": 12750
+      },
+      {
+        "category_chains": [
+          {
+            "id": "600001",
+            "is_leaf": false,
+            "local_name": "Casa e Jardim",
+            "parent_id": "0"
+          },
+          {
+            "id": "600154",
+            "is_leaf": true,
+            "local_name": "Organização",
+            "parent_id": "600001"
+          }
+        ],
+        "commission": {
+          "amount": "8.99",
+          "currency": "BRL",
+          "rate": 1500
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731456446882797161",
+        "has_inventory": true,
+        "id": "1731456446882797161",
+        "main_image_url": "https://example.com/products/1731456446882797161_1.jpg",
+        "original_price": {
+          "currency": "BRL",
+          "maximum_amount": "77.87",
+          "minimum_amount": "77.87"
+        },
+        "sale_region": "BR",
+        "sales_price": {
+          "currency": "BRL",
+          "maximum_amount": "59.90",
+          "minimum_amount": "59.90"
+        },
+        "shop": {
+          "name": "Bella Pele Cosméticos"
+        },
+        "title": "Luminária LED Recarregável",
+        "units_sold": 9820
+      },
+      {
+        "category_chains": [
+          {
+            "id": "800003",
+            "is_leaf": false,
+            "local_name": "Eletrodomésticos",
+            "parent_id": "0"
+          },
+          {
+            "id": "800512",
+            "is_leaf": true,
+            "local_name": "Pequenos Eletros",
+            "parent_id": "800003"
+          }
+        ],
+        "commission": {
+          "amount": "17.99",
+          "currency": "BRL",
+          "rate": 1000
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731496474393577268",
+        "has_inventory": true,
+        "id": "1731496474393577268",
+        "main_image_url": "https://example.com/products/1731496474393577268_1.jpg",
+        "original_price": {
+          "currency": "BRL",
+          "maximum_amount": "233.87",
+          "minimum_amount": "233.87"
+        },
+        "sale_region": "BR",
+        "sales_price": {
+          "currency": "BRL",
+          "maximum_amount": "179.90",
+          "minimum_amount": "179.90"
+        },
+        "shop": {
+          "name": "Bella Pele Cosméticos"
+        },
+        "title": "Aspirador Portátil Sem Fio",
+        "units_sold": 7430
+      },
+      {
+        "category_chains": [
+          {
+            "id": "900004",
+            "is_leaf": false,
+            "local_name": "Moda Feminina",
+            "parent_id": "0"
+          },
+          {
+            "id": "900220",
+            "is_leaf": true,
+            "local_name": "Vestidos",
+            "parent_id": "900004"
+          }
+        ],
+        "commission": {
+          "amount": "15.28",
+          "currency": "BRL",
+          "rate": 1700
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731134420312620653",
+        "has_inventory": true,
+        "id": "1731134420312620653",
+        "main_image_url": "https://example.com/products/1731134420312620653_1.jpg",
+        "original_price": {
+          "currency": "BRL",
+          "maximum_amount": "116.87",
+          "minimum_amount": "116.87"
+        },
+        "sale_region": "BR",
+        "sales_price": {
+          "currency": "BRL",
+          "maximum_amount": "89.90",
+          "minimum_amount": "89.90"
+        },
+        "shop": {
+          "name": "Bella Pele Cosméticos"
+        },
+        "title": "Blusa Tricô Gola Alta",
+        "units_sold": 6210
+      }
+    ],
+    "total_count": 10
+  },
+  "message": "Success",
+  "request_id": "2026206D95C5642474EEC8C2CD768962"
+}

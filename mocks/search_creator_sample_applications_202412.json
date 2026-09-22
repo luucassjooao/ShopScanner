@@ -1,0 +1,130 @@
+{
+  "code": 0,
+  "data": {
+    "next_page_token": "",
+    "sample_applications": [
+      {
+        "activity_id": "",
+        "creator_fulfillment": {
+          "bound_product_status": "LIVE",
+          "expiration_time": 1791241200,
+          "id": "7637378172810845062",
+          "status": "SUCCEED",
+          "total_suspend_duration": 0
+        },
+        "id": "7725695841949954271",
+        "main_order_id": "575546577272544009",
+        "sample_product": {
+          "id": "1731383849675998844",
+          "sku_id": "1732564454888272836",
+          "sku_sale_property_value_names": [
+            "Padrão"
+          ]
+        },
+        "status": "COMPLETED"
+      },
+      {
+        "activity_id": "",
+        "creator_fulfillment": {
+          "bound_product_status": "LIVE",
+          "expiration_time": 1790809200,
+          "id": "7675239371069670959",
+          "status": "SUCCEED",
+          "total_suspend_duration": 0
+        },
+        "id": "7751677347624458300",
+        "main_order_id": "578139967266690347",
+        "sample_product": {
+          "id": "1731518081880197608",
+          "sku_id": "1732932881836244416",
+          "sku_sale_property_value_names": [
+            "Padrão"
+          ]
+        },
+        "status": "COMPLETED"
+      },
+      {
+        "activity_id": "",
+        "creator_fulfillment": {
+          "bound_product_status": "LIVE",
+          "expiration_time": 1790377200,
+          "id": "7656516963569076612",
+          "status": "PENDING",
+          "total_suspend_duration": 0
+        },
+        "id": "7749860403605643592",
+        "main_order_id": "576444752366287266",
+        "sample_product": {
+          "id": "1731814730874103524",
+          "sku_id": "1732259015588191452",
+          "sku_sale_property_value_names": [
+            "Padrão"
+          ]
+        },
+        "status": "SHIPPED"
+      },
+      {
+        "activity_id": "",
+        "creator_fulfillment": {
+          "bound_product_status": "LIVE",
+          "expiration_time": 1790895600,
+          "id": "7660512107902532412",
+          "status": "PENDING",
+          "total_suspend_duration": 0
+        },
+        "id": "7724811143918327938",
+        "main_order_id": "578487125833211826",
+        "sample_product": {
+          "id": "1731923037452316895",
+          "sku_id": "1732988125640064579",
+          "sku_sale_property_value_names": [
+            "Padrão"
+          ]
+        },
+        "status": "TO_BE_POST"
+      },
+      {
+        "activity_id": "",
+        "creator_fulfillment": {
+          "bound_product_status": "LIVE",
+          "expiration_time": 1790722800,
+          "id": "7627761702558563578",
+          "status": "PENDING",
+          "total_suspend_duration": 0
+        },
+        "id": "7724189437623963132",
+        "main_order_id": "",
+        "sample_product": {
+          "id": "1731934453530175320",
+          "sku_id": "1732824047502733735",
+          "sku_sale_property_value_names": [
+            "Padrão"
+          ]
+        },
+        "status": "PENDING"
+      },
+      {
+        "activity_id": "",
+        "creator_fulfillment": {
+          "bound_product_status": "LIVE",
+          "expiration_time": 1791673200,
+          "id": "7639585771995839209",
+          "status": "CANCELLED",
+          "total_suspend_duration": 0
+        },
+        "id": "7744326220133625785",
+        "main_order_id": "",
+        "sample_product": {
+          "id": "1731676060102374794",
+          "sku_id": "1732149525334652475",
+          "sku_sale_property_value_names": [
+            "Padrão"
+          ]
+        },
+        "status": "REJECT_CANCELLED"
+      }
+    ]
+  },
+  "message": "Success",
+  "request_id": "20266DA08322CBE9F6284A8B9AFFA572"
+}

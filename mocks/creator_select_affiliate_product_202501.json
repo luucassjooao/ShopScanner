@@ -1,0 +1,311 @@
+{
+  "code": 0,
+  "data": {
+    "next_page_token": "",
+    "products": [
+      {
+        "brand_name": "Tecno",
+        "commission": {
+          "amount": "6980",
+          "rate": 2000
+        },
+        "id": "1731530497476627894",
+        "main_image_url": "https://example.com/products/1731530497476627894_1.jpg",
+        "market_performance": {
+          "historical_sold_quantity": 40210
+        },
+        "price": {
+          "ceiling_price": "38.39",
+          "currency": "BRL",
+          "floor_price": "34.90"
+        },
+        "review": {
+          "count": 2180,
+          "overall_score": "4.8"
+        },
+        "shop": {
+          "logo_url": "https://example.com/shops/Cozinha_Prática.png",
+          "name": "Cozinha Prática",
+          "rating": "4.9"
+        },
+        "stock": {
+          "quantity": 2874
+        },
+        "title": "Air Fryer Forma de Silicone Kit 2"
+      },
+      {
+        "brand_name": "Tecno",
+        "commission": {
+          "amount": "10392",
+          "rate": 800
+        },
+        "id": "1731390494763408389",
+        "main_image_url": "https://example.com/products/1731390494763408389_1.jpg",
+        "market_performance": {
+          "historical_sold_quantity": 31200
+        },
+        "price": {
+          "ceiling_price": "142.89",
+          "currency": "BRL",
+          "floor_price": "129.90"
+        },
+        "review": {
+          "count": 1610,
+          "overall_score": "4.8"
+        },
+        "shop": {
+          "logo_url": "https://example.com/shops/Cozinha_Prática.png",
+          "name": "Cozinha Prática",
+          "rating": "4.9"
+        },
+        "stock": {
+          "quantity": 4987
+        },
+        "title": "Fone Bluetooth Esportivo"
+      },
+      {
+        "brand_name": "Viva",
+        "commission": {
+          "amount": "9878",
+          "rate": 2200
+        },
+        "id": "1731833602545659210",
+        "main_image_url": "https://example.com/products/1731833602545659210_1.jpg",
+        "market_performance": {
+          "historical_sold_quantity": 25310
+        },
+        "price": {
+          "ceiling_price": "49.39",
+          "currency": "BRL",
+          "floor_price": "44.90"
+        },
+        "review": {
+          "count": 1245,
+          "overall_score": "4.4"
+        },
+        "shop": {
+          "logo_url": "https://example.com/shops/Casa_Aurora_Oficial.png",
+          "name": "Casa Aurora Oficial",
+          "rating": "4.8"
+        },
+        "stock": {
+          "quantity": 775
+        },
+        "title": "Máscara Capilar Reconstrução 500g"
+      },
+      {
+        "brand_name": "Aurora",
+        "commission": {
+          "amount": "6384",
+          "rate": 1600
+        },
+        "id": "1731653226860592350",
+        "main_image_url": "https://example.com/products/1731653226860592350_1.jpg",
+        "market_performance": {
+          "historical_sold_quantity": 22980
+        },
+        "price": {
+          "ceiling_price": "43.89",
+          "currency": "BRL",
+          "floor_price": "39.90"
+        },
+        "review": {
+          "count": 845,
+          "overall_score": "4.8"
+        },
+        "shop": {
+          "logo_url": "https://example.com/shops/TecnoLar_Store.png",
+          "name": "TecnoLar Store",
+          "rating": "4.6"
+        },
+        "stock": {
+          "quantity": 1101
+        },
+        "title": "Hidratante Corporal 400ml"
+      },
+      {
+        "brand_name": "Tecno",
+        "commission": {
+          "amount": "8988",
+          "rate": 1200
+        },
+        "id": "1731501383426286124",
+        "main_image_url": "https://example.com/products/1731501383426286124_1.jpg",
+        "market_performance": {
+          "historical_sold_quantity": 18430
+        },
+        "price": {
+          "ceiling_price": "82.39",
+          "currency": "BRL",
+          "floor_price": "74.90"
+        },
+        "review": {
+          "count": 1231,
+          "overall_score": "4.3"
+        },
+        "shop": {
+          "logo_url": "https://example.com/shops/Bella_Pele_Cosméticos.png",
+          "name": "Bella Pele Cosméticos",
+          "rating": "4.7"
+        },
+        "stock": {
+          "quantity": 289
+        },
+        "title": "Garrafa Térmica 1L Aço Inox"
+      },
+      {
+        "brand_name": "Viva",
+        "commission": {
+          "amount": "6986",
+          "rate": 1400
+        },
+        "id": "1731587230427932245",
+        "main_image_url": "https://example.com/products/1731587230427932245_1.jpg",
+        "market_performance": {
+          "historical_sold_quantity": 15600
+        },
+        "price": {
+          "ceiling_price": "54.89",
+          "currency": "BRL",
+          "floor_price": "49.90"
+        },
+        "review": {
+          "count": 558,
+          "overall_score": "4.7"
+        },
+        "shop": {
+          "logo_url": "https://example.com/shops/Cozinha_Prática.png",
+          "name": "Cozinha Prática",
+          "rating": "4.9"
+        },
+        "stock": {
+          "quantity": 382
+        },
+        "title": "Tapete Antiderrapante Banheiro"
+      },
+      {
+        "brand_name": "Tecno",
+        "commission": {
+          "amount": "17982",
+          "rate": 1800
+        },
+        "id": "1731658773997255496",
+        "main_image_url": "https://example.com/products/1731658773997255496_1.jpg",
+        "market_performance": {
+          "historical_sold_quantity": 12750
+        },
+        "price": {
+          "ceiling_price": "109.89",
+          "currency": "BRL",
+          "floor_price": "99.90"
+        },
+        "review": {
+          "count": 410,
+          "overall_score": "4.7"
+        },
+        "shop": {
+          "logo_url": "https://example.com/shops/TecnoLar_Store.png",
+          "name": "TecnoLar Store",
+          "rating": "4.6"
+        },
+        "stock": {
+          "quantity": 2212
+        },
+        "title": "Conjunto Fitness Feminino"
+      },
+      {
+        "brand_name": "Aurora",
+        "commission": {
+          "amount": "8985",
+          "rate": 1500
+        },
+        "id": "1731456446882797161",
+        "main_image_url": "https://example.com/products/1731456446882797161_1.jpg",
+        "market_performance": {
+          "historical_sold_quantity": 9820
+        },
+        "price": {
+          "ceiling_price": "65.89",
+          "currency": "BRL",
+          "floor_price": "59.90"
+        },
+        "review": {
+          "count": 584,
+          "overall_score": "4.5"
+        },
+        "shop": {
+          "logo_url": "https://example.com/shops/Bella_Pele_Cosméticos.png",
+          "name": "Bella Pele Cosméticos",
+          "rating": "4.7"
+        },
+        "stock": {
+          "quantity": 2929
+        },
+        "title": "Luminária LED Recarregável"
+      },
+      {
+        "brand_name": "Tecno",
+        "commission": {
+          "amount": "17990",
+          "rate": 1000
+        },
+        "id": "1731496474393577268",
+        "main_image_url": "https://example.com/products/1731496474393577268_1.jpg",
+        "market_performance": {
+          "historical_sold_quantity": 7430
+        },
+        "price": {
+          "ceiling_price": "197.89",
+          "currency": "BRL",
+          "floor_price": "179.90"
+        },
+        "review": {
+          "count": 288,
+          "overall_score": "4.7"
+        },
+        "shop": {
+          "logo_url": "https://example.com/shops/Bella_Pele_Cosméticos.png",
+          "name": "Bella Pele Cosméticos",
+          "rating": "4.7"
+        },
+        "stock": {
+          "quantity": 2507
+        },
+        "title": "Aspirador Portátil Sem Fio"
+      },
+      {
+        "brand_name": "Bella",
+        "commission": {
+          "amount": "15283",
+          "rate": 1700
+        },
+        "id": "1731134420312620653",
+        "main_image_url": "https://example.com/products/1731134420312620653_1.jpg",
+        "market_performance": {
+          "historical_sold_quantity": 6210
+        },
+        "price": {
+          "ceiling_price": "98.89",
+          "currency": "BRL",
+          "floor_price": "89.90"
+        },
+        "review": {
+          "count": 213,
+          "overall_score": "4.8"
+        },
+        "shop": {
+          "logo_url": "https://example.com/shops/Bella_Pele_Cosméticos.png",
+          "name": "Bella Pele Cosméticos",
+          "rating": "4.7"
+        },
+        "stock": {
+          "quantity": 2844
+        },
+        "title": "Blusa Tricô Gola Alta"
+      }
+    ],
+    "total_count": 0
+  },
+  "message": "Success",
+  "request_id": "202658F98F1A9EF58A30DF50830250CE"
+}

@@ -1,0 +1,563 @@
+{
+  "code": 0,
+  "data": {
+    "next_page_token": "",
+    "products": [
+      {
+        "addition": {
+          "customized_main_images": [
+            {
+              "heigth": 800,
+              "url": "https://example.com/products/1731518081880197608_1.jpg",
+              "width": 800
+            }
+          ]
+        },
+        "collaboration": {
+          "id": "7451116473315402298",
+          "partner": {
+            "id": "",
+            "name": ""
+          },
+          "type": "1"
+        },
+        "commission": {
+          "rate": 1500,
+          "reward_rate": 0
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731518081880197608",
+        "id": "1731518081880197608",
+        "main_images": [
+          {
+            "heigth": 800,
+            "url": "https://example.com/products/1731518081880197608_1.jpg",
+            "width": 800
+          },
+          {
+            "heigth": 800,
+            "url": "https://example.com/products/1731518081880197608_2.jpg",
+            "width": 800
+          }
+        ],
+        "price": {
+          "original_price": {
+            "currency": "BRL",
+            "maximum_amount": "62.38",
+            "minimum_amount": "62.38"
+          },
+          "platform_discount_price": {
+            "currency": "BRL",
+            "maximum_amount": "48.40",
+            "minimum_amount": "48.40"
+          },
+          "seller_discount_price": {
+            "currency": "BRL",
+            "maximum_amount": "49.90",
+            "minimum_amount": "49.90"
+          }
+        },
+        "sale_regions": [
+          "BR"
+        ],
+        "shop": {
+          "name": "Casa Aurora Oficial"
+        },
+        "source": "AFFILIATE",
+        "status": {
+          "added_status": "ADDED",
+          "inventory_status": "IN_STOCK",
+          "is_hidden": false,
+          "review_status": "APPROVED"
+        },
+        "third_party_link": "",
+        "title": "Organizador de Gaveta Modular 12 peças"
+      },
+      {
+        "addition": {
+          "customized_main_images": [
+            {
+              "heigth": 800,
+              "url": "https://example.com/products/1731022022393041875_1.jpg",
+              "width": 800
+            }
+          ]
+        },
+        "collaboration": {
+          "id": "7489315284360910979",
+          "partner": {
+            "id": "",
+            "name": ""
+          },
+          "type": "1"
+        },
+        "commission": {
+          "rate": 2000,
+          "reward_rate": 0
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731022022393041875",
+        "id": "1731022022393041875",
+        "main_images": [
+          {
+            "heigth": 800,
+            "url": "https://example.com/products/1731022022393041875_1.jpg",
+            "width": 800
+          },
+          {
+            "heigth": 800,
+            "url": "https://example.com/products/1731022022393041875_2.jpg",
+            "width": 800
+          }
+        ],
+        "price": {
+          "original_price": {
+            "currency": "BRL",
+            "maximum_amount": "99.88",
+            "minimum_amount": "99.88"
+          },
+          "platform_discount_price": {
+            "currency": "BRL",
+            "maximum_amount": "77.50",
+            "minimum_amount": "77.50"
+          },
+          "seller_discount_price": {
+            "currency": "BRL",
+            "maximum_amount": "79.90",
+            "minimum_amount": "79.90"
+          }
+        },
+        "sale_regions": [
+          "BR"
+        ],
+        "shop": {
+          "name": "Bella Pele Cosméticos"
+        },
+        "source": "AFFILIATE",
+        "status": {
+          "added_status": "ADDED",
+          "inventory_status": "IN_STOCK",
+          "is_hidden": false,
+          "review_status": "APPROVED"
+        },
+        "third_party_link": "",
+        "title": "Sérum Vitamina C 30ml"
+      },
+      {
+        "addition": {
+          "customized_main_images": [
+            {
+              "heigth": 800,
+              "url": "https://example.com/products/1731805911824555068_1.jpg",
+              "width": 800
+            }
+          ]
+        },
+        "collaboration": {
+          "id": "7415506877987636844",
+          "partner": {
+            "id": "",
+            "name": ""
+          },
+          "type": "1"
+        },
+        "commission": {
+          "rate": 1200,
+          "reward_rate": 0
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731805911824555068",
+        "id": "1731805911824555068",
+        "main_images": [
+          {
+            "heigth": 800,
+            "url": "https://example.com/products/1731805911824555068_1.jpg",
+            "width": 800
+          },
+          {
+            "heigth": 800,
+            "url": "https://example.com/products/1731805911824555068_2.jpg",
+            "width": 800
+          }
+        ],
+        "price": {
+          "original_price": {
+            "currency": "BRL",
+            "maximum_amount": "112.38",
+            "minimum_amount": "112.38"
+          },
+          "platform_discount_price": {
+            "currency": "BRL",
+            "maximum_amount": "87.20",
+            "minimum_amount": "87.20"
+          },
+          "seller_discount_price": {
+            "currency": "BRL",
+            "maximum_amount": "89.90",
+            "minimum_amount": "89.90"
+          }
+        },
+        "sale_regions": [
+          "BR"
+        ],
+        "shop": {
+          "name": "TecnoLar Store"
+        },
+        "source": "AFFILIATE",
+        "status": {
+          "added_status": "ADDED",
+          "inventory_status": "IN_STOCK",
+          "is_hidden": false,
+          "review_status": "APPROVED"
+        },
+        "third_party_link": "",
+        "title": "Mini Processador Elétrico 250ml"
+      },
+      {
+        "addition": {
+          "customized_main_images": [
+            {
+              "heigth": 800,
+              "url": "https://example.com/products/1731057003021853639_1.jpg",
+              "width": 800
+            }
+          ]
+        },
+        "collaboration": {
+          "id": "7484878774287162545",
+          "partner": {
+            "id": "",
+            "name": ""
+          },
+          "type": "1"
+        },
+        "commission": {
+          "rate": 1800,
+          "reward_rate": 0
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731057003021853639",
+        "id": "1731057003021853639",
+        "main_images": [
+          {
+            "heigth": 800,
+            "url": "https://example.com/products/1731057003021853639_1.jpg",
+            "width": 800
+          },
+          {
+            "heigth": 800,
+            "url": "https://example.com/products/1731057003021853639_2.jpg",
+            "width": 800
+          }
+        ],
+        "price": {
+          "original_price": {
+            "currency": "BRL",
+            "maximum_amount": "149.88",
+            "minimum_amount": "149.88"
+          },
+          "platform_discount_price": {
+            "currency": "BRL",
+            "maximum_amount": "116.30",
+            "minimum_amount": "116.30"
+          },
+          "seller_discount_price": {
+            "currency": "BRL",
+            "maximum_amount": "119.90",
+            "minimum_amount": "119.90"
+          }
+        },
+        "sale_regions": [
+          "BR"
+        ],
+        "shop": {
+          "name": "Moda Viva BR"
+        },
+        "source": "AFFILIATE",
+        "status": {
+          "added_status": "ADDED",
+          "inventory_status": "IN_STOCK",
+          "is_hidden": false,
+          "review_status": "APPROVED"
+        },
+        "third_party_link": "",
+        "title": "Vestido Midi Canelado"
+      },
+      {
+        "addition": {
+          "customized_main_images": [
+            {
+              "heigth": 800,
+              "url": "https://example.com/products/1731383849675998844_1.jpg",
+              "width": 800
+            }
+          ]
+        },
+        "collaboration": {
+          "id": "7407328386434716076",
+          "partner": {
+            "id": "",
+            "name": ""
+          },
+          "type": "1"
+        },
+        "commission": {
+          "rate": 1400,
+          "reward_rate": 0
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731383849675998844",
+        "id": "1731383849675998844",
+        "main_images": [
+          {
+            "heigth": 800,
+            "url": "https://example.com/products/1731383849675998844_1.jpg",
+            "width": 800
+          },
+          {
+            "heigth": 800,
+            "url": "https://example.com/products/1731383849675998844_2.jpg",
+            "width": 800
+          }
+        ],
+        "price": {
+          "original_price": {
+            "currency": "BRL",
+            "maximum_amount": "87.38",
+            "minimum_amount": "87.38"
+          },
+          "platform_discount_price": {
+            "currency": "BRL",
+            "maximum_amount": "67.80",
+            "minimum_amount": "67.80"
+          },
+          "seller_discount_price": {
+            "currency": "BRL",
+            "maximum_amount": "69.90",
+            "minimum_amount": "69.90"
+          }
+        },
+        "sale_regions": [
+          "BR"
+        ],
+        "shop": {
+          "name": "Cozinha Prática"
+        },
+        "source": "AFFILIATE",
+        "status": {
+          "added_status": "ADDED",
+          "inventory_status": "IN_STOCK",
+          "is_hidden": false,
+          "review_status": "APPROVED"
+        },
+        "third_party_link": "",
+        "title": "Kit Potes Herméticos 10 un"
+      },
+      {
+        "addition": {
+          "customized_main_images": [
+            {
+              "heigth": 800,
+              "url": "https://example.com/products/1731934453530175320_1.jpg",
+              "width": 800
+            }
+          ]
+        },
+        "collaboration": {
+          "id": "7436773463777491499",
+          "partner": {
+            "id": "",
+            "name": ""
+          },
+          "type": "1"
+        },
+        "commission": {
+          "rate": 1600,
+          "reward_rate": 0
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731934453530175320",
+        "id": "1731934453530175320",
+        "main_images": [
+          {
+            "heigth": 800,
+            "url": "https://example.com/products/1731934453530175320_1.jpg",
+            "width": 800
+          },
+          {
+            "heigth": 800,
+            "url": "https://example.com/products/1731934453530175320_2.jpg",
+            "width": 800
+          }
+        ],
+        "price": {
+          "original_price": {
+            "currency": "BRL",
+            "maximum_amount": "74.88",
+            "minimum_amount": "74.88"
+          },
+          "platform_discount_price": {
+            "currency": "BRL",
+            "maximum_amount": "58.10",
+            "minimum_amount": "58.10"
+          },
+          "seller_discount_price": {
+            "currency": "BRL",
+            "maximum_amount": "59.90",
+            "minimum_amount": "59.90"
+          }
+        },
+        "sale_regions": [
+          "BR"
+        ],
+        "shop": {
+          "name": "Bella Pele Cosméticos"
+        },
+        "source": "AFFILIATE",
+        "status": {
+          "added_status": "ADDED",
+          "inventory_status": "IN_STOCK",
+          "is_hidden": false,
+          "review_status": "APPROVED"
+        },
+        "third_party_link": "",
+        "title": "Protetor Solar Facial FPS 50"
+      },
+      {
+        "addition": {
+          "customized_main_images": [
+            {
+              "heigth": 800,
+              "url": "https://example.com/products/1731923037452316895_1.jpg",
+              "width": 800
+            }
+          ]
+        },
+        "collaboration": {
+          "id": "7430216150905870305",
+          "partner": {
+            "id": "",
+            "name": ""
+          },
+          "type": "1"
+        },
+        "commission": {
+          "rate": 1000,
+          "reward_rate": 0
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731923037452316895",
+        "id": "1731923037452316895",
+        "main_images": [
+          {
+            "heigth": 800,
+            "url": "https://example.com/products/1731923037452316895_1.jpg",
+            "width": 800
+          },
+          {
+            "heigth": 800,
+            "url": "https://example.com/products/1731923037452316895_2.jpg",
+            "width": 800
+          }
+        ],
+        "price": {
+          "original_price": {
+            "currency": "BRL",
+            "maximum_amount": "124.88",
+            "minimum_amount": "124.88"
+          },
+          "platform_discount_price": {
+            "currency": "BRL",
+            "maximum_amount": "96.90",
+            "minimum_amount": "96.90"
+          },
+          "seller_discount_price": {
+            "currency": "BRL",
+            "maximum_amount": "99.90",
+            "minimum_amount": "99.90"
+          }
+        },
+        "sale_regions": [
+          "BR"
+        ],
+        "shop": {
+          "name": "TecnoLar Store"
+        },
+        "source": "AFFILIATE",
+        "status": {
+          "added_status": "ADDED",
+          "inventory_status": "IN_STOCK",
+          "is_hidden": false,
+          "review_status": "APPROVED"
+        },
+        "third_party_link": "",
+        "title": "Umidificador Ultrassônico 300ml"
+      },
+      {
+        "addition": {
+          "customized_main_images": [
+            {
+              "heigth": 800,
+              "url": "https://example.com/products/1731645747364469463_1.jpg",
+              "width": 800
+            }
+          ]
+        },
+        "collaboration": {
+          "id": "7421967424327641785",
+          "partner": {
+            "id": "",
+            "name": ""
+          },
+          "type": "1"
+        },
+        "commission": {
+          "rate": 900,
+          "reward_rate": 0
+        },
+        "detail_link": "https://shop.tiktok.com/view/product/1731645747364469463",
+        "id": "1731645747364469463",
+        "main_images": [
+          {
+            "heigth": 800,
+            "url": "https://example.com/products/1731645747364469463_1.jpg",
+            "width": 800
+          },
+          {
+            "heigth": 800,
+            "url": "https://example.com/products/1731645747364469463_2.jpg",
+            "width": 800
+          }
+        ],
+        "price": {
+          "original_price": {
+            "currency": "BRL",
+            "maximum_amount": "187.38",
+            "minimum_amount": "187.38"
+          },
+          "platform_discount_price": {
+            "currency": "BRL",
+            "maximum_amount": "145.40",
+            "minimum_amount": "145.40"
+          },
+          "seller_discount_price": {
+            "currency": "BRL",
+            "maximum_amount": "149.90",
+            "minimum_amount": "149.90"
+          }
+        },
+        "sale_regions": [
+          "BR"
+        ],
+        "shop": {
+          "name": "TecnoLar Store"
+        },
+        "source": "AFFILIATE",
+        "status": {
+          "added_status": "ADDED",
+          "inventory_status": "IN_STOCK",
+          "is_hidden": false,
+          "review_status": "APPROVED"
+        },
+        "third_party_link": "",
+        "title": "Escova Secadora 3 em 1"
+      }
+    ],
+    "total_count": 8
+  },
+  "message": "Success",
+  "request_id": "2026891BBB2CEBDE2977EEDC74F4159D"
+}
