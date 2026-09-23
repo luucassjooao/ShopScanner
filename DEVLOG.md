@@ -11,16 +11,27 @@ Regras curtas: entrada nova sempre no topo, uma por tarefa concluída, no mesmo 
 _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê ao voltar ao projeto._
 
 - **Fase:** 0 — fundação do front-end.
-- **Rodando:** front em `web/` com a camada de dados completa sobre o MSW (lint, typecheck, build e 36 testes passando).
+- **Rodando:** front em `web/` com a camada de dados sobre o MSW e três telas (lint, typecheck, build e 41 testes passando).
 - **Repositório:** git iniciado na raiz (branch `main`), hook do devlog ativo via `core.hooksPath`.
 - **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. Backend próprio ainda não existe.
 - **Integração TikTok:** Affiliate Creator API não liberada para o Brasil; ticket aberto com a TikTok. Display API disponível, app ainda não submetido.
-- **Próximo passo:** as telas, consumindo os hooks de `web/src/api/queries.ts`.
+- **Telas prontas:** /vendas, /produtos, /videos. Ainda sem navegação entre elas (só pela URL).
+- **Próximo passo:** navegação do app e /inicio.
 - **Bloqueios:** aprovação da categoria "Creator collaborations" para o Brasil; confirmação de que o identificador de conteúdo do pedido é o mesmo id do vídeo.
 
 ---
 
 ## Entradas
+
+### 2026-09-22 · Implementar as telas de vendas, produtos e vídeos
+
+**Fiz:** /vendas (filtros na URL, tabela paginada pelo servidor, painel com divisão da comissão, origem e reembolsos), /produtos (tabela e painel com os vídeos que promoveram) e /videos (grade, ordenação, hashtag e painel com métricas e curva de views com tabela alternativa).
+**Por quê:** são as três telas que respondem "o que vendeu, de onde veio e quanto rendeu".
+**Funcionou:** 5 testes de tela contra o MSW (filtro de status via URL com 57 pedidos em 3 páginas, painel de venda, estado desconectado, vídeos sem Shop mostrando "disponível quando você conectar" nas 14 linhas e nenhum R$ 0,00, filtro de hashtag). Conferi no Chrome: tabela, painel, grade e tooltip da curva (com leituras simuladas só para a verificação).
+**Não funcionou:** o app apareceu escuro no Chrome; era a extensão Dark Reader, não o CSS. Tentei `color-scheme: only light` e desfiz, porque não resolve extensão e o app já é só claro.
+**Decidi:** filtros e item aberto na URL; /vendas e /produtos mostram o estado "TikTok Shop não conectado" e nem disparam a consulta; /videos oferece ordenar por GMV e GPM só com o Shop conectado; imagem que falha some e deixa o fundo.
+**Pendente:** o contrato não define `pageSize` em /videos e /products; o front assume 20, igual ao MSW. A curva só aparece a partir da segunda leitura, então com os mocks atuais ela não aparece. Falta a navegação entre as telas.
+**Commit:** —
 
 ### 2026-09-22 · Implementar a camada de dados sobre o MSW
 

@@ -24,7 +24,10 @@ import {
 } from './schemas';
 import { sessionQuery } from './session';
 
-/** Todo dado de BI é de uma conta num período; a chave de cache carrega os dois. */
+/**
+ * Todo dado de BI é de uma conta num período; a chave de cache carrega os dois.
+ * `accountId` vazio desliga a consulta (sem conta, ou sem TikTok Shop onde ele é exigido).
+ */
 export interface Periodo {
   accountId: string;
   /** ISO 8601 UTC */
@@ -119,12 +122,14 @@ export function useDisconnect() {
 export const useSummary = (p: Periodo) =>
   useQuery({
     queryKey: queryKeys.summary(p),
+    enabled: !!p.accountId,
     queryFn: ({ signal }) => api.get('/summary', { schema: summary, query: { ...p }, signal }),
   });
 
 export const useOrders = (p: Periodo, f: OrdersFiltro = {}) =>
   useQuery({
     queryKey: queryKeys.orders(p, f),
+    enabled: !!p.accountId,
     queryFn: ({ signal }) =>
       api.get('/orders', { schema: ordersPage, query: { ...p, ...f }, signal }),
     placeholderData: keepPreviousData,
@@ -140,6 +145,7 @@ export const useOrder = (id: string) =>
 export const useVideos = (p: Periodo, f: VideosFiltro = {}) =>
   useQuery({
     queryKey: queryKeys.videos(p, f),
+    enabled: !!p.accountId,
     queryFn: ({ signal }) =>
       api.get('/videos', { schema: videosPage, query: { ...p, ...f }, signal }),
     placeholderData: keepPreviousData,
@@ -155,6 +161,7 @@ export const useVideo = (id: string) =>
 export const useProducts = (p: Periodo, f: ProductsFiltro = {}) =>
   useQuery({
     queryKey: queryKeys.products(p, f),
+    enabled: !!p.accountId,
     queryFn: ({ signal }) =>
       api.get('/products', { schema: productsPage, query: { ...p, ...f }, signal }),
     placeholderData: keepPreviousData,

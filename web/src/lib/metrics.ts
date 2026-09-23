@@ -170,3 +170,18 @@ export function summarize(orders: Order[]): Omit<Summary, 'goal'> {
       })),
   };
 }
+
+/** GMV de um pedido: soma do GMV dos SKUs. */
+export function orderGmv(order: Order): Money {
+  return fromCents(order.skus.reduce((t, s) => t + toCents(s.gmv), 0n));
+}
+
+/** Comissão de um pedido: o valor real se já liquidou, senão a estimada. */
+export function orderCommission(order: Order): { valor: Money; real: boolean } {
+  const real = order.status === 'SETTLED';
+  const soma = order.skus.reduce(
+    (t, s) => t + toCents((real ? s.commissionSettled : null) ?? s.commissionEstimated),
+    0n,
+  );
+  return { valor: fromCents(soma), real };
+}

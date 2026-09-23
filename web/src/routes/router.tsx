@@ -1,9 +1,12 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { PublicLayout } from './public/PublicLayout';
 import { AppLayout } from './app/AppLayout';
+import { Produtos } from './app/Produtos';
+import { Vendas } from './app/Vendas';
+import { Videos } from './app/Videos';
 
 /**
- * Duas cascas, nenhuma página ainda.
+ * Duas cascas. Páginas prontas: /vendas, /produtos, /videos.
  *
  * Públicas (dentro de PublicLayout):  /  /entrar  /criar-conta  /recuperar  /termos  /privacidade
  * Do app (dentro de AppLayout):       /inicio  /vendas  /videos  /produtos  /planejamento  /configuracoes
@@ -15,7 +18,11 @@ export const router = createBrowserRouter([
   },
   {
     element: <AppLayout />,
-    children: [],
+    children: [
+      { path: '/vendas', element: <Vendas /> },
+      { path: '/produtos', element: <Produtos /> },
+      { path: '/videos', element: <Videos /> },
+    ],
   },
   {
     path: '*',

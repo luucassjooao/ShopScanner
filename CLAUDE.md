@@ -237,6 +237,8 @@ Use nos testes do adaptador:
 - Schemas Zod de todo o contrato em `web/src/api/schemas.ts`; hooks do TanStack Query em `web/src/api/queries.ts`. Chave de cache de BI sempre `[recurso, accountId, from, to, filtros]`.
 - Conta de dinheiro só com `web/src/lib/money.ts` (centavos em `bigint`). Métricas derivadas do contrato em `web/src/lib/metrics.ts`; `isShopAdsSale` é o único lugar que decide venda por anúncio.
 - Rótulos em português de status, canal e status de plano em `web/src/lib/labels.ts`.
+- Filtros das telas moram na URL (`?de=AAAA-MM-DD&ate=...&status=...&pagina=N`), via `useFiltros` em `web/src/routes/app/filtros.ts`; o item aberto no painel também (`?venda=`, `?produto=`, `?video=`). Datas da URL são dias de São Paulo, convertidas para ISO UTC só na chamada.
+- Peças compartilhadas das telas de dados em `web/src/components/dados.tsx`; métrica de venda nula usa `<Indisponivel />`.
 - MSW só com `import.meta.env.DEV` e `VITE_ENABLE_MSW=true`; o build de produção não inclui MSW nem os JSONs. Nos testes, `web/src/mocks/server.ts` com `VITE_API_URL=http://localhost/api`.
 
 ## Estado da integração (importa para as telas)
