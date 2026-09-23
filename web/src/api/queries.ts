@@ -3,8 +3,10 @@ import { api } from './client';
 import {
   conexaoTiktok,
   contas,
+  exportData,
   goal,
   goals,
+  notificationSettings,
   orderDetail,
   ordersPage,
   plan,
@@ -17,8 +19,10 @@ import {
   type Channel,
   type ForgotPasswordInput,
   type Goal,
+  type NotificationSettings,
   type LoginInput,
   type OrderStatus,
+  type Plan,
   type PlanInput,
   type RegisterInput,
 } from './schemas';
@@ -66,6 +70,7 @@ export const queryKeys = {
   product: (id: string) => ['product', id] as const,
   plans: ['plans'] as const,
   goals: ['goals'] as const,
+  notifications: ['me', 'notifications'] as const,
 };
 
 // --- sessão e contas ---
@@ -193,10 +198,21 @@ function usePlanMutation<V>(fn: (v: V) => Promise<unknown>) {
 export const useCreatePlan = () =>
   usePlanMutation((body: PlanInput) => api.post('/plans', body, { schema: plan }));
 
-export const useUpdatePlan = () =>
-  usePlanMutation(({ id, ...body }: Partial<PlanInput> & { id: string }) =>
-    api.patch(`/plans/${encodeURIComponent(id)}`, body, { schema: plan }),
-  );
+/** Otimista: o card muda de coluna na hora; se o servidor recusar, a lista é relida. */
+export function useUpdatePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: Partial<PlanInput> & { id: string }) =>
+      api.patch(`/plans/${encodeURIComponent(id)}`, body, { schema: plan }),
+    onMutate: async ({ id, ...body }) => {
+      await qc.cancelQueries({ queryKey: queryKeys.plans });
+      qc.setQueryData<Plan[]>(queryKeys.plans, (lista) =>
+        lista?.map((p) => (p.id === id ? { ...p, ...body } : p)),
+      );
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: queryKeys.plans }),
+  });
+}
 
 export const useDeletePlan = () =>
   usePlanMutation((id: string) => api.delete(`/plans/${encodeURIComponent(id)}`));
@@ -216,5 +232,47 @@ export function useSaveGoal() {
       // A meta do mês aparece dentro do /summary.
       void qc.invalidateQueries({ queryKey: ['summary'] });
     },
+  });
+}
+
+// --- preferências e dados da conta ---
+
+export const useNotifications = () =>
+  useQuery({
+    queryKey: queryKeys.notifications,
+    queryFn: ({ signal }) => api.get('/me/notifications', { schema: notificationSettings, signal }),
+  });
+
+export function useSaveNotifications() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: NotificationSettings) =>
+      api.put('/me/notifications', body, { schema: notificationSettings }),
+    onSuccess: (salvo) => qc.setQueryData(queryKeys.notifications, salvo),
+  });
+}
+
+/** Baixa o JSON de GET /me/export como arquivo. */
+export const useExportData = () =>
+  useMutation({
+    mutationFn: async () => {
+      const dados = await api.get('/me/export', { schema: exportData });
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' }),
+      );
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `shopscanner-dados-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+  });
+
+export function useDeleteAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.delete('/me'),
+    // Conta apagada: nada dela fica no cache.
+    onSuccess: () => qc.clear(),
   });
 }

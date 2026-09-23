@@ -1,4 +1,4 @@
-# [NOME DO APP] — contexto do projeto (front-end)
+# ShopScanner — contexto do projeto (front-end)
 
 Plataforma de BI para **creators afiliados do TikTok Shop no Brasil**. A creator conecta a conta do TikTok e, quando a integração for liberada, a conta do TikTok Shop. O app mostra comissões, quais vídeos venderam, quais produtos rendem mais e ajuda a planejar os próximos vídeos.
 
@@ -84,6 +84,7 @@ GET  /products/:id             -> produto + vídeos que o promoveram
 
 GET  /plans  ·  POST /plans  ·  PATCH /plans/:id  ·  DELETE /plans/:id
 GET  /goals  ·  PUT  /goals
+GET  /me/notifications  ·  PUT /me/notifications
 
 GET  /me/export                -> arquivo JSON com todos os dados
 DELETE /me                     -> exclusão de conta
@@ -200,11 +201,22 @@ type Goal = {
   gmv: Money | null;
   commission: Money | null;
 }; // month: "AAAA-MM"
+
+type NotificationSettings = {
+  orderFrozen: boolean; // pedido retido
+  orderRefunded: boolean; // pedido reembolsado
+  goalReached: boolean; // meta do mês batida
+  paceDrop: boolean; // queda de ritmo contra o período anterior
+  postReminder: boolean; // lembrete de postar, vindo do planejamento
+  channels: { inApp: boolean; email: boolean }; // email fica false no MVP
+};
 ```
 
 Em `/summary`, `goal` é `{ gmv: Money | null; commission: Money | null } | null` referente ao mês corrente.
 
 Status do TikTok convertidos pelo backend: `AWAITING PAYMENT` → `AWAITING_PAYMENT`, `To-SETTLE` → `TO_SETTLE`, o resto igual. O front traduz para o rótulo em português; a API sempre manda a chave.
+
+Os avisos em si (o sino do topo) são **derivados no front** a partir de `/summary`, `/orders` e `/plans` que já estão carregados: retido e reembolsado saem do status, meta batida sai do `goal` do resumo, queda de ritmo sai da comparação com o período anterior e lembrete de postar sai do `scheduledFor` do plano. Não existe endpoint de feed de notificação; `/me/notifications` só liga e desliga cada tipo.
 
 ### Definições dos números
 
@@ -239,6 +251,8 @@ Use nos testes do adaptador:
 - Rótulos em português de status, canal e status de plano em `web/src/lib/labels.ts`.
 - Filtros das telas moram na URL (`?de=AAAA-MM-DD&ate=...&status=...&pagina=N`), via `useFiltros` em `web/src/routes/app/filtros.ts`; o item aberto no painel também (`?venda=`, `?produto=`, `?video=`). Datas da URL são dias de São Paulo, convertidas para ISO UTC só na chamada.
 - Peças compartilhadas das telas de dados em `web/src/components/dados.tsx`; métrica de venda nula usa `<Indisponivel />`.
+- Valor em R$ digitado pela creator passa por `parseMoeda` (`web/src/lib/format.ts`): só formato pt-BR, e o que não casar é recusado, nunca adivinhado.
+- Arrastar usa o drag and drop nativo do HTML e sempre tem uma alternativa por select para toque e teclado. Sem biblioteca de arrastar.
 - MSW só com `import.meta.env.DEV` e `VITE_ENABLE_MSW=true`; o build de produção não inclui MSW nem os JSONs. Nos testes, `web/src/mocks/server.ts` com `VITE_API_URL=http://localhost/api`.
 
 ## Estado da integração (importa para as telas)

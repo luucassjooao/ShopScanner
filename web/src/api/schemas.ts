@@ -250,3 +250,19 @@ export const goal = z.object({
 export type Goal = z.infer<typeof goal>;
 
 export const goals = z.array(goal);
+
+// --- preferências de aviso ---
+
+export const notificationSettings = z.object({
+  orderFrozen: z.boolean(),
+  orderRefunded: z.boolean(),
+  goalReached: z.boolean(),
+  paceDrop: z.boolean(),
+  postReminder: z.boolean(),
+  // e-mail existe no contrato, mas fica false no MVP: não há backend enviando.
+  channels: z.object({ inApp: z.boolean(), email: z.boolean() }),
+});
+export type NotificationSettings = z.infer<typeof notificationSettings>;
+
+/** GET /me/export: arquivo JSON com todos os dados; o front só repassa para download. */
+export const exportData = z.unknown();

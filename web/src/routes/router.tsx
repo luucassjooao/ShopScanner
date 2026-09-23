@@ -1,12 +1,14 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { PublicLayout } from './public/PublicLayout';
 import { AppLayout } from './app/AppLayout';
+import { Configuracoes } from './app/Configuracoes';
+import { Planejamento } from './app/Planejamento';
 import { Produtos } from './app/Produtos';
 import { Vendas } from './app/Vendas';
 import { Videos } from './app/Videos';
 
 /**
- * Duas cascas. Páginas prontas: /vendas, /produtos, /videos.
+ * Duas cascas. Páginas prontas: /vendas, /produtos, /videos, /planejamento, /configuracoes.
  *
  * Públicas (dentro de PublicLayout):  /  /entrar  /criar-conta  /recuperar  /termos  /privacidade
  * Do app (dentro de AppLayout):       /inicio  /vendas  /videos  /produtos  /planejamento  /configuracoes
@@ -22,6 +24,8 @@ export const router = createBrowserRouter([
       { path: '/vendas', element: <Vendas /> },
       { path: '/produtos', element: <Produtos /> },
       { path: '/videos', element: <Videos /> },
+      { path: '/planejamento', element: <Planejamento /> },
+      { path: '/configuracoes', element: <Configuracoes /> },
     ],
   },
   {

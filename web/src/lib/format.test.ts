@@ -9,6 +9,7 @@ import {
   formatInteiro,
   formatMoeda,
   formatTaxa,
+  parseMoeda,
   taxaParaFracao,
 } from './format';
 
@@ -84,5 +85,20 @@ describe('datas em America/Sao_Paulo', () => {
 
   it('recusa data inválida', () => {
     expect(() => formatData('ontem')).toThrow(TypeError);
+  });
+});
+
+describe('parseMoeda', () => {
+  it('lê o que a creator digita em pt-BR', () => {
+    expect(parseMoeda('1.500,00')).toBe('1500.00');
+    expect(parseMoeda('R$ 15.000')).toBe('15000.00');
+    expect(parseMoeda('2500,5')).toBe('2500.50');
+    expect(parseMoeda('080')).toBe('80.00');
+  });
+
+  it('recusa formato ambíguo ou inválido em vez de chutar', () => {
+    for (const v of ['', '1,500.00', '15.5', '1,234', 'abc', '-10']) {
+      expect(parseMoeda(v)).toBeNull();
+    }
   });
 });

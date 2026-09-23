@@ -4,10 +4,12 @@ import {
   forgotPasswordInput,
   goal,
   loginInput,
+  notificationSettings,
   planInput,
   registerInput,
   type Conta,
   type Goal,
+  type NotificationSettings,
   type Order,
   type Plan,
   type Sessao,
@@ -32,15 +34,65 @@ import {
 const url = (path: string) => `${env.apiUrl}${path}`;
 const ACCOUNT_ID = 'acc_1';
 
+const dia = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString();
+
+/** Dois planos de exemplo para o quadro não nascer vazio no desenvolvimento. */
+function planosDemo(): Plan[] {
+  const agora = new Date().toISOString();
+  const base = { productId: null, videoId: null, notes: null, createdAt: agora, updatedAt: agora };
+  return [
+    {
+      ...base,
+      id: 'plan_demo_1',
+      title: 'Review honesta do protetor solar',
+      status: 'IDEA',
+      scheduledFor: dia(1),
+      script: null,
+    },
+    {
+      ...base,
+      id: 'plan_demo_2',
+      title: '3 achadinhos de cozinha abaixo de R$ 60',
+      status: 'SCRIPT',
+      scheduledFor: dia(3),
+      script: {
+        hook: 'Parei de passar raiva na cozinha com isso aqui',
+        scene1: 'Mostrar a tábua de corte em uso',
+        scene2: 'Comparar com a tábua antiga',
+        cta: 'Link na vitrine',
+        caption: 'Achadinhos de cozinha que valem cada centavo #achadinhos',
+      },
+    },
+  ];
+}
+
+const avisosPadrao = (): NotificationSettings => ({
+  orderFrozen: true,
+  orderRefunded: true,
+  goalReached: true,
+  paceDrop: true,
+  postReminder: true,
+  channels: { inApp: true, email: false },
+});
+
 /** Estado em memória do backend simulado. `resetDb()` volta ao início (usado nos testes). */
 export const db = {
   loggedIn: true,
+  tiktokConnected: true,
   shopConnected: true,
-  plans: [] as Plan[],
+  plans: planosDemo(),
   goals: [] as Goal[],
+  notifications: avisosPadrao(),
 };
 export function resetDb() {
-  Object.assign(db, { loggedIn: true, shopConnected: true, plans: [], goals: [] });
+  Object.assign(db, {
+    loggedIn: true,
+    tiktokConnected: true,
+    shopConnected: true,
+    plans: planosDemo(),
+    goals: [],
+    notifications: avisosPadrao(),
+  });
 }
 
 const conta = (): Conta => ({
@@ -49,6 +101,8 @@ const conta = (): Conta => ({
   shopConnected: db.shopConnected,
   connectedAt: '2026-08-02T12:00:00.000Z',
 });
+
+const contas = () => (db.tiktokConnected ? [conta()] : []);
 
 const erro = (status: number, message: string) => HttpResponse.json({ message }, { status });
 const semSessao = () => (db.loggedIn ? null : erro(401, 'Sessão expirada.'));
@@ -62,7 +116,7 @@ function params(request: Request) {
 
 /** 401 sem sessão, 404 para conta que não é da usuária. */
 function guarda(q: URLSearchParams) {
-  return semSessao() ?? (q.get('accountId') === ACCOUNT_ID ? null : erro(404, 'Conta não encontrada.'));
+  return semSessao() ?? (db.tiktokConnected && q.get('accountId') === ACCOUNT_ID ? null : erro(404, 'Conta não encontrada.'));
 }
 
 function noPeriodo(iso: string, q: URLSearchParams) {
@@ -110,20 +164,23 @@ export const handlers = [
   http.get(url('/auth/session'), () => {
     const sessao: Sessao = {
       user: { id: 'u_1', name: 'Carolina Dias', email: 'voce@email.com.br' },
-      accounts: [conta()],
+      accounts: contas(),
     };
     return semSessao() ?? HttpResponse.json(sessao);
   }),
 
   // --- contas ---
-  http.get(url('/accounts'), () => semSessao() ?? HttpResponse.json([conta()])),
+  http.get(url('/accounts'), () => semSessao() ?? HttpResponse.json(contas())),
   http.post(
     url('/connections/tiktok/start'),
     () => semSessao() ?? HttpResponse.json({ authorizeUrl: '/configuracoes?conexao=simulada' }),
   ),
   http.delete(url('/connections/:id'), ({ params: p }) => {
-    if (p.id !== ACCOUNT_ID) return erro(404, 'Conexão não encontrada.');
-    return semSessao() ?? new HttpResponse(null, { status: 204 });
+    const negado = semSessao();
+    if (negado) return negado;
+    if (p.id !== ACCOUNT_ID || !db.tiktokConnected) return erro(404, 'Conexão não encontrada.');
+    db.tiktokConnected = false;
+    return new HttpResponse(null, { status: 204 });
   }),
 
   // --- resumo ---
@@ -249,5 +306,33 @@ export const handlers = [
     const g = body.data;
     db.goals = [...db.goals.filter((x) => !(x.accountId === g.accountId && x.month === g.month)), g];
     return HttpResponse.json(g);
+  }),
+
+  // --- preferências e dados da conta ---
+  http.get(url('/me/notifications'), () => semSessao() ?? HttpResponse.json(db.notifications)),
+  http.put(url('/me/notifications'), async ({ request }) => {
+    const negado = semSessao();
+    if (negado) return negado;
+    const body = notificationSettings.safeParse(await request.json());
+    if (!body.success) return erro(422, 'Dados inválidos.');
+    db.notifications = body.data;
+    return HttpResponse.json(db.notifications);
+  }),
+  http.get(url('/me/export'), () => {
+    const negado = semSessao();
+    if (negado) return negado;
+    return HttpResponse.json({
+      exportedAt: new Date().toISOString(),
+      accounts: contas(),
+      plans: db.plans,
+      goals: db.goals,
+      notifications: db.notifications,
+    });
+  }),
+  http.delete(url('/me'), () => {
+    const negado = semSessao();
+    if (negado) return negado;
+    Object.assign(db, { loggedIn: false, tiktokConnected: false, plans: [], goals: [] });
+    return new HttpResponse(null, { status: 204 });
   }),
 ];

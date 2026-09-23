@@ -54,6 +54,22 @@ export function Videos() {
   });
   const itens = query.data?.items ?? [];
 
+  if (!conta) {
+    return (
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 p-4 md:p-6">
+        <CabecalhoPagina
+          titulo="Vídeos"
+          descricao="Conecte sua conta do TikTok para ver seus vídeos."
+        />
+        <Card className="p-5">
+          <p className="text-corpo-sm text-texto-secundario">
+            Nenhuma conta do TikTok conectada. Conecte em Configurações.
+          </p>
+        </Card>
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 p-4 md:p-6">
       <CabecalhoPagina

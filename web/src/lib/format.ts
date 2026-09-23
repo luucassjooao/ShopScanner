@@ -132,3 +132,16 @@ const diaMes = new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, day: '2-digit', m
 export function formatDiaMes(value: string | Date): string {
   return diaMes.format(toDate(value));
 }
+
+const MOEDA_DIGITADA_RE = /^(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d{1,2}))?$/;
+
+/**
+ * O inverso de `formatMoeda` para campos digitados: `"1.500,5"` → `"1500.50"`.
+ * Aceita só o formato brasileiro; qualquer outra coisa vira `null` em vez de um palpite.
+ */
+export function parseMoeda(texto: string): string | null {
+  const m = MOEDA_DIGITADA_RE.exec(texto.replace(/R\$|\s/g, ''));
+  if (!m) return null;
+  const inteiro = m[1].replace(/\./g, '').replace(/^0+(?=\d)/, '');
+  return `${inteiro}.${(m[2] ?? '').padEnd(2, '0')}`;
+}

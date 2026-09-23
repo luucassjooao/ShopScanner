@@ -11,17 +11,27 @@ Regras curtas: entrada nova sempre no topo, uma por tarefa concluída, no mesmo 
 _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê ao voltar ao projeto._
 
 - **Fase:** 0 — fundação do front-end.
-- **Rodando:** front em `web/` com a camada de dados sobre o MSW e três telas (lint, typecheck, build e 41 testes passando).
+- **Rodando:** front em `web/` com a camada de dados sobre o MSW e cinco telas (lint, typecheck, build e 54 testes passando).
 - **Repositório:** git iniciado na raiz (branch `main`), hook do devlog ativo via `core.hooksPath`.
 - **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. Backend próprio ainda não existe.
 - **Integração TikTok:** Affiliate Creator API não liberada para o Brasil; ticket aberto com a TikTok. Display API disponível, app ainda não submetido.
-- **Telas prontas:** /vendas, /produtos, /videos. Ainda sem navegação entre elas (só pela URL).
-- **Próximo passo:** navegação do app e /inicio.
+- **Telas prontas:** /vendas, /produtos, /videos, /planejamento, /configuracoes. Ainda sem navegação entre elas (só pela URL).
+- **Próximo passo:** navegação do app com o sino de avisos, e /inicio.
 - **Bloqueios:** aprovação da categoria "Creator collaborations" para o Brasil; confirmação de que o identificador de conteúdo do pedido é o mesmo id do vídeo.
 
 ---
 
 ## Entradas
+
+### 2026-09-22 · Implementar planejamento e configurações
+
+**Fiz:** /planejamento com quadro de cinco etapas (arrastar e select "mover para"), calendário semanal e modal de roteiro; /configuracoes com perfil, contas conectadas e desconexão, meta do mês, avisos (estado das integrações e preferências) e "Seus dados" com exportar e excluir conta por digitação. Contrato novo `GET/PUT /me/notifications` no MSW, junto com `/me/export` e `DELETE /me`.
+**Por quê:** fecha o ciclo "planejar o próximo vídeo" e dá à creator controle sobre conta, metas e dados.
+**Funcionou:** 11 testes de tela (mover por select e por arrastar, criar ideia com roteiro e produto, validação do nome, calendário, desconectar, meta em texto decimal e recusa de formato errado, alternar aviso sem e-mail na tela, exportar arquivo, excluir só depois de digitar EXCLUIR) e 2 do `parseMoeda`. Conferi as telas no Chrome.
+**Não funcionou:** a mensagem de erro dentro do `<label>` entrava no nome acessível do campo; saiu do rótulo e passou a ser ligada por `aria-describedby`.
+**Decidi:** arrastar nativo mais select, sem biblioteca nova (arrastar nativo não funciona no toque); mudança de etapa otimista; produto do roteiro escolhido entre os vendidos nos últimos 90 dias; e-mail de aviso fica no contrato, mas fora da tela; excluir conta leva para `/`. Regras permanentes no `CLAUDE.md`.
+**Pendente:** o sino com os avisos derivados de /summary, /orders e /plans; `/` ainda não tem página, então quem exclui a conta cai no "rota não existe"; o perfil é só leitura porque o contrato não tem edição.
+**Commit:** —
 
 ### 2026-09-22 · Implementar as telas de vendas, produtos e vídeos
 
