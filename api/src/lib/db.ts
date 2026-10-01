@@ -15,6 +15,12 @@ export const sql = postgres(env.DATABASE_URL, {
   onnotice: () => {},
 });
 
+/**
+ * Quem executa SQL: a conexão ou a transação. Repositório aceita os dois, e é
+ * por isso que a mesma função serve dentro e fora de `transaction()`.
+ */
+export type Executor = typeof sql | postgres.TransactionSql<Record<string, never>>;
+
 /** Transação: o callback recebe o `sql` da transação e nada escapa dele. */
 export const transaction = sql.begin.bind(sql);
 

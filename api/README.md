@@ -41,6 +41,16 @@ npm run dev
 | `npm run db:migrate` | aplica o que falta de `db/migrations/`, em ordem e em transação |
 | `npm run db:seed`    | roda `db/seed.sql`                                              |
 
+## Testes
+
+Precisam de um Postgres de pé. A suíte cria o banco `shopscanner_test` sozinha, aplica as
+migrações e trunca as tabelas entre os testes — o banco de desenvolvimento não é tocado.
+
+```bash
+docker compose up -d db
+npm test
+```
+
 ## Migrações
 
 Arquivos `.sql` numerados em `db/migrations/`. O runner aplica em ordem, cada arquivo numa

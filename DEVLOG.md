@@ -11,18 +11,49 @@ Regras curtas: entrada nova sempre no topo, uma por tarefa concluída, no mesmo 
 _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê ao voltar ao projeto._
 
 - **Fase:** 0 — fundação das duas pontas: front pronto, backend recém-nascido.
-- **Rodando:** front em `web/` com o design do canvas aplicado: área logada completa, páginas legais e públicas (lint, typecheck, build e 93 testes passando).
+- **Rodando:** front em `web/` com o design do canvas aplicado: área logada completa, páginas legais e públicas; acesso por e-mail ou Google, TikTok só como conexão (lint, typecheck, build e 98 testes passando).
 - **Repositório:** git iniciado na raiz (branch `main`), hook do devlog ativo via `core.hooksPath`.
 - **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. O backend em `api/` já sobe, mas ainda não serve nenhuma rota do contrato.
-- **Backend:** esqueleto em `api/` (Fastify + Postgres 16 por docker compose, migrações próprias, `GET /health`). Sem tabela de domínio, sem autenticação.
+- **Backend:** `api/` com conta e sessão funcionando (registrar, entrar, refresh rotativo, logout, sessões, redefinir senha). Sem tabela de domínio (pedidos, vídeos) e sem login do Google ainda.
 - **Integração TikTok:** Affiliate Creator API não liberada para o Brasil; ticket aberto com a TikTok. Display API disponível, app ainda não submetido.
 - **Telas prontas:** /, /entrar, /criar-conta, /recuperar, /termos, /privacidade, /inicio-rapido, /inicio, /vendas, /videos, /videos/:id, /produtos, /planejamento, /configuracoes, /avisos.
-- **Próximo passo:** autenticação na API (tabelas, argon2, sessão em cookie); no front, decidir as propostas de contrato da entrada de 23/09 e preencher `web/src/lib/textos.ts`.
+- **Próximo passo:** login com Google e `provider_connections` na API; no front, decidir as propostas de contrato da entrada de 23/09 e preencher `web/src/lib/textos.ts`.
 - **Bloqueios:** aprovação da categoria "Creator collaborations" para o Brasil; confirmação de que o identificador de conteúdo do pedido é o mesmo id do vídeo.
 
 ---
 
 ## Entradas
+
+### 2026-10-01 · [api] Implementar conta e sessão
+
+**Fiz:** `0002_auth.sql` (users, sessions, refresh_tokens, auth_identities) e as rotas de `/auth`: registrar, entrar, refresh rotativo, logout, logout-all, sessões, esqueci e redefinir senha. Senha em argon2id, access token JWT de 15 min em `__Host-at` e refresh opaco em `__Secure-rt`, só o hash SHA-256 com pepper no banco.
+**Por quê:** é a base de tudo: sem sessão não há conta, e sem conta não há conexão com o TikTok nem dado de pedido.
+**Funcionou:** 13 testes com `fastify.inject` contra um Postgres de teste de verdade (criado e migrado pela própria suíte): registra e entra, atributos dos cookies, refresh gira, reuso derruba a família e encerra a sessão, dois refresh simultâneos só giram um, sessão revogada não autentica, logout-all derruba tudo, redefinir senha mata a sessão antiga e o próprio link, e-mail inexistente responde igual a senha errada, 429 no 11º login e 403 sem o `X-Requested-With`. Conferi no ar pelo docker: `Set-Cookie` sai com `HttpOnly; Secure; SameSite=Lax` e o refresh com `Path=/auth/refresh`.
+**Não funcionou:** a queima da família estava dentro da transação da rotação — e como a rotação termina lançando 401, o rollback desfazia a própria queima; o token "bom" continuava válido. Passou a ser transação própria. Os tipos do driver também não deixam `TransactionSql` passar por `Sql`, então `Executor` virou união dos dois.
+**Decidi:** `__Secure-rt` no lugar de `__Host-rt` (o prefixo `__Host-` exige `Path=/`, e o caminho restrito vale mais que o prefixo). Redefinição de senha sem tabela: JWT de 30 min carregando `credentials_version`, que o próprio reset incrementa — então o link é de uso único de graça. JWT HS256 escrito com `node:crypto`, sem biblioteca. `users` ganhou `avatar_url` e `accepted_terms_version`, que o contrato pede em `SessionUser` e no registro. O índice avulso em `users(email)` e em `refresh_tokens(token_hash)` não foi criado: o `unique` das duas colunas já é esse índice.
+**Pendente:** `/auth/session` devolve `accounts: []` porque `provider_connections` ainda não existe. Não há envio de e-mail: o token de redefinição só aparece no log fora de produção. Login com Google (PKCE, JWKS) é a próxima tarefa, e `COOKIE_DOMAIN` segue sem uso enquanto os cookies usarem prefixo.
+**Commit:** —
+
+### 2026-10-01 · [front] Separar acesso à conta de conexão com o TikTok
+
+**Fiz:** canvas e código das telas afetadas pela regra nova. /entrar e /criar-conta com "Continuar com Google" neutro no topo e sem TikTok; o aceite fica acima dos dois caminhos e trava os dois. /recuperar ganhou o estado "esse e-mail entra pelo Google". /inicio-rapido tem três passos opcionais com "Fazer depois" e envio do .xlsx no passo do Shop. /configuracoes separa "Acesso à conta" (senha, Google vinculado, desvincular travado sem senha) de "Contas conectadas" (uma linha por conexão, diálogo de desconectar). Landing com os passos e a confiança novos.
+**Por quê:** o TikTok saiu do login (não devolve e-mail e revogar trancaria a creator fora da conta). A interface precisa dizer que a conta é dela e sobrevive ao TikTok desligado.
+**Funcionou:** 98 testes, incluindo Google antes do formulário e navegando para `/auth/google/start`, mapa de `?erro=` sem código cru, aceite travando os dois botões, conta só-Google em /recuperar, primeira senha liberando o desvincular, desconectar sem mexer no acesso. Lint, Prettier, typecheck e build limpos. Conferido no navegador em 390px e no desktop.
+**Não funcionou:** o primeiro desenho do diálogo de desconectar dizia que os dados importados ficavam. Isso contradiz Termos, Privacidade, FAQ e a regra da API (apagar em até `PRAZO_EXCLUSAO`). O diálogo segue o texto legal, no canvas e no código. As linhas de conexão espremiam o texto no celular; resolvido com largura mínima no texto, para o botão quebrar a linha.
+**Decidi:** "Continuar com Google" é `window.location.assign` para a API, nunca `fetch`. O mapa de erros do Google mora em `lib/textos.ts`. `EnviarRelatorio` (em `components/dados.tsx`) é o atalho único do .xlsx. "Para depois" no onboarding vale só para a visita.
+**Pendente:** propostas de contrato que a API precisa confirmar:
+  - `409 { code: "GOOGLE_ONLY" }` em `/auth/forgot-password` (revela que o e-mail existe; avaliar contra a enumeração).
+  - `?acceptedTermsVersion=` em `/auth/google/start` para registrar o aceite de quem cria conta pelo Google.
+  - `currentPassword` opcional em `PUT /me/password` quando `hasPassword` é falso.
+  - Vincular o Google com sessão aberta passando por `/auth/google/start`.
+  - Códigos de erro do Google (`cancelado`, `email_nao_verificado`, `expirado`).
+
+  Fora do escopo:
+  - "Último arquivo enviado" (`GET /imports`) e o acompanhamento por `GET /imports/:id`.
+  - Atalho do .xlsx no `ShopDesconectado` das telas de dados.
+
+  Em dev, o botão do Google cai fora do MSW, porque a navegação não é interceptada.
+**Commit:** —
 
 ### 2026-10-01 · [api] Criar o esqueleto do backend
 

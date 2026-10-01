@@ -55,11 +55,12 @@ Erro nunca vaza stack, mensagem de banco nem nome de coluna para o cliente. Uma 
 Modelo: **access token curto em JWT + refresh token opaco rotativo com detecção de reuso**, os dois em cookie `httpOnly`.
 
 - **Access token:** JWT assinado (HS256), 15 minutos, cookie `__Host-at`, `httpOnly`, `Secure`, `SameSite=Lax`, `Path=/`. Payload mínimo: `sub` (id do usuário), `sid` (id da sessão) e `ver` (versão das credenciais).
-- **Refresh token:** 32 bytes aleatórios em base64url, **nunca** é id de linha. Cookie `__Host-rt`, `httpOnly`, `Secure`, `SameSite=Lax`, `Path=/auth/refresh`. No banco guarda-se só o **hash SHA-256** com pepper.
+- **Refresh token:** 32 bytes aleatórios em base64url, **nunca** é id de linha. Cookie `__Secure-rt`, `httpOnly`, `Secure`, `SameSite=Lax`, `Path=/auth/refresh`. (Era `__Host-rt` no plano, mas o prefixo `__Host-` exige `Path=/`: não cabe junto com o caminho restrito, e o caminho vale mais.) No banco guarda-se só o **hash SHA-256** com pepper.
 - **Rotação:** todo uso do refresh emite um novo e marca o antigo como usado, na mesma transação. O `UPDATE` que marca como usado é condicional (`used_at IS NULL`) e a rotação só segue se afetou uma linha — é isso que fecha a corrida entre dois refreshes simultâneos.
 - **Detecção de reuso:** refresh já marcado como usado chegando de novo revoga a **família inteira** de tokens daquela sessão e registra o incidente. É o que protege contra token roubado.
 - **Sessão:** tabela própria com user agent, IP, criada em, último uso e revogada em. Dá a tela de dispositivos conectados e permite revogar uma sessão sem derrubar as outras.
 - **Logout:** apaga os dois cookies e revoga a sessão. `logout all` revoga todas.
+- **Redefinição de senha:** sem tabela. O link é um JWT de 30 minutos com `sub`, `ver` e `pur: 'reset'`; como redefinir incrementa `credentials_version`, o link vale uma vez só. Enquanto não existe envio de e-mail, o token sai no log fora de produção.
 - **Senha:** argon2id. Mensagem de erro igual para e-mail inexistente e senha errada. Troca de senha ou reset incrementa `credentials_version` e invalida todas as sessões; o middleware recusa JWT com `ver` diferente.
 - **Rate limit:** global por IP e específico em `/auth/*`, com contagem por e-mail mais IP no login.
 - **CSRF:** `SameSite=Lax` cobre o caso comum; além disso, toda rota que muda estado exige o header `X-Requested-With: shopscanner` e rejeita requisição sem ele.

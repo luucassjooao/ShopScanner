@@ -6,6 +6,7 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import { ZodError } from 'zod';
+import { HEADER_CSRF, VALOR_CSRF } from './config/constants.ts';
 import { env, isProd } from './config/env.ts';
 import { AppError } from './lib/errors.ts';
 import { sql } from './lib/db.ts';
@@ -26,7 +27,26 @@ export async function buildApp() {
   await app.register(helmet);
   await app.register(cors, { origin: env.WEB_ORIGIN, credentials: true });
   await app.register(cookie, { secret: env.JWT_SECRET });
-  await app.register(rateLimit, { max: 100, timeWindow: '1 minute' });
+  await app.register(rateLimit, {
+    // No teste o limite global sai da frente; o que se quer provar lá são os
+    // limites de /auth, não o teto por IP.
+    max: env.NODE_ENV === 'test' ? 1000 : 100,
+    timeWindow: '1 minute',
+    // preHandler, e não onRequest, porque o limite do login é por e-mail mais
+    // IP — e o e-mail só existe depois do corpo lido.
+    hook: 'preHandler',
+  });
+
+  app.decorateRequest('autenticado', null);
+
+  // SameSite=Lax já cobre o caso comum; este header é a segunda tranca, e só o
+  // nosso front manda. Requisição que muda estado sem ele não passa.
+  app.addHook('onRequest', async (request) => {
+    const mudaEstado = !['GET', 'HEAD', 'OPTIONS'].includes(request.method);
+    if (mudaEstado && request.headers[HEADER_CSRF] !== VALOR_CSRF) {
+      throw new AppError(403, 'CABECALHO_AUSENTE', 'Requisição recusada');
+    }
+  });
 
   app.setErrorHandler((error: FastifyError, request, reply) => {
     if (error instanceof AppError) {
