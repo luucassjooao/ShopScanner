@@ -1,0 +1,2 @@
+-- Dados fixos de desenvolvimento. Ainda não há tabela de domínio para popular;
+-- os pedidos dos mocks entram por scripts/seed-from-mocks.ts quando o schema existir.
