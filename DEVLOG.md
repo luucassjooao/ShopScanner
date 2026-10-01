@@ -32,7 +32,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** a queima da família estava dentro da transação da rotação — e como a rotação termina lançando 401, o rollback desfazia a própria queima; o token "bom" continuava válido. Passou a ser transação própria. Os tipos do driver também não deixam `TransactionSql` passar por `Sql`, então `Executor` virou união dos dois.
 **Decidi:** `__Secure-rt` no lugar de `__Host-rt` (o prefixo `__Host-` exige `Path=/`, e o caminho restrito vale mais que o prefixo). Redefinição de senha sem tabela: JWT de 30 min carregando `credentials_version`, que o próprio reset incrementa — então o link é de uso único de graça. JWT HS256 escrito com `node:crypto`, sem biblioteca. `users` ganhou `avatar_url` e `accepted_terms_version`, que o contrato pede em `SessionUser` e no registro. O índice avulso em `users(email)` e em `refresh_tokens(token_hash)` não foi criado: o `unique` das duas colunas já é esse índice.
 **Pendente:** `/auth/session` devolve `accounts: []` porque `provider_connections` ainda não existe. Não há envio de e-mail: o token de redefinição só aparece no log fora de produção. Login com Google (PKCE, JWKS) é a próxima tarefa, e `COOKIE_DOMAIN` segue sem uso enquanto os cookies usarem prefixo.
-**Commit:** —
+**Commit:** c0090c9
 
 ### 2026-10-01 · [front] Separar acesso à conta de conexão com o TikTok
 
