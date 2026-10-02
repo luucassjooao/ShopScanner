@@ -82,7 +82,9 @@ Entrar no app é por e-mail e senha ou pelo **Google**. O TikTok **não é meio 
 
 **Conexões com o TikTok** (vídeos pela Display API e pedidos pelo TikTok Shop) vivem na tabela `provider_connections`, separadas da identidade de login: expiram e são revogadas de formas diferentes.
 
-`access_token` e `refresh_token` do TikTok são guardados **criptografados** com AES-256-GCM, chave em variável de ambiente (ou KMS em produção), com `key_version` na linha para permitir rotação. Nunca saem em resposta de API, nunca em log, nunca em erro.
+`access_token` e `refresh_token` do TikTok são guardados **criptografados** com AES-256-GCM (`lib/cripto.ts`, formato `iv(12) || tag(16) || texto`), chave em `ENCRYPTION_KEY` (ou KMS em produção), com `key_version` na linha para permitir rotação. Nunca saem em resposta de API, nunca em log, nunca em erro.
+
+A tabela guarda uma linha por parte: `kind` é `VIDEOS` (Display API) ou `SHOP` (pedidos). Uma "conta" do contrato é a linha de vídeos, e `shopConnected` é a existência da linha de pedidos com o mesmo `provider_user_id`. Desconectar **apaga** a linha, e apagar os vídeos apaga os pedidos daquela conta junto.
 
 - Renovação de token agendada antes de expirar, com recuo progressivo em caso de falha.
 - `lib/tiktok` com assinatura HMAC-SHA256 em toda chamada, paginação por `page_token`, tratamento de 429 com recuo, e um cliente falso para os testes.

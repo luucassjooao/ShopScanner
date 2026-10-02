@@ -1,5 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import * as auth from '../controllers/auth.ts';
+import * as conexoes from '../controllers/connections.ts';
+import * as me from '../controllers/me.ts';
 import { ping } from '../lib/db.ts';
 import { exigirSessao } from '../middlewares/auth.ts';
 
@@ -34,6 +36,7 @@ export async function publicRoutes(app: FastifyInstance) {
   // Navegação do navegador, não fetch: por isso são GET e não exigem o header.
   app.get('/auth/google/start', { config: { rateLimit: LIMITE_AUTH } }, auth.iniciarGoogle);
   app.get('/auth/google/callback', { config: { rateLimit: LIMITE_AUTH } }, auth.retornoGoogle);
+  app.get('/connections/tiktok/callback', conexoes.retornoTiktok);
 }
 
 /** Rotas de sessão: o hook roda antes de todas as desta instância. */
@@ -46,6 +49,11 @@ export async function privateRoutes(app: FastifyInstance) {
   app.post('/auth/logout-all', auth.sairDeTodas);
   app.get('/auth/identities', auth.listarIdentidades);
   app.delete('/auth/identities/:provider', auth.desvincularIdentidade);
+  app.put('/me/password', { config: { rateLimit: LIMITE_AUTH } }, me.definirSenha);
+
+  app.get('/accounts', conexoes.listarContas);
+  app.post('/connections/tiktok/start', conexoes.iniciarTiktok);
+  app.delete('/connections/:id', conexoes.desconectar);
 }
 
 export async function routes(app: FastifyInstance) {

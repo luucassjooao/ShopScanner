@@ -19,6 +19,18 @@ const schema = z.object({
   GOOGLE_CLIENT_ID: z.string().min(1).optional(),
   GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
   GOOGLE_REDIRECT_URI: z.url().optional(),
+
+  // Conexão com o TikTok. Nasce pronta e desligada: sem as credenciais, as
+  // rotas respondem indisponível em vez de quebrar.
+  TIKTOK_CLIENT_KEY: z.string().min(1).optional(),
+  TIKTOK_CLIENT_SECRET: z.string().min(1).optional(),
+  TIKTOK_REDIRECT_URI: z.url().optional(),
+  // A Affiliate Creator API não está liberada para o Brasil: enquanto for
+  // falso, conectar a parte de pedidos responde indisponível.
+  TIKTOK_SHOP_ENABLED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
 });
 
 const parsed = schema.safeParse(process.env);

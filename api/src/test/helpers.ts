@@ -5,7 +5,8 @@ import { sql } from '../lib/db.ts';
 export const CSRF = { 'x-requested-with': 'shopscanner' };
 
 export async function limparBanco() {
-  await sql`truncate users, sessions, refresh_tokens, auth_identities restart identity cascade`;
+  await sql`truncate users, sessions, refresh_tokens, auth_identities, provider_connections
+            restart identity cascade`;
 }
 
 export function cookiesDe(res: LightMyRequestResponse): Record<string, string> {

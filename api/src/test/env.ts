@@ -19,4 +19,8 @@ export const AMBIENTE_DE_TESTE = {
   GOOGLE_CLIENT_ID: 'cliente-de-teste.apps.googleusercontent.com',
   GOOGLE_CLIENT_SECRET: 'segredo-de-teste',
   GOOGLE_REDIRECT_URI: 'http://localhost:3333/auth/google/callback',
+  TIKTOK_CLIENT_KEY: 'chave-de-teste',
+  TIKTOK_CLIENT_SECRET: 'segredo-de-teste',
+  TIKTOK_REDIRECT_URI: 'http://localhost:3333/connections/tiktok/callback',
+  TIKTOK_SHOP_ENABLED: 'false',
 };

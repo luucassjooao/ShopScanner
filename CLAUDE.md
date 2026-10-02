@@ -65,12 +65,15 @@ GET  /auth/identities          -> [{ provider: "GOOGLE", email, linkedAt, canUnl
 DELETE /auth/identities/:provider  -> só quando canUnlink; 409 se for o único acesso
 
 PATCH /me                      { name?, email? }
-PUT  /me/password              { currentPassword, newPassword }
+PUT  /me/password              { currentPassword?, newPassword }
+                                 currentPassword só é exigido quando hasPassword é true
 POST /me/avatar                multipart -> { avatarUrl }
 
 GET  /accounts                 -> [{ id, username, avatarUrl, shopConnected,
                                      connectedAt, lastSyncedAt, expiresAt }]
-POST /connections/tiktok/start -> { authorizeUrl }
+POST /connections/tiktok/start { kind?: "VIDEOS" | "SHOP" } -> { authorizeUrl }
+                                 o front navega para authorizeUrl; "SHOP" responde 503
+GET  /connections/tiktok/callback  cria a conexão e volta para /configuracoes
 DELETE /connections/:id
 
 GET  /summary?accountId&from&to
@@ -361,6 +364,9 @@ Esta seção existe porque as duas pontas são construídas em sessões separada
 
 - Sessão é cookie `httpOnly`. O cliente HTTP manda `credentials: "include"` e `X-Requested-With: shopscanner` em toda rota que muda estado.
 - `Continuar com Google` é **navegação do navegador** para `GET /auth/google/start`, não `fetch`. A sessão volta por cookie no callback. Erro volta em `/entrar?erro=CODIGO`, com um destes códigos: `GOOGLE_INDISPONIVEL` (login social desligado), `GOOGLE_RECUSADO` (a pessoa cancelou no Google), `EMAIL_NAO_VERIFICADO` (o Google não confirma o e-mail) e `JA_VINCULADO` (aquela conta do Google já pertence a outro cadastro). O front traduz; a API nunca manda detalhe técnico na query.
+- **Conectar o TikTok** é diferente do login social: `POST /connections/tiktok/start` devolve `authorizeUrl` e o front navega para lá. A volta cai em `/configuracoes?conectado=1`, ou `/configuracoes?erro=CODIGO` com `TIKTOK_RECUSADO`, `TIKTOK_INDISPONIVEL`, `TIKTOK_SHOP_INDISPONIVEL` ou `TIKTOK_INVALIDO`. Sessão vencida no meio do caminho volta em `/entrar?erro=SESSAO_EXPIRADA`.
+- **Desconectar apaga**: `DELETE /connections/:id` remove a conexão e o token guardado, e desligar os vídeos desliga junto a parte de pedidos da mesma conta.
+- **Definir a primeira senha**: quem entrou pelo Google chama `PUT /me/password` só com `newPassword`. A resposta traz cookies novos — trocar a senha derruba todas as sessões, e a aba que pediu a troca continua logada com a sessão nova.
 - Se a pessoa já está logada quando volta do Google, o callback só **vincula** a identidade e mantém a sessão atual — não emite cookie novo. É assim que a tela de Configurações vincula o Google.
 - Conta criada pelo Google nasce sem senha (`hasPassword: false`) e com `acceptedTermsVersion: null`: o front precisa pedir o aceite dos termos depois do primeiro acesso.
 - Ao tomar 401, o cliente chama `POST /auth/refresh` **uma vez** e repete a requisição; se falhar de novo, vai para `/entrar`.

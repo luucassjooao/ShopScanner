@@ -14,15 +14,25 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 - **Rodando:** front em `web/` com o design do canvas aplicado: área logada completa, páginas legais e públicas; acesso por e-mail ou Google, TikTok só como conexão (lint, typecheck, build e 98 testes passando).
 - **Repositório:** git iniciado na raiz (branch `main`), hook do devlog ativo via `core.hooksPath`.
 - **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. O backend em `api/` já sobe, mas ainda não serve nenhuma rota do contrato.
-- **Backend:** `api/` com conta, sessão e login do Google (registrar, entrar, refresh rotativo, logout, sessões, redefinir senha, vincular e desvincular o Google). Sem tabela de domínio (pedidos, vídeos) e sem `provider_connections`.
+- **Backend:** `api/` com conta, sessão, login do Google e conexão com o TikTok (`/accounts`, conectar, desconectar, tokens cifrados). Falta a tabela de domínio: pedidos, vídeos, produtos, metas, pautas.
 - **Integração TikTok:** Affiliate Creator API não liberada para o Brasil; ticket aberto com a TikTok. Display API disponível, app ainda não submetido.
 - **Telas prontas:** /, /entrar, /criar-conta, /recuperar, /termos, /privacidade, /inicio-rapido, /inicio, /vendas, /videos, /videos/:id, /produtos, /planejamento, /configuracoes, /avisos.
-- **Próximo passo:** `provider_connections` e o cliente do TikTok na API; no front, decidir as propostas de contrato da entrada de 23/09 e preencher `web/src/lib/textos.ts`.
+- **Próximo passo:** tabelas e endpoints de domínio na API (`/summary`, `/orders`, `/videos`, `/products`) conferindo os totais de referência; no front, decidir as propostas de contrato da entrada de 23/09 e preencher `web/src/lib/textos.ts`.
 - **Bloqueios:** aprovação da categoria "Creator collaborations" para o Brasil; confirmação de que o identificador de conteúdo do pedido é o mesmo id do vídeo.
 
 ---
 
 ## Entradas
+
+### 2026-10-02 · [api] Resolver a senha de quem veio do Google e as conexões com o TikTok
+
+**Fiz:** `PUT /me/password` com `currentPassword` opcional (só é exigido de quem já tem senha), e a tabela `provider_connections` com o fluxo de conexão: `GET /accounts`, `POST /connections/tiktok/start`, `GET /connections/tiktok/callback` e `DELETE /connections/:id`. Tokens do TikTok guardados com AES-256-GCM em `lib/cripto.ts`. `/auth/session` parou de devolver `accounts: []` fixo.
+**Por quê:** eram as duas pendências abertas: quem entrou pelo Google não tinha como definir senha, e `accounts` era mentira no contrato.
+**Funcionou:** 32 testes na API. Nos novos: senha atual exigida de quem tem senha e dispensada de quem não tem, troca de senha derruba as outras sessões e devolve cookie novo para a aba atual, conexão aparece em `/accounts` com `shopConnected: false`, o token no banco não contém o texto claro e volta pelo `decifrar`, state divergente dá 400, conectar os pedidos responde 503 `TIKTOK_SHOP_INDISPONIVEL`, e desconectar apaga a linha. Provedor TikTok falso por `fetch` trocado, como o do Google.
+**Não funcionou:** uma execução isolada falhou 4 testes logo depois de eu mover o `truncate` de `provider_connections` para o helper; não reproduziu em cinco execuções seguintes, nem com a mesma sequência de comandos. Fica anotado.
+**Decidi:** trocar a senha derruba todas as sessões, como manda o `api/CLAUDE.md`, mas abre uma nova na hora para o aparelho que pediu a troca — invalidar tudo e expulsar a pessoa da tela seria pior. `kind` (`VIDEOS` ou `SHOP`) separa as duas partes da mesma conta do TikTok; desligar os vídeos desliga os pedidos junto. Desconectar apaga a linha em vez de marcar revogada: a política promete não guardar dado de conta desconectada. As variáveis `TIKTOK_*` são opcionais e `TIKTOK_SHOP_ENABLED` nasce `false`, então a parte de pedidos responde indisponível sem nenhuma gambiarra de código.
+**Pendente:** renovação automática do token antes de expirar (hoje `expiresAt` só é exibido), chamadas assinadas com HMAC e webhook de desautorização. Conta criada pelo Google ainda fica com `acceptedTermsVersion` nulo e não existe rota para registrar o aceite — proponho `PATCH /me { acceptedTermsVersion? }` junto com o resto de `/me`.
+**Commit:** —
 
 ### 2026-10-02 · [api] Implementar login com Google
 

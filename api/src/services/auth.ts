@@ -14,6 +14,7 @@ import { conferirSenha, hashSenha } from '../lib/password.ts';
 import * as usuarios from '../repositories/users.ts';
 import type { Usuario } from '../repositories/users.ts';
 import * as sessoes from '../repositories/sessions.ts';
+import { contasDoUsuario } from './connections.ts';
 
 export type Tokens = { acesso: string; refresh: string };
 export type Contexto = { userAgent: string | null; ip: string | null };
@@ -242,6 +243,33 @@ export async function entrarComGoogle(
   return { usuario, tokens: await abrirSessao(usuario, ctx) };
 }
 
+/**
+ * Define ou troca a senha. Quem entrou pelo Google ainda não tem senha: nesse
+ * caso não há senha atual para pedir, e exigir uma trancaria a pessoa fora.
+ *
+ * Trocar a senha derruba todas as sessões — inclusive a deste aparelho, que
+ * ganha uma nova na hora para a pessoa não ser expulsa da tela em que está.
+ */
+export async function definirSenha(
+  usuario: Usuario,
+  dados: { currentPassword?: string; newPassword: string },
+  ctx: Contexto,
+): Promise<Tokens> {
+  if (usuario.passwordHash !== null) {
+    const confere =
+      dados.currentPassword !== undefined &&
+      (await conferirSenha(usuario.passwordHash, dados.currentPassword));
+    if (!confere) throw new AppError(400, 'SENHA_ATUAL_INCORRETA', 'A senha atual não confere');
+  }
+
+  const atualizado = await transaction(async (tx) => {
+    const novo = await usuarios.trocarSenha(usuario.id, await hashSenha(dados.newPassword), tx);
+    await sessoes.revogarSessoesDoUsuario(usuario.id, MOTIVO.trocaDeSenha, tx);
+    return novo;
+  });
+  return abrirSessao(atualizado, ctx);
+}
+
 /** `canUnlink` é decidido aqui, não no front: sem senha, o Google é a única porta. */
 export async function identidadesDoUsuario(usuario: Usuario) {
   const identidades = await usuarios.listarIdentidades(usuario.id);
@@ -265,7 +293,7 @@ export async function desvincularIdentidade(usuario: Usuario, provider: 'GOOGLE'
   if (removidas === 0) throw AppError.naoEncontrado('Vínculo não encontrado');
 }
 
-/** O `user` do contrato. `accounts` fica vazio até existir conexão com o TikTok. */
+/** O `user` e as `accounts` do contrato, do jeito que `/auth/session` devolve. */
 export async function montarSessao(usuario: Usuario) {
   const identidades = await usuarios.listarIdentidades(usuario.id);
   return {
@@ -283,6 +311,6 @@ export async function montarSessao(usuario: Usuario) {
       })),
       acceptedTermsVersion: usuario.acceptedTermsVersion,
     },
-    accounts: [] as const,
+    accounts: await contasDoUsuario(usuario.id),
   };
 }

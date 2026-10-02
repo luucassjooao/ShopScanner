@@ -19,6 +19,10 @@ export const COOKIE_OAUTH = '__Secure-goog';
 export const CAMINHO_OAUTH = '/auth/google';
 export const OAUTH_SEGUNDOS = 10 * 60;
 
+/** Cookie efêmero do fluxo de conexão com o TikTok. */
+export const COOKIE_CONEXAO = '__Secure-conn';
+export const CAMINHO_CONEXAO = '/connections';
+
 export const HEADER_CSRF = 'x-requested-with';
 export const VALOR_CSRF = 'shopscanner';
 
