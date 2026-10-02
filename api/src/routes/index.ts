@@ -1,6 +1,8 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import * as auth from '../controllers/auth.ts';
 import * as conexoes from '../controllers/connections.ts';
+import * as dados from '../controllers/data.ts';
+import * as planejamento from '../controllers/planning.ts';
 import * as me from '../controllers/me.ts';
 import { ping } from '../lib/db.ts';
 import { exigirSessao } from '../middlewares/auth.ts';
@@ -54,6 +56,26 @@ export async function privateRoutes(app: FastifyInstance) {
   app.get('/accounts', conexoes.listarContas);
   app.post('/connections/tiktok/start', conexoes.iniciarTiktok);
   app.delete('/connections/:id', conexoes.desconectar);
+
+  app.get('/summary', dados.resumo);
+  app.get('/orders', dados.listarPedidos);
+  app.get('/orders/:id', dados.pedido);
+  app.get('/videos', dados.listarVideos);
+  app.get('/videos/:id', dados.video);
+  app.get('/products', dados.listarProdutos);
+  app.get('/products/:id', dados.produto);
+
+  app.get('/plans', planejamento.listarPlanos);
+  app.post('/plans', planejamento.criarPlano);
+  app.patch('/plans/:id', planejamento.atualizarPlano);
+  app.delete('/plans/:id', planejamento.apagarPlano);
+  app.get('/goals', planejamento.listarMetas);
+  app.put('/goals', planejamento.salvarMeta);
+  app.get('/me/notifications', planejamento.lerAvisos);
+  app.put('/me/notifications', planejamento.salvarAvisos);
+
+  app.get('/me/export', me.exportar);
+  app.delete('/me', me.excluirConta);
 }
 
 export async function routes(app: FastifyInstance) {

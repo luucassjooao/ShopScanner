@@ -110,7 +110,7 @@ export async function listarSessoes(request: FastifyRequest, reply: FastifyReply
 }
 
 export async function revogarUmaSessao(request: FastifyRequest, reply: FastifyReply) {
-  const { id } = z.object({ id: z.uuid() }).parse(request.params);
+  const { id } = z.object({ id: z.guid() }).parse(request.params);
   const { usuario, sessionId } = request.autenticado!;
   const revogadas = await revogarSessao(id, usuario.id, MOTIVO.revogadaPeloUsuario);
   if (revogadas === 0) throw AppError.naoEncontrado('Sessão não encontrada');

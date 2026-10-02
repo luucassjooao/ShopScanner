@@ -100,6 +100,9 @@ As definições estão na raiz. O que a API tem de garantir:
 - Taxas em `integer`, centésimos de %. Datas sempre ISO UTC na borda.
 - Status e canal como enum do Postgres ou check constraint, com os valores exatos do contrato. `INELIGIBLE` só é aceito quando `source = 'FILE'`.
 - Todo pedido grava `source` e `source_at`. Quando as duas fontes existem, a **API prevalece** e a diferença vira linha de reconciliação — nunca sobrescrita em silêncio.
+- O relatório do TikTok **repete o mesmo id de SKU em linhas diferentes do mesmo pedido** (quantidades separadas do mesmo produto). A chave de `order_skus` carrega a posição da linha (`line_no`): id de SKU sozinho não identifica item, e tratá-lo como único perderia venda.
+- Id de linha se valida com `z.guid()`, nunca `z.uuid()`: o tipo `uuid` do Postgres guarda qualquer valor de 128 bits, e o `z.uuid()` do Zod exige bits de versão RFC — ficaria mais estrito que o próprio banco.
+- Seed em duas partes: `db/seed.sql` tem o fixo (creator e conta de demonstração, senha `demo-shopscanner`) e `scripts/seed-from-mocks.ts` carrega os JSONs de `mocks/` com o **mesmo mapeamento do adaptador do front**. Os dois são idempotentes (tudo por upsert).
 - Os cortes de `/summary` (`gmvEligible`, `commissionToReceive`, etc.) são calculados no SQL conforme "Definições dos números" da raiz, e conferidos em teste contra os **totais de referência**. Se a API divergir desses números, a API está errada.
 - Paginação por cursor nas listas grandes, com `total` separado.
 - Import de arquivo é assíncrono: o upload vai para armazenamento e o parser roda em fila, não no request.

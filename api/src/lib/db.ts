@@ -24,6 +24,11 @@ export type Executor = typeof sql | postgres.TransactionSql<Record<string, never
 /** Transação: o callback recebe o `sql` da transação e nada escapa dele. */
 export const transaction = sql.begin.bind(sql);
 
+/**
+ * Id de linha: `z.guid()`, não `z.uuid()`. O tipo uuid do Postgres guarda
+ * qualquer valor de 128 bits, e o `z.uuid()` do Zod exige bits de versão RFC —
+ * seria mais estrito que o próprio banco, recusando id válido.
+ */
 function validar<T>(schema: z.ZodType<T>, row: unknown): T {
   const parsed = schema.safeParse(row);
   if (!parsed.success) {

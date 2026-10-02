@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { many, sql, type Executor } from '../lib/db.ts';
 
 const linha = z.object({
-  id: z.uuid(),
+  id: z.guid(),
   name: z.string(),
   email: z.string().nullable(),
   email_verified_at: z.date().nullable(),
@@ -126,7 +126,7 @@ export async function buscarIdentidade(
   db: Executor = sql,
 ): Promise<{ userId: string } | null> {
   const linhas = await many(
-    z.object({ user_id: z.uuid() }),
+    z.object({ user_id: z.guid() }),
     db`select user_id from auth_identities
         where provider = ${provider} and provider_user_id = ${providerUserId}`,
   );

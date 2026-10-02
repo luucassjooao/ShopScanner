@@ -64,7 +64,9 @@ GET  /auth/google/callback     -> cria a sessão e volta para o app
 GET  /auth/identities          -> [{ provider: "GOOGLE", email, linkedAt, canUnlink }]
 DELETE /auth/identities/:provider  -> só quando canUnlink; 409 se for o único acesso
 
-PATCH /me                      { name?, email? }
+PATCH /me                      { name?, email?, acceptedTermsVersion? } -> SessionUser
+                                 acceptedTermsVersion é o aceite de quem criou a conta
+                                 pelo Google, pedido no primeiro acesso
 PUT  /me/password              { currentPassword?, newPassword }
                                  currentPassword só é exigido quando hasPassword é true
 POST /me/avatar                multipart -> { avatarUrl }
@@ -85,16 +87,20 @@ GET  /summary?accountId&from&to
        byChannel: [{ channel, gmv }],
        topProducts: [{ productId, name, shopName, gmv, commission, units }] }
 
-GET  /orders?accountId&from&to&status&channel&productId&shopName&q&page&pageSize
-  -> { items: Order[], total, page }
+GET  /orders?accountId&from&to&status&channel&productId&shopName&q&page&pageSize&cursor
+  -> { items: Order[], total, page, nextCursor }
+     cursor é opcional e substitui page; nextCursor vem null na última página
 GET  /orders/:id               -> OrderDetail
 
-GET  /videos?accountId&from&to&sort&hashtag&page
+GET  /videos?accountId&from&to&sort&hashtag&page&pageSize
+     sort: postedAt (padrão) | views | gmv | gpm
   -> { items: [{ id, title, description, postedAt, duration, coverUrl, shareUrl,
                  views, likes, comments, shares, gmv?, commission?, gpm? }], total }
 GET  /videos/:id               -> vídeo + snapshots: [{ at, views, likes }]
 
-GET  /products?accountId&from&to&sort&shopName&q&page   -> ProductRow[]
+GET  /products?accountId&from&to&sort&shopName&q&page&pageSize
+     sort: gmv (padrão) | commission | units | refunds
+  -> { items: ProductRow[], total, page }
 GET  /products/:id             -> ProductDetail
 
 GET  /plans  ·  POST /plans  ·  PATCH /plans/:id  ·  DELETE /plans/:id
@@ -371,9 +377,11 @@ Esta seção existe porque as duas pontas são construídas em sessões separada
 - **Desconectar apaga**: `DELETE /connections/:id` remove a conexão e o token guardado, e desligar os vídeos desliga junto a parte de pedidos da mesma conta.
 - **Definir a primeira senha**: quem entrou pelo Google chama `PUT /me/password` só com `newPassword`. A resposta traz cookies novos — trocar a senha derruba todas as sessões, e a aba que pediu a troca continua logada com a sessão nova.
 - Se a pessoa já está logada quando volta do Google, o callback só **vincula** a identidade e mantém a sessão atual — não emite cookie novo. É assim que a tela de Configurações vincula o Google.
-- Conta criada pelo Google nasce sem senha (`hasPassword: false`) e com `acceptedTermsVersion: null`: o front precisa pedir o aceite dos termos depois do primeiro acesso.
+- Conta criada pelo Google nasce sem senha (`hasPassword: false`) e com `acceptedTermsVersion: null`: o front pede o aceite dos termos depois do primeiro acesso e grava por `PATCH /me { acceptedTermsVersion }`. Enquanto estiver nulo, a área logada fica atrás de um diálogo que só sai com o aceite.
 - Ao tomar 401, o cliente chama `POST /auth/refresh` **uma vez** e repete a requisição; se falhar de novo, vai para `/entrar`.
 - O access token dura 15 minutos. Aba aberta por muito tempo vai tomar 401 — isso é normal, não é erro de tela.
+- Listas grandes aceitam **cursor**: `/orders` devolve `nextCursor` e aceita `cursor` no lugar de `page`. O `total` vem sempre, contado à parte. Página sem cursor continua funcionando; `pageSize` tem teto de 100 em todas as listas.
+- O `goal` de `/summary` é o do **mês corrente em São Paulo**, não o do período filtrado.
 - Import de arquivo é assíncrono: `POST /imports` devolve `importId` e o processamento acontece em fila. O front acompanha por `GET /imports/:id`, não espera na resposta do upload.
 - **`accountId` do import vai na query, não como campo do multipart.** O relatório do TikTok não diz de qual conta veio, então a API precisa da conta — mas precisa dela **antes** de ler o arquivo, para recusar conta de outra pessoa sem engolir 50 MB. Em campo de multipart isso só funcionaria se o campo viesse antes do arquivo, e essa é uma regra que um dia alguém quebra sem perceber. Conta que não é da sessão responde 404.
 - Limites do upload, conferidos antes de enfileirar: só `.xlsx`, só a primeira aba, no máximo 50 MB, só `BRL`. Cada recusa vira um `error.code` do `ImportBatch` (`WRONG_EXTENSION`, `TOO_LARGE`, `WRONG_CURRENCY`, ...), nunca um 500 seco.

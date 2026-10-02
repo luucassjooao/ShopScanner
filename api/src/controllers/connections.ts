@@ -80,7 +80,7 @@ export async function retornoTiktok(request: FastifyRequest, reply: FastifyReply
 }
 
 export async function desconectar(request: FastifyRequest, reply: FastifyReply) {
-  const { id } = z.object({ id: z.uuid() }).parse(request.params);
+  const { id } = z.object({ id: z.guid() }).parse(request.params);
   await conexoes.desconectar(id, request.autenticado!.usuario.id);
   return reply.status(204).send();
 }

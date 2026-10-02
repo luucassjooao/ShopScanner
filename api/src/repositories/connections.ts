@@ -5,7 +5,7 @@ import { many, sql, type Executor } from '../lib/db.ts';
 export type TipoDeConexao = 'VIDEOS' | 'SHOP';
 
 const linhaConta = z.object({
-  id: z.uuid(),
+  id: z.guid(),
   provider_user_id: z.string(),
   username: z.string().nullable(),
   avatar_url: z.string().nullable(),
@@ -54,6 +54,25 @@ export async function listarContas(userId: string, db: Executor = sql): Promise<
   }));
 }
 
+/** A conta existe e é desta pessoa? Devolve também se o Shop está ligado. */
+export async function buscarConta(
+  userId: string,
+  accountId: string,
+  db: Executor = sql,
+): Promise<{ id: string; shopConnected: boolean } | null> {
+  const linhas = await many(
+    z.object({ id: z.guid(), shop_connected: z.boolean() }),
+    db`select c.id,
+              exists (select 1 from provider_connections s
+                       where s.user_id = c.user_id and s.provider = c.provider
+                         and s.kind = 'SHOP' and s.provider_user_id = c.provider_user_id
+                         and s.revoked_at is null) as shop_connected
+         from provider_connections c
+        where c.id = ${accountId} and c.user_id = ${userId} and c.revoked_at is null`,
+  );
+  return linhas[0] ? { id: linhas[0].id, shopConnected: linhas[0].shop_connected } : null;
+}
+
 /** Reconectar a mesma conta atualiza a linha: o token novo substitui o velho. */
 export async function salvarConexao(
   dados: {
@@ -70,7 +89,7 @@ export async function salvarConexao(
   db: Executor = sql,
 ): Promise<string> {
   const linhas = await many(
-    z.object({ id: z.uuid() }),
+    z.object({ id: z.guid() }),
     db`insert into provider_connections
          (user_id, provider, kind, provider_user_id, username, avatar_url,
           access_token, refresh_token, key_version, scopes, expires_at, revoked_at)

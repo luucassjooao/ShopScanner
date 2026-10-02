@@ -4,8 +4,8 @@ import { many, sql, type Executor } from '../lib/db.ts';
 /* ---------------------------------------------------------------- sessions */
 
 const linhaSessao = z.object({
-  id: z.uuid(),
-  user_id: z.uuid(),
+  id: z.guid(),
+  user_id: z.guid(),
   user_agent: z.string().nullable(),
   ip: z.string().nullable(),
   created_at: z.date(),
@@ -104,9 +104,9 @@ export async function tocarSessao(id: string, db: Executor = sql): Promise<void>
 /* ---------------------------------------------------------- refresh_tokens */
 
 const linhaRefresh = z.object({
-  id: z.uuid(),
-  session_id: z.uuid(),
-  family_id: z.uuid(),
+  id: z.guid(),
+  session_id: z.guid(),
+  family_id: z.guid(),
   expires_at: z.date(),
   used_at: z.date().nullable(),
 });
