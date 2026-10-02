@@ -174,6 +174,97 @@ export async function redefinirSenha(token: string, novaSenha: string): Promise<
   });
 }
 
+/**
+ * Entra, vincula ou cria conta a partir do Google.
+ *
+ * Com usuário já logado, só vincula e devolve `tokens: null` — a sessão atual
+ * continua valendo, não faz sentido abrir outra.
+ */
+export async function entrarComGoogle(
+  conta: { providerUserId: string; email: string; nome: string | null },
+  ctx: Contexto,
+  usuarioLogadoId: string | null,
+): Promise<{ usuario: Usuario; tokens: Tokens | null }> {
+  const vinculo = await usuarios.buscarIdentidade('GOOGLE', conta.providerUserId);
+
+  if (vinculo) {
+    if (usuarioLogadoId && vinculo.userId !== usuarioLogadoId) {
+      throw new AppError(409, 'JA_VINCULADO', 'Esta conta do Google já está em outro cadastro');
+    }
+    const usuario = await usuarios.buscarPorId(vinculo.userId);
+    if (!usuario) throw new AppError(409, 'JA_VINCULADO', 'Conta indisponível');
+    return { usuario, tokens: usuarioLogadoId ? null : await abrirSessao(usuario, ctx) };
+  }
+
+  if (usuarioLogadoId) {
+    const usuario = await usuarios.buscarPorId(usuarioLogadoId);
+    if (!usuario) throw SESSAO;
+    await usuarios.criarIdentidade({
+      userId: usuario.id,
+      provider: 'GOOGLE',
+      providerUserId: conta.providerUserId,
+      email: conta.email,
+    });
+    return { usuario, tokens: null };
+  }
+
+  // Mesmo e-mail: o Google já provou que é dele, então vincula em vez de criar
+  // uma segunda conta — e aproveita para marcar o e-mail como verificado.
+  const existente = await usuarios.buscarPorEmail(conta.email);
+  if (existente) {
+    await usuarios.criarIdentidade({
+      userId: existente.id,
+      provider: 'GOOGLE',
+      providerUserId: conta.providerUserId,
+      email: conta.email,
+    });
+    await usuarios.marcarEmailVerificado(existente.id);
+    const atualizado = (await usuarios.buscarPorId(existente.id)) ?? existente;
+    return { usuario: atualizado, tokens: await abrirSessao(atualizado, ctx) };
+  }
+
+  const usuario = await transaction(async (tx) => {
+    const novo = await usuarios.criarComGoogle(
+      { name: conta.nome ?? conta.email.split('@')[0]!, email: conta.email },
+      tx,
+    );
+    await usuarios.criarIdentidade(
+      {
+        userId: novo.id,
+        provider: 'GOOGLE',
+        providerUserId: conta.providerUserId,
+        email: conta.email,
+      },
+      tx,
+    );
+    return novo;
+  });
+  return { usuario, tokens: await abrirSessao(usuario, ctx) };
+}
+
+/** `canUnlink` é decidido aqui, não no front: sem senha, o Google é a única porta. */
+export async function identidadesDoUsuario(usuario: Usuario) {
+  const identidades = await usuarios.listarIdentidades(usuario.id);
+  return identidades.map((i) => ({
+    provider: i.provider,
+    email: i.email,
+    linkedAt: i.linkedAt.toISOString(),
+    canUnlink: usuario.passwordHash !== null,
+  }));
+}
+
+export async function desvincularIdentidade(usuario: Usuario, provider: 'GOOGLE') {
+  if (usuario.passwordHash === null) {
+    throw new AppError(
+      409,
+      'UNICO_ACESSO',
+      'Defina uma senha antes de desvincular, senão você fica sem como entrar',
+    );
+  }
+  const removidas = await usuarios.removerIdentidade(usuario.id, provider);
+  if (removidas === 0) throw AppError.naoEncontrado('Vínculo não encontrado');
+}
+
 /** O `user` do contrato. `accounts` fica vazio até existir conexão com o TikTok. */
 export async function montarSessao(usuario: Usuario) {
   const identidades = await usuarios.listarIdentidades(usuario.id);

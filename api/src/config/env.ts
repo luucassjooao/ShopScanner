@@ -13,6 +13,12 @@ const schema = z.object({
   ENCRYPTION_KEY: base64de32Bytes,
   COOKIE_DOMAIN: z.string().min(1),
   WEB_ORIGIN: z.url(),
+
+  // Login com Google. Faltando qualquer uma, o botão responde indisponível em
+  // vez de derrubar o boot: o resto da API não depende dele.
+  GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+  GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+  GOOGLE_REDIRECT_URI: z.url().optional(),
 });
 
 const parsed = schema.safeParse(process.env);

@@ -70,7 +70,8 @@ Modelo: **access token curto em JWT + refresh token opaco rotativo com detecçã
 
 Entrar no app é por e-mail e senha ou pelo **Google**. O TikTok **não é meio de login** — a razão está no `CLAUDE.md` da raiz, em "Identidade de acesso e conexões", e não se reabre sem mudar os dois arquivos.
 
-- Authorization Code com **PKCE**; `code_verifier`, `state` e `nonce` em cookie efêmero assinado, 10 minutos de vida, validados no callback. State ausente ou inválido responde 400 sem detalhe.
+- Authorization Code com **PKCE**; `code_verifier`, `state` e `nonce` em cookie efêmero assinado (`__Secure-goog`, `Path=/auth/google`), 10 minutos de vida, validados no callback. State ausente ou inválido responde 400 sem detalhe.
+- OIDC sem biblioteca: `lib/google.ts` faz as duas chamadas HTTP e a verificação RS256 com `node:crypto`. A JWKS fica em cache de 1 hora, e `kid` desconhecido recarrega no máximo uma vez por minuto. Nos testes, o provedor falso é um par de chaves RSA gerado na hora com `fetch` trocado — o caminho de validação exercitado é o de verdade.
 - Google é OIDC: validar o `id_token` (assinatura pela JWKS do Google com cache, `aud`, `iss`, `exp`, `nonce`) e só usar o e-mail quando `email_verified` for verdadeiro.
 - Vínculo: identidade já existente para aquele `provider_user_id` entra; usuário com o mesmo e-mail verificado recebe a identidade vinculada; senão, cria usuário novo já com e-mail verificado.
 - Tabela `auth_identities` com `provider`, `provider_user_id` e `email`, única em `(provider, provider_user_id)`. Um usuário pode ter senha e Google ao mesmo tempo.

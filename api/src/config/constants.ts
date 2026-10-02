@@ -14,6 +14,11 @@ export const ACESSO_SEGUNDOS = 15 * 60;
 export const REFRESH_SEGUNDOS = 30 * 24 * 60 * 60;
 export const RESET_SENHA_SEGUNDOS = 30 * 60;
 
+/** Cookie efêmero do fluxo OAuth: state, nonce e code_verifier, assinado. */
+export const COOKIE_OAUTH = '__Secure-goog';
+export const CAMINHO_OAUTH = '/auth/google';
+export const OAUTH_SEGUNDOS = 10 * 60;
+
 export const HEADER_CSRF = 'x-requested-with';
 export const VALOR_CSRF = 'shopscanner';
 

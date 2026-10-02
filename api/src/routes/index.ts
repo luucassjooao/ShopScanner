@@ -30,6 +30,10 @@ export async function publicRoutes(app: FastifyInstance) {
   app.post('/auth/logout', auth.sair);
   app.post('/auth/forgot-password', { config: { rateLimit: LIMITE_AUTH } }, auth.esqueciSenha);
   app.post('/auth/reset-password', { config: { rateLimit: LIMITE_AUTH } }, auth.redefinirSenha);
+
+  // Navegação do navegador, não fetch: por isso são GET e não exigem o header.
+  app.get('/auth/google/start', { config: { rateLimit: LIMITE_AUTH } }, auth.iniciarGoogle);
+  app.get('/auth/google/callback', { config: { rateLimit: LIMITE_AUTH } }, auth.retornoGoogle);
 }
 
 /** Rotas de sessão: o hook roda antes de todas as desta instância. */
@@ -40,6 +44,8 @@ export async function privateRoutes(app: FastifyInstance) {
   app.get('/auth/sessions', auth.listarSessoes);
   app.delete('/auth/sessions/:id', auth.revogarUmaSessao);
   app.post('/auth/logout-all', auth.sairDeTodas);
+  app.get('/auth/identities', auth.listarIdentidades);
+  app.delete('/auth/identities/:provider', auth.desvincularIdentidade);
 }
 
 export async function routes(app: FastifyInstance) {

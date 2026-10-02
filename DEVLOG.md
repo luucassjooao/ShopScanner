@@ -14,15 +14,25 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 - **Rodando:** front em `web/` com o design do canvas aplicado: área logada completa, páginas legais e públicas; acesso por e-mail ou Google, TikTok só como conexão (lint, typecheck, build e 98 testes passando).
 - **Repositório:** git iniciado na raiz (branch `main`), hook do devlog ativo via `core.hooksPath`.
 - **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. O backend em `api/` já sobe, mas ainda não serve nenhuma rota do contrato.
-- **Backend:** `api/` com conta e sessão funcionando (registrar, entrar, refresh rotativo, logout, sessões, redefinir senha). Sem tabela de domínio (pedidos, vídeos) e sem login do Google ainda.
+- **Backend:** `api/` com conta, sessão e login do Google (registrar, entrar, refresh rotativo, logout, sessões, redefinir senha, vincular e desvincular o Google). Sem tabela de domínio (pedidos, vídeos) e sem `provider_connections`.
 - **Integração TikTok:** Affiliate Creator API não liberada para o Brasil; ticket aberto com a TikTok. Display API disponível, app ainda não submetido.
 - **Telas prontas:** /, /entrar, /criar-conta, /recuperar, /termos, /privacidade, /inicio-rapido, /inicio, /vendas, /videos, /videos/:id, /produtos, /planejamento, /configuracoes, /avisos.
-- **Próximo passo:** login com Google e `provider_connections` na API; no front, decidir as propostas de contrato da entrada de 23/09 e preencher `web/src/lib/textos.ts`.
+- **Próximo passo:** `provider_connections` e o cliente do TikTok na API; no front, decidir as propostas de contrato da entrada de 23/09 e preencher `web/src/lib/textos.ts`.
 - **Bloqueios:** aprovação da categoria "Creator collaborations" para o Brasil; confirmação de que o identificador de conteúdo do pedido é o mesmo id do vídeo.
 
 ---
 
 ## Entradas
+
+### 2026-10-02 · [api] Implementar login com Google
+
+**Fiz:** `GET /auth/google/start` e `/callback` com Authorization Code + PKCE, mais `GET /auth/identities` e `DELETE /auth/identities/:provider`. `state`, `nonce` e `code_verifier` viajam num cookie assinado de 10 minutos; o `id_token` é validado pela JWKS do Google antes de virar sessão.
+**Por quê:** entrar por e-mail e senha é atrito para quem já tem conta Google, e a tela de Configurações precisa de vínculo e desvínculo.
+**Funcionou:** 10 testes com provedor falso (par de chaves RSA gerado na hora, `fetch` trocado): fluxo feliz conferindo que o `code_verifier` enviado bate com o desafio publicado, state divergente e callback sem cookie dão 400 seco, nonce de outro fluxo dá 400, e-mail não verificado volta para `/entrar?erro=EMAIL_NAO_VERIFICADO`, recusa no Google volta com `GOOGLE_RECUSADO`, vínculo com conta de mesmo e-mail reaproveita o usuário, usuário logado vincula sem trocar de sessão, e desvincular responde 409 `UNICO_ACESSO` quando não há senha. Total de 23 testes na API.
+**Não funcionou:** nada travou, mas o cookie assinado precisou voltar byte a byte no teste: reenviar o valor já decodificado quebra a assinatura, então o teste copia o `Set-Cookie` cru.
+**Decidi:** OIDC sem biblioteca — `node:crypto` verifica RS256 e a JWKS fica em cache de 1 hora, com piso de um minuto entre recargas quando o `kid` é desconhecido. Vincular pela sessão, e não por endpoint novo: se há cookie de acesso válido no callback, a identidade entra naquele usuário e a sessão atual continua. Vincular por e-mail quando o Google confirma o endereço, marcando o e-mail como verificado — o Google já provou a posse. As variáveis `GOOGLE_*` são opcionais: sem elas o botão responde `GOOGLE_INDISPONIVEL` em vez de derrubar o boot.
+**Pendente:** conta criada pelo Google fica com `acceptedTermsVersion` nulo — o front precisa pedir o aceite no primeiro acesso. Definir senha para quem entrou só pelo Google (o `PUT /me/password` de hoje exige a senha atual) continua em aberto.
+**Commit:** —
 
 ### 2026-10-01 · [api] Implementar conta e sessão
 
@@ -38,14 +48,15 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 **Fiz:** canvas e código das telas afetadas pela regra nova. /entrar e /criar-conta com "Continuar com Google" neutro no topo e sem TikTok; o aceite fica acima dos dois caminhos e trava os dois. /recuperar ganhou o estado "esse e-mail entra pelo Google". /inicio-rapido tem três passos opcionais com "Fazer depois" e envio do .xlsx no passo do Shop. /configuracoes separa "Acesso à conta" (senha, Google vinculado, desvincular travado sem senha) de "Contas conectadas" (uma linha por conexão, diálogo de desconectar). Landing com os passos e a confiança novos.
 **Por quê:** o TikTok saiu do login (não devolve e-mail e revogar trancaria a creator fora da conta). A interface precisa dizer que a conta é dela e sobrevive ao TikTok desligado.
-**Funcionou:** 98 testes, incluindo Google antes do formulário e navegando para `/auth/google/start`, mapa de `?erro=` sem código cru, aceite travando os dois botões, conta só-Google em /recuperar, primeira senha liberando o desvincular, desconectar sem mexer no acesso. Lint, Prettier, typecheck e build limpos. Conferido no navegador em 390px e no desktop.
+**Funcionou:** 99 testes, incluindo Google antes do formulário e navegando para `/auth/google/start`, mapa de `?erro=` sem código cru, aceite travando os dois botões, conta só-Google em /recuperar, primeira senha liberando o desvincular, desconectar sem mexer no acesso, e passo adiado que sobrevive à volta à tela. Lint, Prettier, typecheck e build limpos. Conferido no navegador em 390px e no desktop. Varri `web/src` atrás de TikTok como login: o que resta é conexão, marca registrada e FAQ.
 **Não funcionou:** o primeiro desenho do diálogo de desconectar dizia que os dados importados ficavam. Isso contradiz Termos, Privacidade, FAQ e a regra da API (apagar em até `PRAZO_EXCLUSAO`). O diálogo segue o texto legal, no canvas e no código. As linhas de conexão espremiam o texto no celular; resolvido com largura mínima no texto, para o botão quebrar a linha.
-**Decidi:** "Continuar com Google" é `window.location.assign` para a API, nunca `fetch`. O mapa de erros do Google mora em `lib/textos.ts`. `EnviarRelatorio` (em `components/dados.tsx`) é o atalho único do .xlsx. "Para depois" no onboarding vale só para a visita.
+**Decidi:** "Continuar com Google" é `window.location.assign` para a API, nunca `fetch`. O mapa de erros do Google mora em `lib/textos.ts`. `EnviarRelatorio` (em `components/dados.tsx`) é o atalho único do .xlsx. O bloco de acesso lê `hasPassword` e `identities` de `GET /auth/session`, sem uma segunda chamada: `GET /auth/identities` não é usado pelo front, e o hook e o schema que eu tinha criado para ele saíram. Quem decide o desvínculo continua sendo a API, que responde 409 quando é o único acesso; a tela só não oferece o que seria recusado. "Para depois" no onboarding fica no `localStorage` por usuário, como os avisos lidos: nenhum passo é obrigatório, então isso é conveniência do aparelho, não dado da conta.
 **Pendente:** propostas de contrato que a API precisa confirmar:
   - `409 { code: "GOOGLE_ONLY" }` em `/auth/forgot-password` (revela que o e-mail existe; avaliar contra a enumeração).
   - `?acceptedTermsVersion=` em `/auth/google/start` para registrar o aceite de quem cria conta pelo Google.
   - `currentPassword` opcional em `PUT /me/password` quando `hasPassword` é falso.
   - Vincular o Google com sessão aberta passando por `/auth/google/start`.
+  - `canUnlink` só existe em `GET /auth/identities`, que o front não usa. Enquanto a regra for "pode desvincular quando `hasPassword`", a sessão basta; se a API passar a ter outro critério, o front precisa do campo em `/auth/session`.
   - Códigos de erro do Google (`cancelado`, `email_nao_verificado`, `expirado`).
 
   Fora do escopo:

@@ -16,4 +16,7 @@ export const AMBIENTE_DE_TESTE = {
   ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
   COOKIE_DOMAIN: 'localhost',
   WEB_ORIGIN: 'http://localhost:5173',
+  GOOGLE_CLIENT_ID: 'cliente-de-teste.apps.googleusercontent.com',
+  GOOGLE_CLIENT_SECRET: 'segredo-de-teste',
+  GOOGLE_REDIRECT_URI: 'http://localhost:3333/auth/google/callback',
 };

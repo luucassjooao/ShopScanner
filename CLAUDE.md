@@ -1,96 +1,126 @@
-# ShopScanner — contexto do projeto (front-end)
+# ShopScanner — contexto geral do projeto
 
-Plataforma de BI para **creators afiliados do TikTok Shop no Brasil**. A creator conecta a conta do TikTok e, quando a integração for liberada, a conta do TikTok Shop. O app mostra comissões, quais vídeos venderam, quais produtos rendem mais e ajuda a planejar os próximos vídeos.
-
-**O front-end fica em `web/`.** O backend é próprio e fica fora de `web/`. O front nunca fala com o TikTok: quem guarda `app_secret`, faz a troca de token, assina as chamadas com HMAC e sincroniza os pedidos é o backend.
+Plataforma de BI para **creators afiliados do TikTok Shop no Brasil**. A creator cria conta no app, conecta a conta do TikTok e — quando a integração for liberada — a conta do TikTok Shop. O app mostra comissões, quais vídeos venderam, quais produtos rendem mais e ajuda a planejar os próximos vídeos.
 
 Público: creators de 20 a 40 anos, quase sempre no celular, sem familiaridade com dashboards corporativos. Interface inteira em português do Brasil, valores em `R$ 1.234,56`, datas em `dd/mm/aaaa`.
 
-## Stack
+> **Este arquivo é o chão comum das duas pontas.** Produto, contrato, regras de domínio e números moram aqui. Detalhe de implementação mora em `web/CLAUDE.md` (front) e `api/CLAUDE.md` (backend). Se uma regra vale para os dois lados, ela vem para cá — e não é copiada para lá.
 
-- **Vite + React + TypeScript**
-- **Tailwind CSS + shadcn/ui** (Radix)
-- **React Router** para as rotas
-- **TanStack Query** para estado de servidor, **Zod** para validar respostas
-- **Recharts** para gráficos
-- **react-hook-form** nos formulários
-- **MSW** para simular a API enquanto o backend não existe
-- **Vitest + Testing Library**, **ESLint + Prettier**
-
-Sem framework de servidor, sem ORM, sem rota de API aqui dentro.
-
-## Estrutura
+## Mapa do repositório
 
 ```
-CLAUDE.md, DEVLOG.md  contexto e histórico (raiz)
+CLAUDE.md             este arquivo: produto, contrato, domínio, números
+DEVLOG.md             histórico de decisões (uma entrada por tarefa)
 .githooks/pre-commit  bloqueia commit de código sem DEVLOG.md
-web/                  front-end: package.json, configs, public/, src/
-web/src/
-  routes/public/      landing, /entrar, /criar-conta, /recuperar, /termos, /privacidade
-  routes/app/         /inicio, /vendas, /videos, /produtos, /planejamento, /configuracoes
-  components/ui/      shadcn
-  components/charts/  wrappers do Recharts
-  api/                cliente HTTP, tipos e schemas Zod do contrato com o backend
-  mocks/              handlers do MSW + adaptador dos JSONs em /mocks
-  lib/                formatadores, métricas derivadas, utilitários
-mocks/                JSONs simulados no formato oficial da API do TikTok (não editar à mão)
-docs/                 termos e política
+web/                  front-end (Vite + React).  Contexto: web/CLAUDE.md
+api/                  backend (Fastify + Postgres). Contexto: api/CLAUDE.md
+mocks/                JSONs no formato oficial da API do TikTok (não editar à mão)
+docs/                 termos, política, especificação do parser, prompts
+scripts/              utilitários do repositório (hook do devlog)
 ```
 
-Os prompts de construção ficam fora do repositório: são colados um a um no chat.
+Os prompts de construção ficam em `docs/PROMPTS.md` (front) e `docs/PROMPTS-API.md` (backend) e são colados um a um no chat.
 
-## Como os dados chegam hoje
+## Quem é dono do quê
 
-O backend ainda não existe. O front consome o **contrato abaixo**, servido pelo MSW em desenvolvimento. Os handlers do MSW leem os JSONs de `mocks/` (que estão no formato cru da API do TikTok) e convertem para o contrato. Quando o backend ficar pronto, basta apontar `VITE_API_URL` para ele e desligar o MSW: nenhuma tela muda.
+- **A API é dona do contrato.** Se o contrato mudar, muda neste arquivo e na API no mesmo commit. O front se adapta; nunca o contrário.
+- **O front nunca fala com o TikTok.** Quem guarda `app_secret`, troca código por token, assina as chamadas com HMAC-SHA256 e sincroniza pedidos é a API. Se uma tarefa de front pedir chamada ao TikTok, pare e avise.
+- **O front não faz conta de negócio nova.** Corte, soma e definição de métrica vivem em "Definições dos números", abaixo, e a API entrega pronto. O front só formata e deriva o que está escrito aqui.
+- **Nenhuma das pontas inventa campo.** Dado que não existe no contrato é proposta, não implementação: pare e pergunte.
 
-O adaptador `web/src/mocks/adapters/` é o único lugar que conhece o formato cru do TikTok.
+## Estado da integração (importa para as duas pontas)
 
-## Contrato com o backend
+| Fonte                                                             | Situação em 01/10/2026                                                                                                                  |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| TikTok Shop — Affiliate Creator API (pedidos, comissões, vitrine) | **Não liberada para o Brasil.** Depende da aprovação da categoria "Creator collaborations". Ticket aberto.                              |
+| Display API (vídeos da própria creator)                           | Disponível, depende da revisão do app em developers.tiktok.com.                                                                         |
+| Métricas de e-commerce por vídeo (`analytics/202403`)             | Só para creators dos EUA.                                                                                                               |
+| APIs de live room                                                 | Não confirmado se aceitam token de creator do Brasil.                                                                                   |
+| Import do `affiliate_orders.xlsx`                                 | **É a espinha de dados do MVP** enquanto a API não libera. Especificação em `docs/parser-affiliate-orders.md` (seção 3 ainda pendente). |
 
-Base: `VITE_API_URL`. Autenticação por cookie httpOnly de sessão (preferido) ou Bearer em memória. Nunca guardar token em `localStorage`.
+Consequência para o front: toda tela precisa de um estado "TikTok Shop não conectado", em que só os dados de vídeo aparecem. Consequência para a API: o cliente do TikTok nasce pronto e **desligado por variável de ambiente**, com as rotas respondendo indisponibilidade clara.
+
+## Contrato
+
+Base: `VITE_API_URL` no front. Autenticação por **cookie httpOnly** de sessão. Nunca token em `localStorage`, nunca token em corpo de resposta.
 
 Convenções: dinheiro como **texto decimal** (`"11378.50"`) com `currency` ao lado; datas em **ISO 8601 UTC**; taxas como **inteiro em centésimos de %** (`1500` = 15%), igual ao TikTok.
 
 ```
 POST /auth/register            { name, email, password, acceptedTermsVersion }
 POST /auth/login               { email, password }
+POST /auth/refresh             -> renova a sessão; o cliente chama uma vez ao tomar 401
 POST /auth/logout
+POST /auth/logout-all
 POST /auth/forgot-password     { email }
-GET  /auth/session             -> { user, accounts[] }
+POST /auth/reset-password      { token, newPassword }
+GET  /auth/session             -> { user: SessionUser, accounts[] }
+GET  /auth/sessions            -> [{ id, userAgent, createdAt, lastUsedAt, current }]
+DELETE /auth/sessions/:id
 
-GET  /accounts                 -> [{ id, username, avatarUrl, shopConnected, connectedAt }]
+GET  /auth/google/start        -> redireciona para o Google (login social)
+GET  /auth/google/callback     -> cria a sessão e volta para o app
+                                  erro volta como /entrar?erro=CODIGO, sem detalhe técnico
+GET  /auth/identities          -> [{ provider: "GOOGLE", email, linkedAt, canUnlink }]
+DELETE /auth/identities/:provider  -> só quando canUnlink; 409 se for o único acesso
+
+PATCH /me                      { name?, email? }
+PUT  /me/password              { currentPassword, newPassword }
+POST /me/avatar                multipart -> { avatarUrl }
+
+GET  /accounts                 -> [{ id, username, avatarUrl, shopConnected,
+                                     connectedAt, lastSyncedAt, expiresAt }]
 POST /connections/tiktok/start -> { authorizeUrl }
 DELETE /connections/:id
 
 GET  /summary?accountId&from&to
-  -> { gmv, commissionEstimated, commissionToReceive, commissionSettled,
+  -> { gmv, gmvEligible, gmvIneligible,
+       commissionEstimated, commissionToReceive, commissionSettled,
        unitsSold, ordersCount, avgTicket, goal,
        byDay: [{ date, gmv, commission }],
        byStatus: [{ status, gmv }],
        byChannel: [{ channel, gmv }],
        topProducts: [{ productId, name, shopName, gmv, commission, units }] }
 
-GET  /orders?accountId&from&to&status&channel&productId&page&pageSize
-  -> { items: [{ id, createdAt, deliveredAt, status, skus: [...] }], total, page }
-GET  /orders/:id
+GET  /orders?accountId&from&to&status&channel&productId&shopName&q&page&pageSize
+  -> { items: Order[], total, page }
+GET  /orders/:id               -> OrderDetail
 
 GET  /videos?accountId&from&to&sort&hashtag&page
   -> { items: [{ id, title, description, postedAt, duration, coverUrl, shareUrl,
                  views, likes, comments, shares, gmv?, commission?, gpm? }], total }
 GET  /videos/:id               -> vídeo + snapshots: [{ at, views, likes }]
 
-GET  /products?accountId&from&to&sort&page
-GET  /products/:id             -> produto + vídeos que o promoveram
+GET  /products?accountId&from&to&sort&shopName&q&page   -> ProductRow[]
+GET  /products/:id             -> ProductDetail
 
 GET  /plans  ·  POST /plans  ·  PATCH /plans/:id  ·  DELETE /plans/:id
 GET  /goals  ·  PUT  /goals
 GET  /me/notifications  ·  PUT /me/notifications
 
+POST /imports                  multipart (arquivo .xlsx) -> { importId }
+GET  /imports?accountId        -> ImportBatch[]
+GET  /imports/:id              -> o mesmo item, para acompanhar o processamento
+GET  /reconciliation?accountId&from&to
+  -> [{ orderId, skuId, field, fromFile, fromApi, resolvedWith, at }]
+GET  /payouts?accountId        -> [{ week, expected, settled, pending }]
+
 GET  /me/export                -> arquivo JSON com todos os dados
 DELETE /me                     -> exclusão de conta
 ```
 
-Campos opcionais (`gmv`, `commission`, `gpm` em vídeos) vêm nulos quando a conta do TikTok Shop não está conectada. A interface precisa tratar isso como "ainda não disponível", nunca como zero.
+Campos opcionais (`gmv`, `commission`, `gpm` em vídeos) vêm nulos quando a conta do TikTok Shop não está conectada. A interface trata isso como "ainda não disponível", **nunca como zero**.
+
+### Identidade de acesso e conexões
+
+Duas coisas diferentes, que nem a interface nem o banco misturam:
+
+- **Identidade de acesso** — como a pessoa entra no app: e-mail e senha, ou **Google**. É o que aparece em `/entrar` e `/criar-conta`. Não existe botão de entrar com TikTok. No banco: `auth_identities`.
+- **Conexões** — contas de terceiro que o app lê depois de a pessoa já ter conta. O TikTok entra aqui, em duas partes independentes: **vídeos** (Display API, disponível) e **pedidos** (TikTok Shop, em liberação no Brasil). Cada parte conecta, expira e desconecta por conta própria. No banco: `provider_connections`.
+
+Por que o TikTok ficou fora do login: ele não devolve e-mail, então a conta ficaria sem canal de recuperação e de cobrança; e revogar a autorização no app do TikTok trancaria a creator fora da própria conta no ShopScanner. Como conexão, revogar só interrompe a importação.
+
+Na tela de Configurações isso vira dois blocos separados: **Acesso à conta** (e-mail, trocar senha, Google vinculado ou não) e **Contas conectadas** (TikTok vídeos com status, última leitura e desconectar; TikTok Shop pedidos com o aviso "em liberação no Brasil" enquanto `shopConnected` for falso).
 
 ### Tipos do contrato
 
@@ -99,12 +129,26 @@ type Money = string; // decimal em texto: "1234.56". Nunca number.
 type Rate = number; // centésimos de %: 1500 = 15%
 type Iso = string; // ISO 8601 em UTC
 
+type SessionUser = {
+  id: string;
+  name: string;
+  email: string;
+  emailVerified: boolean;
+  avatarUrl: string | null;
+  hasPassword: boolean; // falso quando a conta nasceu pelo Google e nunca definiu senha
+  identities: { provider: "GOOGLE"; email: string; linkedAt: Iso }[];
+  acceptedTermsVersion: string | null;
+};
+
 type OrderStatus =
   | "AWAITING_PAYMENT"
   | "TO_SETTLE"
   | "SETTLED"
   | "REFUNDED"
-  | "FROZEN";
+  | "FROZEN"
+  | "INELIGIBLE"; // só quando source = "FILE"; ver "Fontes do dado"
+
+type Source = "API" | "FILE" | "ESTIMATED";
 type Channel =
   | "VIDEO"
   | "LIVE"
@@ -139,12 +183,40 @@ type Order = {
   deliveredAt: Iso | null;
   status: OrderStatus;
   currency: string; // "BRL", no pedido, não no item
+  source: Source; // de onde veio o registro
+  sourceAt: Iso; // quando essa fonte leu o dado
   skus: OrderSku[];
 };
 
-// GET /orders/:id
 type OrderDetail = Order & {
   statusHistory: { status: OrderStatus; at: Iso }[];
+};
+
+type ImportBatch = {
+  id: string;
+  kind: "FILE" | "SYNC" | "RECHECK"; // arquivo, sincronização automática, reconferência
+  fileName: string | null;
+  createdAt: Iso;
+  status: "QUEUED" | "PROCESSING" | "DONE" | "FAILED";
+  result: {
+    created: number;
+    updated: number;
+    unchanged: number;
+    skipped: number;
+  } | null;
+  error: {
+    code:
+      | "WRONG_EXTENSION"
+      | "TOO_LARGE"
+      | "NO_HEADER"
+      | "UNKNOWN_COLUMNS"
+      | "WRONG_CURRENCY"
+      | "WRONG_FILE"
+      | "FAILED";
+    message: string;
+    columnsFound?: string[];
+    columnsMissing?: string[];
+  } | null;
 };
 
 type ProductRow = {
@@ -197,16 +269,18 @@ type Plan = {
 
 type Goal = {
   accountId: string;
-  month: string;
+  month: string; // "AAAA-MM"
   gmv: Money | null;
   commission: Money | null;
-}; // month: "AAAA-MM"
+};
 
 type NotificationSettings = {
+  orderSettled: boolean; // comissão liquidada
   orderFrozen: boolean; // pedido retido
   orderRefunded: boolean; // pedido reembolsado
-  goalReached: boolean; // meta do mês batida
-  paceDrop: boolean; // queda de ritmo contra o período anterior
+  goalReached: boolean; // meta do mês: dispara em 80% e em 100%
+  paceDrop: boolean; // queda de ritmo de vendas contra o período anterior
+  viewsDrop: boolean; // queda de views contra a média recente
   postReminder: boolean; // lembrete de postar, vindo do planejamento
   channels: { inApp: boolean; email: boolean }; // email fica false no MVP
 };
@@ -214,22 +288,40 @@ type NotificationSettings = {
 
 Em `/summary`, `goal` é `{ gmv: Money | null; commission: Money | null } | null` referente ao mês corrente.
 
-Status do TikTok convertidos pelo backend: `AWAITING PAYMENT` → `AWAITING_PAYMENT`, `To-SETTLE` → `TO_SETTLE`, o resto igual. O front traduz para o rótulo em português; a API sempre manda a chave.
+Decisões de contrato que valem para as duas pontas:
 
-Os avisos em si (o sino do topo) são **derivados no front** a partir de `/summary`, `/orders` e `/plans` que já estão carregados: retido e reembolsado saem do status, meta batida sai do `goal` do resumo, queda de ritmo sai da comparação com o período anterior e lembrete de postar sai do `scheduledFor` do plano. Não existe endpoint de feed de notificação; `/me/notifications` só liga e desliga cada tipo.
+- Status do TikTok convertidos **pela API**: `AWAITING PAYMENT` → `AWAITING_PAYMENT`, `To-SETTLE` → `TO_SETTLE`, o resto igual. A API sempre manda a chave; o front traduz para o rótulo em português.
+- `canUnlink` é derivado na API, não no front: desvincular o Google só é permitido quando `hasPassword` é verdadeiro.
+- **Não existe endpoint de feed de notificação.** O sino do topo é derivado no front a partir de `/summary`, `/orders`, `/videos` e `/plans` já carregados. `/me/notifications` só liga e desliga cada tipo.
+- No MVP só o canal no app funciona, então nenhuma tela escreve "por e-mail". Resumo semanal e novidades do produto ficam fora até a API enviar e-mail.
+- O campo `title` da pauta continua obrigatório no contrato, mas o formulário não pede: o front deriva das primeiras palavras do gancho. Gancho vazio vira "Pauta sem nome".
+- "Marcar para regravar" não é campo novo: cria uma pauta em `/plans` com `status: "IDEA"` e o `productId` do produto.
 
-### Definições dos números
+## Fontes do dado: API, arquivo e estimativa
 
+O MVP funciona **antes** de a API ser liberada, com o relatório `affiliate_orders.xlsx` que a creator exporta do Centro de Afiliados do TikTok. Especificação em `docs/parser-affiliate-orders.md`.
+
+- Todo pedido carrega `source` e `sourceAt`. A interface mostra isso como selo discreto: "da API, lido às 14h20", "do arquivo de 12/09", "estimado".
+- `INELIGIBLE` só existe quando `source` é `FILE`: é o rótulo que a creator vê no app do TikTok. A API separa a mesma situação em `REFUNDED` e `FROZEN`. O mapeamento definitivo depende de ver a planilha real; até lá, a API guarda o status do arquivo como veio.
+- Quando as duas fontes existirem para o mesmo pedido, **a API prevalece** e a divergência entra em `/reconciliation`. Nada é sobrescrito em silêncio.
+- Reimportar o mesmo arquivo atualiza, não duplica. A chave é id do pedido mais id do SKU.
+- Dado estimado (duração de live deduzida dos pedidos, por exemplo) sempre aparece rotulado como estimativa.
+
+## Definições dos números
+
+Esta seção é a fonte única. A API calcula assim; o front exibe assim; o teste confere assim.
+
+- **GMV do topo do Início é o elegível**: só `TO_SETTLE` e `SETTLED`. O que está em `AWAITING_PAYMENT`, `INELIGIBLE`, `REFUNDED` ou `FROZEN` aparece numa linha à parte ("+ R$ X aguardando ou não elegível"). O motivo: é assim que a creator vê no app do TikTok, e número que não bate com a fonte destrói a confiança no resto. O bruto continua disponível em `gmv`.
 - `commissionEstimated` do resumo: soma da comissão estimada de **todos** os pedidos do período, inclusive reembolsados. É o valor bruto.
 - `commissionToReceive`: só pedidos `TO_SETTLE`. Pedido `AWAITING_PAYMENT` ainda não foi pago, então não entra.
 - `commissionSettled`: comissão real dos pedidos `SETTLED`.
 - Comissão perdida (KPI): comissão estimada de `REFUNDED` mais `FROZEN`.
-- Venda por anúncio da loja: `rates.shopAds > 0`. É dedução, não campo oficial — concentre em uma função só.
-- Taxa padrão vem pronta em `rates.standard`; o front não recalcula por subtração.
+- Venda por anúncio da loja: `rates.shopAds > 0`. É dedução, não campo oficial — concentrada em uma função só em cada ponta.
+- Taxa padrão vem pronta em `rates.standard`; ninguém recalcula por subtração.
 
 ### Totais de referência (mocks, 30 dias, conta demo)
 
-Use nos testes do adaptador:
+O front confere nos testes do adaptador; a API confere nos testes dos endpoints depois do seed. Se um lado divergir do outro, **o erro está no lado que divergiu destes números**.
 
 | Métrica                           | Valor                                                                |
 | --------------------------------- | -------------------------------------------------------------------- |
@@ -244,89 +336,69 @@ Use nos testes do adaptador:
 | Pedidos por status                | 57 a liquidar, 13 liquidados, 7 reembolsados, 2 aguardando, 1 retido |
 | SKUs com Shop Ads                 | 15, somando R$ 1.843,40 de GMV                                       |
 
-### Camada de dados no front
+## Regras vindas da API do TikTok
 
-- Schemas Zod de todo o contrato em `web/src/api/schemas.ts`; hooks do TanStack Query em `web/src/api/queries.ts`. Chave de cache de BI sempre `[recurso, accountId, from, to, filtros]`.
-- Conta de dinheiro só com `web/src/lib/money.ts` (centavos em `bigint`). Métricas derivadas do contrato em `web/src/lib/metrics.ts`; `isShopAdsSale` é o único lugar que decide venda por anúncio.
-- Rótulos em português de status, canal e status de plano em `web/src/lib/labels.ts`.
-- Filtros das telas moram na URL (`?de=AAAA-MM-DD&ate=...&status=...&pagina=N`), via `useFiltros` em `web/src/routes/app/filtros.ts`; o item aberto no painel também (`?venda=`, `?produto=`, `?video=`). Datas da URL são dias de São Paulo, convertidas para ISO UTC só na chamada.
-- Peças compartilhadas das telas de dados em `web/src/components/dados.tsx`; métrica de venda nula usa `<Indisponivel />`.
-- Valor em R$ digitado pela creator passa por `parseMoeda` (`web/src/lib/format.ts`): só formato pt-BR, e o que não casar é recusado, nunca adivinhado.
-- Arrastar usa o drag and drop nativo do HTML e sempre tem uma alternativa por select para toque e teclado. Sem biblioteca de arrastar.
-- MSW só com `import.meta.env.DEV` e `VITE_ENABLE_MSW=true`; o build de produção não inclui MSW nem os JSONs. Nos testes, `web/src/mocks/server.ts` com `VITE_API_URL=http://localhost/api`.
-
-## Estado da integração (importa para as telas)
-
-| Fonte                                                             | Situação em 22/09/2026                                                                      |
-| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| TikTok Shop — Affiliate Creator API (pedidos, comissões, vitrine) | **Não liberada para o Brasil.** Depende da aprovação da categoria "Creator collaborations". |
-| Display API (vídeos da própria creator)                           | Disponível, depende da revisão do app em developers.tiktok.com.                             |
-| Métricas de e-commerce por vídeo (analytics/202403)               | Só para creators dos EUA.                                                                   |
-| APIs de live room                                                 | Não confirmado se aceitam token de creator do Brasil.                                       |
-
-Por isso toda tela precisa de um estado "TikTok Shop não conectado", em que só os dados de vídeo aparecem.
-
-## Regras vindas da API do TikTok (o backend entrega assim)
+Valem para a API, que traduz, e para o front, que precisa saber de onde o número vem.
 
 - **GMV** = preço × quantidade do item (no TikTok, o campo é `estimated_commission_base`). Não existe campo "gmv" na origem.
 - **Comissão**: estimada enquanto não liquida; o valor real só existe quando o status é `SETTLED`.
 - **Taxas em centésimos de %**: `1500` = 15%. A taxa total já soma padrão, anúncio da loja, bônus e reward.
-- **Status**: `AWAITING PAYMENT`, `To-SETTLE`, `SETTLED`, `REFUNDED`, `FROZEN` → Aguardando pagamento, A liquidar, Liquidado, Reembolsado, Retido. **Não existe "inelegível"**.
+- **Status**: `AWAITING PAYMENT`, `To-SETTLE`, `SETTLED`, `REFUNDED`, `FROZEN` → Aguardando pagamento, A liquidar, Liquidado, Reembolsado, Retido. **Não existe "inelegível" na API.**
 - **Canais**: `VIDEO`, `LIVE`, `PRE_LIVE`, `SHOP` (vitrine), `LINKSHARE` (link), `PROMOTION_PAGE`.
 - **Venda por anúncio da loja**: dedução a partir da comissão de Shop Ads maior que zero. Não existe sinal oficial de GMV Max.
 - **Reembolso**: a origem dá só a quantidade, não o valor. O valor é calculado.
 - A origem **não tem** id da loja, data de liquidação nem valor reembolsado.
-- Views de vídeo são um total acumulado; a série no tempo vem dos snapshots que o backend guarda.
-- Ainda **não está confirmado** que o identificador de conteúdo do pedido é o mesmo id do vídeo. Toda análise por vídeo depende disso: tratar como suposição isolada.
+- Views de vídeo são um total acumulado; a série no tempo vem dos snapshots que a API guarda.
+- Ainda **não está confirmado** que o identificador de conteúdo do pedido (`contentId`) é o mesmo id do vídeo. Toda análise por vídeo depende disso: tratar como suposição isolada, em um lugar só, fácil de corrigir.
 
 Valores monetários são texto: converter com decimal, nunca com float.
 
-## Design system
+## O que cada ponta precisa saber da outra
 
-- Marca: coral `#F8ADA0` e pêssego `#F7CBAB`. São claras: servem de fundo, preenchimento e destaque, **nunca com texto branco em cima** (contraste 1,8:1 e 1,5:1).
-- Tokens: fundo `#FFF8F5`, superfície `#FFFFFF`, borda `#F1E4DF`, texto `#2B1D1B`, texto secundário `#6E5B57`, ação forte `#B6402B` (links, foco, item ativo), apoio `#9E5D2E`.
-- Botão primário: fundo `#F8ADA0` com texto `#2B1D1B`. Secundário: contorno e texto `#B6402B`.
-- Status: liquidado `#2F7D5B`, a liquidar `#9A6200`, aguardando pagamento `#5F5A58`, reembolsado `#B42318`, retido `#6B4FA0`. Sempre com o rótulo escrito junto.
-- Contraste mínimo de 4,5:1 em texto e 3:1 em ícones e traços de gráfico.
-- Uma família tipográfica (Inter ou Plus Jakarta Sans), cantos de 12px em cards e 8px em campos, sombra suave, ícones lucide-react.
-- Só tema claro no MVP.
+Esta seção existe porque as duas pontas são construídas em sessões separadas. É o mínimo para não quebrar a outra sem perceber.
 
-### Gráficos
+**O front precisa saber da API:**
 
-Ordem categórica fixa, validada para daltonismo e contraste, usada nesta ordem e nunca reciclada:
+- Sessão é cookie `httpOnly`. O cliente HTTP manda `credentials: "include"` e `X-Requested-With: shopscanner` em toda rota que muda estado.
+- `Continuar com Google` é **navegação do navegador** para `GET /auth/google/start`, não `fetch`. A sessão volta por cookie no callback. Erro volta em `/entrar?erro=CODIGO`, com um destes códigos: `GOOGLE_INDISPONIVEL` (login social desligado), `GOOGLE_RECUSADO` (a pessoa cancelou no Google), `EMAIL_NAO_VERIFICADO` (o Google não confirma o e-mail) e `JA_VINCULADO` (aquela conta do Google já pertence a outro cadastro). O front traduz; a API nunca manda detalhe técnico na query.
+- Se a pessoa já está logada quando volta do Google, o callback só **vincula** a identidade e mantém a sessão atual — não emite cookie novo. É assim que a tela de Configurações vincula o Google.
+- Conta criada pelo Google nasce sem senha (`hasPassword: false`) e com `acceptedTermsVersion: null`: o front precisa pedir o aceite dos termos depois do primeiro acesso.
+- Ao tomar 401, o cliente chama `POST /auth/refresh` **uma vez** e repete a requisição; se falhar de novo, vai para `/entrar`.
+- O access token dura 15 minutos. Aba aberta por muito tempo vai tomar 401 — isso é normal, não é erro de tela.
+- Import de arquivo é assíncrono: `POST /imports` devolve `importId` e o processamento acontece em fila. O front acompanha por `GET /imports/:id`, não espera na resposta do upload.
+- Nenhum endpoint devolve token. Nada para guardar.
 
-`#C0442C` · `#2F5FC0` · `#1E8E64` · `#7A4CC0` · `#B07400` · `#B03A78`
+**A API precisa saber do front:**
 
-- Série única (GMV por dia, acumulado): `#C0442C`; comparação com o período anterior em cinza médio.
-- Rampa sequencial de coral: `#FBD9D2`, `#F8ADA0`, `#EC8071`, `#D65B49`, `#B6402B`.
-- Coral e pêssego da marca só em área e preenchimento, nunca em traço fino.
-- Nunca dois eixos y no mesmo gráfico.
-- Legenda sempre que houver 2 ou mais séries; rótulo direto em no máximo 4; nunca número em cima de todo ponto.
-- Tooltip no hover em todo gráfico; filtros em uma linha acima dos gráficos.
-- Texto de valores, eixos e legenda nos tokens de texto, nunca na cor da série.
-- Todo gráfico tem alternativa em tabela.
+- O front é SPA em outra origem. CORS restrito a `WEB_ORIGIN` com `credentials: true`, e o callback do Google redireciona para `WEB_ORIGIN`.
+- O front filtra por **dia de São Paulo** na URL e converte para ISO UTC na chamada. A API recebe e devolve sempre UTC.
+- Todo pedido precisa de `source` e `sourceAt`: tem selo de procedência em tela para cada número de venda.
+- `GET /accounts` precisa de `lastSyncedAt`: o front mostra "atualizado há X" no topo e um lembrete no Início quando o último import passou de 5 dias.
+- O front não tem feed de notificação: não crie endpoint para isso.
+- Depois do seed, os endpoints têm que reproduzir os **totais de referência** acima — é como o front detecta que a API quebrou alguma conta.
 
 ## Fora do MVP
 
 Lives, produtos em alta do mercado, ranking de hooks, amostras, classificação de gancho por IA e benchmark entre creators. Não colocar na navegação agora.
 
-## Devlog (obrigatório)
+## Devlog (obrigatório, nas duas pontas)
 
-Toda mudança entra no `DEVLOG.md`, **no mesmo commit da mudança**. Tarefa sem entrada no devlog não está concluída. O hook `.githooks/pre-commit` cobra isso (instalar uma vez com `git config core.hooksPath .githooks`).
+Toda mudança entra no `DEVLOG.md` da raiz, **no mesmo commit da mudança**. Tarefa sem entrada no devlog não está concluída. O hook `.githooks/pre-commit` cobra isso (instalar uma vez com `git config core.hooksPath .githooks`).
 
 Como escrever:
 
 - Uma entrada por tarefa concluída, sempre no topo do arquivo, da mais recente para a mais antiga.
+- Marque a ponta no título: `[front]`, `[api]` ou `[repo]`. Em sessões separadas, é isso que faz a outra ponta entender o que mudou sem ler o diff.
 - Não repita o diff. O git já guarda o que mudou; o devlog guarda **por que**, o que funcionou e o que não funcionou.
 - Não registre formatação, lint, bump de dependência nem renomeação trivial.
 - Atualize a seção "Estado atual", no topo do `DEVLOG.md`, sempre que o estado do projeto mudar.
 - Ao começar uma sessão, leia **só** o "Estado atual" e as duas últimas entradas. Nunca leia o arquivo inteiro.
-- Decisão permanente (padrão de código, contrato com o backend, token de design) não fica só no devlog: ela vai para o `CLAUDE.md`. O devlog registra que a decisão foi tomada e por quê.
+- Decisão permanente não fica só no devlog: contrato, domínio e número vão para este arquivo; padrão de código e token de design vão para o `CLAUDE.md` da ponta. O devlog registra que a decisão foi tomada e por quê.
 
 Formato da entrada:
 
 ```markdown
-### AAAA-MM-DD · título curto no imperativo
+### AAAA-MM-DD · [front|api|repo] título curto no imperativo
 
 **Fiz:** o que foi entregue, em uma ou duas frases.
 **Por quê:** o problema que isso resolve.
@@ -337,12 +409,14 @@ Formato da entrada:
 **Commit:** hash curto
 ```
 
-## Regras para o agente
+## Regras para o agente (valem nas duas pontas)
 
+- Leia este arquivo e o `CLAUDE.md` da pasta em que vai trabalhar antes de começar. Só esses dois.
 - Nenhuma tarefa está pronta sem a entrada no `DEVLOG.md` no mesmo commit.
-- O front não chama a API do TikTok. Se uma tarefa pedir isso, pare e avise.
-- Nada de token em `localStorage`, nada de segredo no código do cliente.
-- Se um dado não existe no contrato, não invente: proponha o campo e pergunte.
+- Se um dado não existe no contrato, **não invente**: proponha o campo e pergunte.
+- Mudança no contrato toca este arquivo e a API no mesmo commit, e vira entrada no devlog com `[repo]`.
+- Mexeu em algo que afeta a outra ponta (contrato, formato de dado, cookie, código de erro)? Diga isso em voz alta no fim da tarefa, com a frase exata que precisa ser levada para a outra sessão.
+- Nada de segredo em código, em log ou em commit.
+- Dinheiro é decimal em texto. Nunca `float`, em nenhuma das pontas.
 - Perguntar antes de adicionar dependência nova.
 - Commits pequenos, em português, no imperativo.
-- Rodar `npm run lint` e `npm test` (dentro de `web/`) antes de considerar uma tarefa pronta.
