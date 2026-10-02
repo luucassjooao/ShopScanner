@@ -101,9 +101,11 @@ GET  /plans  ·  POST /plans  ·  PATCH /plans/:id  ·  DELETE /plans/:id
 GET  /goals  ·  PUT  /goals
 GET  /me/notifications  ·  PUT /me/notifications
 
-POST /imports                  multipart (arquivo .xlsx) -> { importId }
-GET  /imports?accountId        -> ImportBatch[]
-GET  /imports/:id              -> o mesmo item, para acompanhar o processamento
+POST /imports?accountId        multipart, campo `file` com o .xlsx -> { importId }
+                                 accountId vai na query, não no corpo do multipart
+GET  /imports?accountId&kind&status&page&pageSize
+                               -> { items: ImportBatch[], total, page }
+GET  /imports/:id              -> ImportBatch, para acompanhar o processamento
 GET  /reconciliation?accountId&from&to
   -> [{ orderId, skuId, field, fromFile, fromApi, resolvedWith, at }]
 GET  /payouts?accountId        -> [{ week, expected, settled, pending }]
@@ -197,6 +199,7 @@ type OrderDetail = Order & {
 
 type ImportBatch = {
   id: string;
+  accountId: string;
   kind: "FILE" | "SYNC" | "RECHECK"; // arquivo, sincronização automática, reconferência
   fileName: string | null;
   createdAt: Iso;
@@ -372,6 +375,9 @@ Esta seção existe porque as duas pontas são construídas em sessões separada
 - Ao tomar 401, o cliente chama `POST /auth/refresh` **uma vez** e repete a requisição; se falhar de novo, vai para `/entrar`.
 - O access token dura 15 minutos. Aba aberta por muito tempo vai tomar 401 — isso é normal, não é erro de tela.
 - Import de arquivo é assíncrono: `POST /imports` devolve `importId` e o processamento acontece em fila. O front acompanha por `GET /imports/:id`, não espera na resposta do upload.
+- **`accountId` do import vai na query, não como campo do multipart.** O relatório do TikTok não diz de qual conta veio, então a API precisa da conta — mas precisa dela **antes** de ler o arquivo, para recusar conta de outra pessoa sem engolir 50 MB. Em campo de multipart isso só funcionaria se o campo viesse antes do arquivo, e essa é uma regra que um dia alguém quebra sem perceber. Conta que não é da sessão responde 404.
+- Limites do upload, conferidos antes de enfileirar: só `.xlsx`, só a primeira aba, no máximo 50 MB, só `BRL`. Cada recusa vira um `error.code` do `ImportBatch` (`WRONG_EXTENSION`, `TOO_LARGE`, `WRONG_CURRENCY`, ...), nunca um 500 seco.
+- `GET /imports` é paginado como `/orders` (`{ items, total, page }`), ordenado do mais recente para o mais antigo, com `pageSize` padrão de 20 e teto de 100. Filtra por `kind` (`FILE`, `SYNC`, `RECHECK`) e por `status` — a tela de histórico mostra só os de arquivo sem precisar baixar as sincronizações automáticas, que são muitas.
 - Nenhum endpoint devolve token. Nada para guardar.
 
 **A API precisa saber do front:**

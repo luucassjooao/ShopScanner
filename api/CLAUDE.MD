@@ -103,6 +103,8 @@ As definições estão na raiz. O que a API tem de garantir:
 - Os cortes de `/summary` (`gmvEligible`, `commissionToReceive`, etc.) são calculados no SQL conforme "Definições dos números" da raiz, e conferidos em teste contra os **totais de referência**. Se a API divergir desses números, a API está errada.
 - Paginação por cursor nas listas grandes, com `total` separado.
 - Import de arquivo é assíncrono: o upload vai para armazenamento e o parser roda em fila, não no request.
+- `accountId` do import vem na **query** de `POST /imports`, nunca como campo do multipart: a conta é validada contra a sessão antes de o corpo ser lido, então arquivo de 50 MB para conta alheia morre no começo. Em campo de multipart a validação dependeria da ordem das partes.
+- `GET /imports` é paginado (`{ items, total, page }`, `pageSize` padrão 20 e teto 100) e filtra por `kind` e `status`. Lista de import cresce para sempre: nenhuma rota de histórico nasce sem corte.
 - CORS restrito a `WEB_ORIGIN` com `credentials: true`.
 
 ## LGPD

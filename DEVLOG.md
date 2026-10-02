@@ -11,18 +11,43 @@ Regras curtas: entrada nova sempre no topo, uma por tarefa concluída, no mesmo 
 _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê ao voltar ao projeto._
 
 - **Fase:** 0 — fundação das duas pontas: front pronto, backend recém-nascido.
-- **Rodando:** front em `web/` com o design do canvas aplicado: área logada completa, páginas legais e públicas; acesso por e-mail ou Google, TikTok só como conexão (lint, typecheck, build e 98 testes passando).
+- **Rodando:** front em `web/` com o design do canvas aplicado: área logada completa, páginas legais e públicas; acesso por e-mail ou Google, TikTok só como conexão, e a entrada de pedidos por arquivo `.xlsx` (lint, typecheck, build e 108 testes passando).
 - **Repositório:** git iniciado na raiz (branch `main`), hook do devlog ativo via `core.hooksPath`.
 - **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. O backend em `api/` já sobe, mas ainda não serve nenhuma rota do contrato.
 - **Backend:** `api/` com conta, sessão, login do Google e conexão com o TikTok (`/accounts`, conectar, desconectar, tokens cifrados). Falta a tabela de domínio: pedidos, vídeos, produtos, metas, pautas.
 - **Integração TikTok:** Affiliate Creator API não liberada para o Brasil; ticket aberto com a TikTok. Display API disponível, app ainda não submetido.
-- **Telas prontas:** /, /entrar, /criar-conta, /recuperar, /termos, /privacidade, /inicio-rapido, /inicio, /vendas, /videos, /videos/:id, /produtos, /planejamento, /configuracoes, /avisos.
+- **Telas prontas:** /, /entrar, /criar-conta, /recuperar, /termos, /privacidade, /inicio-rapido, /inicio, /vendas, /videos, /videos/:id, /produtos, /planejamento, /configuracoes, /avisos, /reconciliacao.
 - **Próximo passo:** tabelas e endpoints de domínio na API (`/summary`, `/orders`, `/videos`, `/products`) conferindo os totais de referência; no front, decidir as propostas de contrato da entrada de 23/09 e preencher `web/src/lib/textos.ts`.
 - **Bloqueios:** aprovação da categoria "Creator collaborations" para o Brasil; confirmação de que o identificador de conteúdo do pedido é o mesmo id do vídeo.
 
 ---
 
 ## Entradas
+
+### 2026-10-02 · [api] Fechar o contrato do import de arquivo
+
+**Fiz:** decidi as duas dúvidas que vieram da sessão do front e escrevi no contrato: `accountId` do `POST /imports` vai na **query**, não como campo do multipart, e `GET /imports` passa a ser paginado (`{ items, total, page }`) com filtro por `kind` e `status`. `ImportBatch` ganhou `accountId`.
+**Por quê:** o relatório do TikTok não diz de qual conta veio, então a conta precisa vir do front — e a lista de imports cresce para sempre se nascer sem corte.
+**Funcionou:** nada de código ainda; é decisão de contrato. O front já manda `accountId`, só muda de lugar: uma linha.
+**Não funcionou:** nada.
+**Decidi:** `accountId` na query porque a validação acontece **antes** de ler o corpo — arquivo de 50 MB para conta de outra pessoa morre no começo, e não depende da ordem das partes do multipart, que um dia alguém inverte sem perceber. Paginação igual à de `/orders`, `pageSize` padrão 20 e teto 100, do mais recente para o mais antigo. Limites do upload declarados no contrato (só `.xlsx`, primeira aba, 50 MB, só `BRL`), cada recusa virando `error.code` do `ImportBatch` em vez de 500.
+**Pendente:** nada de `/imports` está implementado na API — não há tabela, fila nem parser, e `docs/parser-affiliate-orders.md`, citado duas vezes no `CLAUDE.md` da raiz, **não existe no repositório**. Enquanto a seção 3 do parser não fechar (depende de um `affiliate_orders.xlsx` real), implementar seria chutar as colunas.
+**Commit:** —
+
+### 2026-10-02 · [front] Implementar a entrada de dados por arquivo
+
+**Fiz:** o caminho do `affiliate_orders.xlsx` de ponta a ponta no front: painel de import em Configurações → Contas (arrastar ou escolher, vários arquivos em sequência, barra de progresso, acompanhamento por `GET /imports/:id` e resultado em "N novas, N atualizadas, N sem mudança"), orientação própria para os sete códigos de erro do contrato, histórico com tipo, data, resultado e status, selo de procedência em venda, "Atualizado há X" no topo, lembrete no Início depois de 5 dias sem leitura, tela `/reconciliacao` e o app registrado como destino de compartilhamento no celular.
+**Por quê:** a Affiliate Creator API não está liberada no Brasil. Sem o arquivo, o painel não tem número de venda nenhum — é a espinha de dados do MVP, não um extra.
+**Funcionou:** 108 testes. Os novos cobrem envio com resultado, a orientação de `WRONG_CURRENCY` (conferindo que a mensagem técnica da API **não** vai para a tela), `UNKNOWN_COLUMNS` com as colunas que faltam e as que vieram, histórico separando arquivo de sincronização, e a reconciliação vazia. Lint, Prettier, typecheck e build limpos.
+**Não funcionou:** o teste ponta a ponta do upload real. O jsdom não serializa `FormData` com arquivo no `XMLHttpRequest` (quebra em `_buffer`), então o teste troca o XHR por um que fala com o mesmo handler do MSW em JSON; da fila em diante tudo é real. É a mesma limitação que já tinha obrigado o teste do avatar a trocar o `fetch`. Também não consegui conferir no navegador: o Chrome não respondeu.
+**Decidi:** o upload usa `XMLHttpRequest` (`upload()` em `api/client.ts`) porque `fetch` não informa progresso de envio; o resto da camada continua no `request()`. Vários arquivos vão **um depois do outro**, não em paralelo: a fila do backend é uma só e o resultado precisa ser lido arquivo a arquivo. A orientação de cada erro mora só em `lib/import.ts`, e a `message` técnica fica fora da tela. O selo de procedência é um componente só, `<Procedencia />`. A tela de import não virou rota própria: ela mora em Configurações, e Vendas e o estado "Shop não conectado" apontam para `?secao=import`. `/reconciliacao` é rota, mas fora da navegação. O service worker do compartilhamento só é registrado em produção, porque em desenvolvimento o escopo `/` é do worker do MSW. Aproveitei para mandar `X-Requested-With` nas rotas que mudam estado, como o `CLAUDE.md` já exigia e o cliente não fazia.
+**Pendente:** `docs/parser-affiliate-orders.md` **não existe** — o `CLAUDE.md` da raiz o cita como a especificação do parser. Os nomes de coluna continuam sendo problema do backend, então nada disso travou o front. Propostas de contrato que a API precisa confirmar:
+  - `accountId` junto do arquivo no `POST /imports`: o relatório do TikTok não diz de qual conta veio.
+  - `GET /imports` sem filtro de `kind` nem paginação; com meses de uso a lista cresce sem limite.
+  - `INELIGIBLE` ficou sem cor no design: está no cinza de texto secundário, com o rótulo escrito.
+
+  Fora do escopo desta tarefa: `GET /payouts` (está no contrato, nenhuma tela usa) e cancelar um envio em andamento.
+**Commit:** —
 
 ### 2026-10-02 · [api] Resolver a senha de quem veio do Google e as conexões com o TikTok
 
