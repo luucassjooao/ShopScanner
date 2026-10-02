@@ -32,7 +32,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** duas descobertas quebraram premissas. (1) O relatório do TikTok **repete o mesmo id de SKU em linhas diferentes do mesmo pedido** — o mock tem o pedido 575059629618826862 com duas linhas do mesmo SKU, quantidades 1 e 2. A chave `(conta, pedido, sku)` perdia uma venda; passou a carregar `line_no`. (2) `z.uuid()` do Zod 4 valida bits de versão RFC e recusava os ids fixos do seed, que o Postgres aceita sem reclamar: virou `z.guid()` em todo lugar.
 **Decidi:** toda soma acontece no SQL, com `filter (where ...)` para os cortes — o service só formata. GPM sai do Postgres em `numeric`: dinheiro não encosta em float em lugar nenhum. Linha de produto é agregação dos pedidos, com imagem e link vindos do catálogo; nome, loja e taxa são os do pedido mais recente. Cursor convive com `page` em vez de substituí-lo, para não quebrar o front que já está pronto. `0004` foi editada em vez de ganhar uma `0005`: ela ainda não tinha sido commitada nem aplicada fora do meu banco de teste.
 **Pendente:** `/videos/:id` tem só um snapshot por vídeo (a origem dá um total acumulado, e a leitura que temos é uma só) — a série cresce quando a sincronização existir. `/reconciliation` e `/payouts` continuam fora. Retenção de registro de acesso por 6 meses (Marco Civil) não existe: `DELETE /me` apaga sessões junto, e não há tabela de log separada.
-**Commit:** —
+**Commit:** 910b3e7
 
 ### 2026-10-02 · [front] Alinhar o front ao contrato fechado de conexão e sessão
 
