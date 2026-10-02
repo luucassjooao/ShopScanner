@@ -32,7 +32,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada travou, mas o cookie assinado precisou voltar byte a byte no teste: reenviar o valor já decodificado quebra a assinatura, então o teste copia o `Set-Cookie` cru.
 **Decidi:** OIDC sem biblioteca — `node:crypto` verifica RS256 e a JWKS fica em cache de 1 hora, com piso de um minuto entre recargas quando o `kid` é desconhecido. Vincular pela sessão, e não por endpoint novo: se há cookie de acesso válido no callback, a identidade entra naquele usuário e a sessão atual continua. Vincular por e-mail quando o Google confirma o endereço, marcando o e-mail como verificado — o Google já provou a posse. As variáveis `GOOGLE_*` são opcionais: sem elas o botão responde `GOOGLE_INDISPONIVEL` em vez de derrubar o boot.
 **Pendente:** conta criada pelo Google fica com `acceptedTermsVersion` nulo — o front precisa pedir o aceite no primeiro acesso. Definir senha para quem entrou só pelo Google (o `PUT /me/password` de hoje exige a senha atual) continua em aberto.
-**Commit:** —
+**Commit:** 328a535
 
 ### 2026-10-01 · [api] Implementar conta e sessão
 
