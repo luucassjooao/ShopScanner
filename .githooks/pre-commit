@@ -2,6 +2,9 @@
 # Bloqueia commit que mexe em código sem atualizar o DEVLOG.md.
 #
 # Instalação (uma vez, na raiz do repositório):
+#   mkdir -p .githooks
+#   cp scripts/pre-commit-devlog.sh .githooks/pre-commit
+#   chmod +x .githooks/pre-commit
 #   git config core.hooksPath .githooks
 #
 # Para pular de propósito (ex.: só formatação):
@@ -13,7 +16,7 @@ staged=$(git diff --cached --name-only)
 [ -z "$staged" ] && exit 0
 
 # Arquivos que exigem entrada no devlog.
-relevante=$(printf '%s\n' "$staged" | grep -E '^(web/(src/|public/|package\.json|tsconfig|vite\.config|tailwind\.config)|mocks/|docs/)')
+relevante=$(printf '%s\n' "$staged" | grep -E '^(web/src/|web/public/|web/package\.json|web/tsconfig|web/vite\.config|web/tailwind\.config|api/src/|api/db/|api/scripts/|api/package\.json|api/tsconfig|api/docker-compose|mocks/|docs/|CLAUDE\.md$|web/CLAUDE\.md$|api/CLAUDE\.md$)')
 [ -z "$relevante" ] && exit 0
 
 if printf '%s\n' "$staged" | grep -qx 'DEVLOG.md'; then
