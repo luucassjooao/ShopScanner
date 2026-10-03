@@ -33,7 +33,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada travou, mas achei dois defeitos de arrasto. `useAllVideos` e `buscarTodosProdutos` deduziam o tamanho da página pelo que vinha na primeira resposta — bastava a última página vir curta para a conta de páginas sair errada; agora pedem `pageSize: 100` e contam a partir de `total`. E o aviso de meta no sino comparava o GMV **bruto** do mês com a meta, enquanto a barra do Início já media o elegível: o sino podia dizer "meta batida" com a barra em 80%.
 **Decidi:** `MAX_PAGE_SIZE` (100) em `api/queries.ts` é o teto do contrato, usado por toda varredura. Não adotei `cursor` em `/orders`: `page` continua valendo, mora na URL e deixa as varreduras buscarem páginas em paralelo; cursor entra se aparecer inconsistência entre páginas. No MSW, o mês do `goal` passou a ser calculado em São Paulo com `dayKey` — era UTC, e nas três últimas horas de cada mês apontava para o mês seguinte.
 **Pendente:** nada desta tarefa. `/payouts` segue no contrato sem tela que o use.
-**Commit:** —
+**Commit:** 9784352
 
 ### 2026-10-02 · [front] Fechar o que a especificação do parser define
 
@@ -43,7 +43,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** o teste da recusa não passa pelo seletor de arquivo: o `accept` do campo filtra o `.csv` antes do handler, então ele usa `applyAccept: false`, que é o caminho do arrastar. Também achei um buraco antigo: `STATUSES` em `lib/metrics.ts` não tinha `INELIGIBLE`, então a comissão desses itens sumia da soma sem ninguém notar.
 **Decidi:** a recusa local é conveniência, não autoridade — a API confere de novo, e o motivo mostrado é o mesmo texto nos dois caminhos. O limite mora em `LIMITE_MB`, em `lib/import.ts`, apontando para a especificação.
 **Pendente:** a seção 3 da especificação continua em aberto (nomes de coluna), e isso **não bloqueia o front** — as telas dependem só dos códigos de erro e do resultado, como o próprio documento diz. Falta resolver uma incoerência que isso expôs: o topo do Início mostra o GMV elegível, mas "GMV por dia" e "GMV acumulado" usam `byDay`, que é bruto. Os dois números aparecem na mesma tela e não batem. Ou `byDay` ganha o corte elegível no contrato, ou os gráficos passam a dizer que são brutos — é decisão de contrato, não do front.
-**Commit:** —
+**Commit:** 9784352
 
 ### 2026-10-02 · [api] Servir o contrato de dados a partir do banco
 
@@ -64,7 +64,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Decidi:** todo código de erro — da URL ou do `serverCode` de um corpo de erro — passa por `mensagemDoErro`, em `lib/textos.ts`. Um mapa só. O aceite dos termos de conta criada pelo Google trava a área logada num diálogo sem X, e grava por `PATCH /me { acceptedTermsVersion }` (decidido com você; o contrato não tinha rota para isso). O histórico de imports pede `kind=FILE`: as sincronizações automáticas são muitas e não são daquela tela.
 **Conferi na API:** li `api/` antes de escrever o aviso de desconectar, e o que estava escrito não batia. `repositories/connections.ts` apaga a linha e, quando o `kind` é `VIDEOS`, apaga todas as conexões do mesmo `provider_user_id` — então a conta inteira cai. E `0004_domain.sql` liga `orders`, `order_skus`, `order_status_history`, `videos`, `video_snapshots`, `products` e **`goals`** a `provider_connections` com `on delete cascade`: o dado some **na hora**, não "em até" prazo nenhum. `plans` e `notification_settings` pendem de `users`, então sobrevivem. O aviso agora diz isso, no código e no canvas, e um teste cobra que a palavra "em até" não apareça ali. `DELETE /me` ainda não existe na API, então o texto de excluir conta não tinha o que conferir.
 **Pendente:** `docs/parser-affiliate-orders.md` continua sem existir — confirmado que o documento não foi escrito, e ficou de lado a pedido.
-**Commit:** —
+**Commit:** 9784352
 
 ### 2026-10-02 · [api] Fechar o contrato do import de arquivo
 
@@ -89,7 +89,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
   - `INELIGIBLE` ficou sem cor no design: está no cinza de texto secundário, com o rótulo escrito.
 
   Fora do escopo desta tarefa: `GET /payouts` (está no contrato, nenhuma tela usa) e cancelar um envio em andamento.
-**Commit:** —
+**Commit:** 9784352
 
 ### 2026-10-02 · [api] Resolver a senha de quem veio do Google e as conexões com o TikTok
 
@@ -141,7 +141,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
   - Atalho do .xlsx no `ShopDesconectado` das telas de dados.
 
   Em dev, o botão do Google cai fora do MSW, porque a navegação não é interceptada.
-**Commit:** —
+**Commit:** 9784352
 
 ### 2026-10-01 · [api] Criar o esqueleto do backend
 
@@ -161,7 +161,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** `app_key`, scopes e a lista exata de colunas não saem sem iniciar o fluxo de autorização ou subir um arquivo; ficaram como não verificáveis.
 **Decidi:** nada ainda.
 **Pendente:** exportar um `affiliate_orders.xlsx` real para fechar as colunas do nosso parser e confirmar de onde vem o status "Inelegível", que diverge do `CLAUDE.md`.
-**Commit:** —
+**Commit:** 9784352
 
 ### 2026-09-24 · Analisar o Owra como referência
 
@@ -171,7 +171,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada; nenhuma análise de IA foi disparada na conta, para não gastar a cota.
 **Decidi:** nada ainda; as ideias ficam como proposta no documento.
 **Pendente:** decidir quais ideias entram (projeção do mês, Pareto, apostas e PWA cabem no front atual; ingestão por arquivo e push pedem backend); investigar a origem do status "inelegível" que o Owra mostra.
-**Commit:** —
+**Commit:** 9784352
 
 ### 2026-09-23 · Construir o design do canvas no front
 
@@ -181,7 +181,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** o texto oculto da última coluna das tabelas, com posição absoluta, vazava para a largura da página; resolvido com `relative` no contêiner. A mensagem de erro dentro do `<label>` voltou a aparecer no modal novo e saiu do rótulo de novo. O `FormData` do jsdom com arquivo não passa pelo `Request` do Node, então o teste da foto confere o envio antes do MSW.
 **Decidi:** números do design são ilustrativos; as telas usam os dados do contrato. Cortados de vez: frete e descontos, prazo de devolução, liquidação prevista, produtos marcados no vídeo, aviso por e-mail do Shop e toda frase "por e-mail" das telas. "Comissões em um lugar só" da landing perdeu "com a data de cada pagamento". A ilustração da landing ganhou o selo "Exemplo". Arrastar no quadro continua com a alternativa por menu, que o design não mostrava. A meta do início rápido é de comissão e a de Configurações é de GMV, como no design; cada tela preserva a outra.
 **Pendente:** propostas de contrato, para aprovar: (1) `units` por vídeo em /videos e /videos/:id; (2) `q` e `pageSize` em /videos, hoje a busca é no front com todos os vídeos do período; (3) `pageSize` e os valores de `sort` de /products no contrato (`gmv`, `commission`, `units`, `refunds`); (4) `imageUrl` em `topProducts` e nos SKUs de pedido, para as miniaturas; (5) `user.avatarUrl` e `user.createdAt` na sessão; (6) um endpoint para iniciar a conexão do TikTok Shop, hoje o botão fica desativado; (7) a série de views disponível em /videos, para derivar o aviso `viewsDrop` sem abrir vídeo por vídeo; (8) total de itens em /orders, porque o design conta itens e o contrato pagina pedidos; (9) filtro "todas as contas" para quem tem mais de uma. Também falta preencher `web/src/lib/textos.ts`.
-**Commit:** —
+**Commit:** 9784352
 
 ### 2026-09-22 · Implementar planejamento e configurações
 
