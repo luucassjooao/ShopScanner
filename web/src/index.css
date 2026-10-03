@@ -55,6 +55,11 @@
     @apply bg-fundo font-sans text-corpo text-texto antialiased;
   }
 
+  /* Link é ação forte por padrão (CLAUDE.md); classes de cor na própria tag mandam mais. */
+  a {
+    @apply text-acao;
+  }
+
   /* Ação forte também marca o foco (CLAUDE.md) */
   :focus-visible {
     @apply outline-none ring-2 ring-acao ring-offset-2 ring-offset-fundo;

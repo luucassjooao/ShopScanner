@@ -1,0 +1,32 @@
+{
+  "name": "ShopScanner",
+  "short_name": "ShopScanner",
+  "description": "Comissões, vídeos e produtos que vendem, para creators afiliadas do TikTok Shop.",
+  "lang": "pt-BR",
+  "start_url": "/inicio",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FFF8F5",
+  "theme_color": "#FFF8F5",
+  "icons": [
+    {
+      "src": "/icone.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "share_target": {
+    "action": "/compartilhar",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "file",
+          "accept": [".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]
+        }
+      ]
+    }
+  }
+}

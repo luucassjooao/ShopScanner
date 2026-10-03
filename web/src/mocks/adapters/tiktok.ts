@@ -140,9 +140,16 @@ export function adaptOrder(raw: RawOrder): Order {
     deliveredAt: raw.delivery_time ? unixToIso(raw.delivery_time) : null,
     status: s,
     currency: raw.skus[0]?.price.currency ?? 'BRL',
+    // Os JSONs são o formato cru da API do TikTok, então a procedência é a API.
+    // Quem simula a leitura por arquivo são os handlers, conforme o estado da conta.
+    source: 'API',
+    sourceAt: LIDO_EM,
     skus: raw.skus.map((sku) => adaptSku(sku, s)),
   };
 }
+
+/** Quando o backend teria lido estes mocks. Fixo, para o teste não depender do relógio. */
+export const LIDO_EM = '2026-10-01T09:00:00.000Z';
 
 /**
  * A origem não tem datas de transição de status; o backend vai guardá-las ao sincronizar.

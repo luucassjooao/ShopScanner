@@ -11,7 +11,8 @@ Regras curtas: entrada nova sempre no topo, uma por tarefa concluída, no mesmo 
 _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê ao voltar ao projeto._
 
 - **Fase:** 0 — fundação das duas pontas: front pronto, backend recém-nascido.
-- **Rodando:** front em `web/` com o design do canvas aplicado: área logada completa, páginas legais e públicas; acesso por e-mail ou Google, TikTok só como conexão, e a entrada de pedidos por arquivo `.xlsx` (lint, typecheck, build e 112 testes passando). O front está alinhado ao contrato fechado da API.
+- **Rodando:** front em `web/` com o design do canvas aplicado: área logada completa, páginas legais e públicas; acesso por e-mail ou Google, TikTok só como conexão, e a entrada de pedidos por arquivo `.xlsx` (lint, typecheck, build e 115 testes passando). O front está alinhado ao contrato fechado da API e à especificação do parser.
+- **Números:** o topo do Início é o GMV elegível; os gráficos são brutos e dizem isso no título e na nota.
 - **Repositório:** git iniciado na raiz (branch `main`), hook do devlog ativo via `core.hooksPath`.
 - **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. O backend em `api/` já sobe, mas ainda não serve nenhuma rota do contrato.
 - **Backend:** `api/` servindo o contrato de dados (`/summary`, `/orders`, `/videos`, `/products`, `/plans`, `/goals`, `/me/notifications`, `/me/export`, `DELETE /me`) sobre o banco, além de conta, sessão, Google e conexão com o TikTok. Falta o import de arquivo (`/imports`, `/reconciliation`, `/payouts`) e a sincronização com o TikTok.
@@ -23,6 +24,26 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 ---
 
 ## Entradas
+
+### 2026-10-02 · [front] Dizer nos gráficos que o GMV é bruto, e usar o contrato novo das listas
+
+**Fiz:** os quatro gráficos do Início passaram a se chamar "GMV bruto" e ganharam uma nota dizendo o que entra na conta e que o topo mostra só o elegível. Junto, apliquei o contrato que a API fechou: `pageSize` nas varreduras de vídeos e produtos, e o `goal` tratado como o do mês corrente em São Paulo.
+**Por quê:** o topo virou elegível na tarefa anterior e os gráficos continuaram brutos. Dois números diferentes com o mesmo nome na mesma tela é a forma mais rápida de perder a confiança da creator — ela confere com o app do TikTok e acha que erramos.
+**Funcionou:** 115 testes, com o da tela cobrando o título novo e a nota. Lint, Prettier, typecheck e build limpos.
+**Não funcionou:** nada travou, mas achei dois defeitos de arrasto. `useAllVideos` e `buscarTodosProdutos` deduziam o tamanho da página pelo que vinha na primeira resposta — bastava a última página vir curta para a conta de páginas sair errada; agora pedem `pageSize: 100` e contam a partir de `total`. E o aviso de meta no sino comparava o GMV **bruto** do mês com a meta, enquanto a barra do Início já media o elegível: o sino podia dizer "meta batida" com a barra em 80%.
+**Decidi:** `MAX_PAGE_SIZE` (100) em `api/queries.ts` é o teto do contrato, usado por toda varredura. Não adotei `cursor` em `/orders`: `page` continua valendo, mora na URL e deixa as varreduras buscarem páginas em paralelo; cursor entra se aparecer inconsistência entre páginas. No MSW, o mês do `goal` passou a ser calculado em São Paulo com `dayKey` — era UTC, e nas três últimas horas de cada mês apontava para o mês seguinte.
+**Pendente:** nada desta tarefa. `/payouts` segue no contrato sem tela que o use.
+**Commit:** —
+
+### 2026-10-02 · [front] Fechar o que a especificação do parser define
+
+**Fiz:** com `docs/parser-affiliate-orders.md` em mãos, fechei o que eu tinha deixado em aberto. O GMV do topo do Início passou a ser o **elegível** (`TO_SETTLE` + `SETTLED`), com o resto numa linha à parte, e a barra da meta mede o mesmo número. `INELIGIBLE` entrou no cálculo de comissão, de onde estava faltando. O envio agora recusa na hora o que a especificação já descarta: extensão fora de `.xlsx` e arquivo acima de 50 MB.
+**Por quê:** `INELIGIBLE` só existe em dado vindo de arquivo, então o corte elegível só virou real agora. E o limite de 50 MB eu não tinha de fonte confiável — estava deduzido da análise do Owra, não de uma regra nossa.
+**Funcionou:** 115 testes. O do MSW cobra a identidade `gmvEligible + gmvIneligible = gmv` contra os mocks de referência e confere o elegível contra `byStatus`, em vez de fixar um número novo que ninguém validou. O da recusa local cobre extensão, limite e o caso de maiúsculas. Lint, Prettier, typecheck e build limpos.
+**Não funcionou:** o teste da recusa não passa pelo seletor de arquivo: o `accept` do campo filtra o `.csv` antes do handler, então ele usa `applyAccept: false`, que é o caminho do arrastar. Também achei um buraco antigo: `STATUSES` em `lib/metrics.ts` não tinha `INELIGIBLE`, então a comissão desses itens sumia da soma sem ninguém notar.
+**Decidi:** a recusa local é conveniência, não autoridade — a API confere de novo, e o motivo mostrado é o mesmo texto nos dois caminhos. O limite mora em `LIMITE_MB`, em `lib/import.ts`, apontando para a especificação.
+**Pendente:** a seção 3 da especificação continua em aberto (nomes de coluna), e isso **não bloqueia o front** — as telas dependem só dos códigos de erro e do resultado, como o próprio documento diz. Falta resolver uma incoerência que isso expôs: o topo do Início mostra o GMV elegível, mas "GMV por dia" e "GMV acumulado" usam `byDay`, que é bruto. Os dois números aparecem na mesma tela e não batem. Ou `byDay` ganha o corte elegível no contrato, ou os gráficos passam a dizer que são brutos — é decisão de contrato, não do front.
+**Commit:** —
 
 ### 2026-10-02 · [api] Servir o contrato de dados a partir do banco
 

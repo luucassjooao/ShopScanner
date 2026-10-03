@@ -25,8 +25,11 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    /** Diálogo que a pessoa precisa responder (aceite dos termos) esconde o X. */
+    fecharVisivel?: boolean;
+  }
+>(({ className, children, fecharVisivel = true, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -39,12 +42,14 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close
-        className="absolute right-4 top-4 inline-flex size-9 items-center justify-center rounded-campo text-texto-secundario transition-colors hover:bg-fundo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acao"
-        aria-label="Fechar"
-      >
-        <X className="size-4" />
-      </DialogPrimitive.Close>
+      {fecharVisivel ? (
+        <DialogPrimitive.Close
+          className="absolute right-4 top-4 inline-flex size-9 items-center justify-center rounded-campo text-texto-secundario transition-colors hover:bg-fundo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acao"
+          aria-label="Fechar"
+        >
+          <X className="size-4" />
+        </DialogPrimitive.Close>
+      ) : null}
     </DialogPrimitive.Content>
   </DialogPortal>
 ));

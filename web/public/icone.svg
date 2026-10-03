@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ShopScanner">
+  <rect width="512" height="512" rx="112" fill="#F8ADA0"/>
+  <g fill="none" stroke="#2B1D1B" stroke-width="34" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="228" cy="228" r="110"/>
+    <path d="M312 312l84 84"/>
+    <path d="M186 268h84M186 212h84"/>
+  </g>
+</svg>

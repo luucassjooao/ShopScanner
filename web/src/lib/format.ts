@@ -145,3 +145,12 @@ export function parseMoeda(texto: string): string | null {
   const inteiro = m[1].replace(/\./g, '').replace(/^0+(?=\d)/, '');
   return `${inteiro}.${(m[2] ?? '').padEnd(2, '0')}`;
 }
+
+const relativo = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto' });
+/** "há 5 minutos", "há 2 horas", "ontem", "há 3 dias". */
+export function haQuanto(iso: string, agora = Date.now()) {
+  const min = Math.round((Date.parse(iso) - agora) / 60_000);
+  if (min > -60) return relativo.format(Math.min(min, -1), 'minute');
+  if (min > -24 * 60) return relativo.format(Math.round(min / 60), 'hour');
+  return relativo.format(Math.round(min / (24 * 60)), 'day');
+}

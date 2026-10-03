@@ -1,7 +1,11 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { api, ApiError } from '@/api/client';
+import { fromCents, toCents } from '@/lib/money';
 import {
   goal,
+  productsPage as produtos,
+  usuario,
+  notificationSettings,
   orderDetail,
   ordersPage,
   plan,
@@ -32,6 +36,12 @@ describe('handlers do MSW respeitam o contrato', () => {
 
     const s = await api.get('/summary', { schema: summary, query: periodo });
     expect(s.gmv).toBe('11378.50');
+    // O topo do Início mostra o elegível; o resto vai na linha à parte. Somados, dão o bruto.
+    expect(toCents(s.gmvEligible) + toCents(s.gmvIneligible)).toBe(toCents(s.gmv));
+    const porStatus = new Map(s.byStatus.map((b) => [b.status, b.gmv]));
+    expect(s.gmvEligible).toBe(
+      fromCents(toCents(porStatus.get('TO_SETTLE')!) + toCents(porStatus.get('SETTLED')!)),
+    );
 
     const p = await api.get('/orders', { schema: ordersPage, query: { ...periodo, pageSize: 100 } });
     expect(p.total).toBe(80);
@@ -100,5 +110,36 @@ describe('handlers do MSW respeitam o contrato', () => {
       .catch((x: unknown) => x);
     expect(e).toBeInstanceOf(ApiError);
     expect((e as ApiError).code).toBe('nao_encontrado');
+  });
+
+  it('busca e filtro por loja em pedidos e produtos', async () => {
+    const r = await api.get('/orders', {
+      schema: ordersPage,
+      query: { ...periodo, q: 'ESCOVA', pageSize: 100 },
+    });
+    expect(r.total).toBeGreaterThan(0);
+    expect(r.items.every((o) => o.skus.some((s) => /escova/i.test(s.name)))).toBe(true);
+    const p = await api.get('/products', {
+      schema: produtos,
+      query: { ...periodo, shopName: 'TecnoLar Store' },
+    });
+    expect(p.items.every((x) => x.shopName === 'TecnoLar Store')).toBe(true);
+    const reembolsos = await api.get('/products', {
+      schema: produtos,
+      query: { ...periodo, sort: 'refunds' },
+    });
+    expect(reembolsos.items[0]!.refundedUnits).toBeGreaterThanOrEqual(reembolsos.items[1]!.refundedUnits);
+  });
+
+  it('perfil, senha e preferências de aviso', async () => {
+    const u = await api.patch('/me', { name: 'Carol' }, { schema: usuario });
+    expect(u.name).toBe('Carol');
+    await expect(
+      api.put('/me/password', { currentPassword: 'x', newPassword: '12345678' }),
+    ).rejects.toMatchObject({ code: 'invalido' });
+    await api.put('/me/password', { currentPassword: 'senha-demo-123', newPassword: '12345678' });
+    const n = await api.get('/me/notifications', { schema: notificationSettings });
+    expect(n.channels).toEqual({ inApp: true, email: false });
+    expect(n).toHaveProperty('viewsDrop');
   });
 });

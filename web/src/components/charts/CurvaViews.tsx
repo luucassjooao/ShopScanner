@@ -39,7 +39,7 @@ export function CurvaViews({ pontos }: { pontos: PontoViews[] }) {
 
   return (
     <figure className="flex flex-col gap-3">
-      <figcaption className="text-corpo-sm font-bold text-texto">Views acumuladas</figcaption>
+      <figcaption className="sr-only">Views acumuladas</figcaption>
 
       {dados.length < 2 ? (
         <p className="text-corpo-sm text-texto-secundario">

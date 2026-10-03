@@ -87,6 +87,8 @@ export interface RequestOptions<T> {
 }
 
 const TIMEOUT_PADRAO_MS = 20_000;
+/** Vai em `X-Requested-With` nas rotas que mudam estado (CLAUDE.md → CSRF). */
+const CLIENTE = 'shopscanner';
 
 function buildUrl(path: string, query?: Record<string, QueryValue>): string {
   const base = `${env.apiUrl}${path.startsWith('/') ? path : `/${path}`}`;
@@ -154,6 +156,7 @@ export async function request<T = void>(
       signal: controller.signal,
       headers: {
         Accept: 'application/json',
+        ...(method === 'GET' ? {} : { 'X-Requested-With': CLIENTE }),
         ...(body !== undefined && !isFormData ? { 'Content-Type': 'application/json' } : {}),
         ...headers,
       },
@@ -204,6 +207,83 @@ export async function request<T = void>(
     });
   }
   return parsed.data;
+}
+
+/**
+ * Upload com barra de progresso. É `XMLHttpRequest` porque `fetch` não informa
+ * quanto do corpo já subiu, e um arquivo de dezenas de MB precisa disso em tela.
+ * O processamento acontece depois, em fila: aqui só acompanhamos o envio.
+ */
+export function upload<T>(
+  path: string,
+  body: FormData,
+  { schema, onProgress, signal }: UploadOptions<T>,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', buildUrl(path));
+    xhr.withCredentials = true;
+    xhr.responseType = 'text';
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.setRequestHeader('X-Requested-With', CLIENTE);
+
+    const cancelar = () => xhr.abort();
+    signal?.addEventListener('abort', cancelar, { once: true });
+    const encerrar = () => signal?.removeEventListener('abort', cancelar);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress?.(e.loaded / e.total);
+    };
+    xhr.onerror = () => {
+      encerrar();
+      reject(new ApiError('rede'));
+    };
+    xhr.ontimeout = () => {
+      encerrar();
+      reject(new ApiError('timeout'));
+    };
+    xhr.onabort = () => {
+      encerrar();
+      reject(new ApiError('cancelado'));
+    };
+    xhr.onload = () => {
+      encerrar();
+      let corpo: unknown;
+      try {
+        corpo = JSON.parse(xhr.responseText) as unknown;
+      } catch {
+        corpo = undefined;
+      }
+      if (xhr.status < 200 || xhr.status >= 300) {
+        const obj = (corpo ?? {}) as { code?: unknown; message?: unknown; details?: unknown };
+        return reject(
+          new ApiError(codeFromStatus(xhr.status), {
+            status: xhr.status,
+            serverCode: typeof obj.code === 'string' ? obj.code : undefined,
+            message: typeof obj.message === 'string' ? obj.message : undefined,
+            details: obj.details,
+          }),
+        );
+      }
+      // O envio terminou: o que resta é o servidor processar.
+      onProgress?.(1);
+      const parsed = schema.safeParse(corpo);
+      if (!parsed.success) {
+        return reject(
+          new ApiError('resposta_invalida', { status: xhr.status, details: parsed.error.issues }),
+        );
+      }
+      resolve(parsed.data);
+    };
+    xhr.send(body);
+  });
+}
+
+export interface UploadOptions<T> {
+  schema: ZodType<T>;
+  /** Fração enviada, de 0 a 1. */
+  onProgress?: (fracao: number) => void;
+  signal?: AbortSignal;
 }
 
 export const api = {

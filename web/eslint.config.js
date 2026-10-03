@@ -32,6 +32,11 @@ export default tseslint.config(
     },
   },
   {
+    // O service worker do compartilhamento roda fora da janela: os globais são outros.
+    files: ['public/sw.js'],
+    languageOptions: { ecmaVersion: 2022, globals: globals.serviceworker },
+  },
+  {
     // shadcn/ui exporta o componente e o `cva` do mesmo arquivo — é o padrão da biblioteca.
     files: ['src/components/ui/**/*.tsx'],
     rules: { 'react-refresh/only-export-components': 'off' },

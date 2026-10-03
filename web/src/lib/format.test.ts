@@ -3,6 +3,7 @@ import {
   DecimalInvalidoError,
   formatData,
   formatDataHora,
+  haQuanto,
   formatDecimal,
   formatDiaMes,
   formatHora,
@@ -100,5 +101,15 @@ describe('parseMoeda', () => {
     for (const v of ['', '1,500.00', '15.5', '1,234', 'abc', '-10']) {
       expect(parseMoeda(v)).toBeNull();
     }
+  });
+});
+
+describe('haQuanto', () => {
+  const agora = Date.parse('2026-10-01T12:00:00Z');
+  it('fala em minutos, horas e dias', () => {
+    expect(haQuanto('2026-10-01T11:55:00Z', agora)).toBe('há 5 minutos');
+    expect(haQuanto('2026-10-01T10:00:00Z', agora)).toBe('há 2 horas');
+    expect(haQuanto('2026-09-30T12:00:00Z', agora)).toBe('ontem');
+    expect(haQuanto('2026-09-28T12:00:00Z', agora)).toBe('há 3 dias');
   });
 });

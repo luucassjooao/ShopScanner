@@ -15,7 +15,22 @@ import { divRound, fromCents, toCents } from './money';
  * O MSW usa estas funções para montar /summary e /products; o backend real fará o mesmo lá.
  */
 
-const STATUSES: OrderStatus[] = ['AWAITING_PAYMENT', 'TO_SETTLE', 'SETTLED', 'REFUNDED', 'FROZEN'];
+const STATUSES: OrderStatus[] = [
+  'AWAITING_PAYMENT',
+  'TO_SETTLE',
+  'SETTLED',
+  'REFUNDED',
+  'FROZEN',
+  'INELIGIBLE',
+];
+
+/**
+ * GMV elegível: só o que está a liquidar ou já liquidado. É o número que a creator vê
+ * no app do TikTok, e o que o topo do Início mostra (CLAUDE.md → "Definições dos números").
+ * O resto — aguardando pagamento, inelegível, reembolsado e retido — vai numa linha à parte.
+ */
+export const GMV_ELEGIVEL: OrderStatus[] = ['TO_SETTLE', 'SETTLED'];
+export const ehElegivel = (status: OrderStatus) => GMV_ELEGIVEL.includes(status);
 
 /** Venda por anúncio da loja: dedução, não campo oficial. Único lugar que decide isso. */
 export function isShopAdsSale(sku: OrderSku): boolean {
@@ -142,10 +157,16 @@ export function summarize(orders: Order[]): Omit<Summary, 'goal'> {
   }
 
   const gmvStatus = somaPor(itens.map(({ o, sku }) => [o.status, toCents(sku.gmv)]));
+  const elegivel = itens.reduce(
+    (t, { o, sku }) => t + (ehElegivel(o.status) ? toCents(sku.gmv) : 0n),
+    0n,
+  );
   const gmvCanal = somaPor(itens.map(({ sku }) => [sku.channel, toCents(sku.gmv)]));
 
   return {
     gmv: fromCents(gmv),
+    gmvEligible: fromCents(elegivel),
+    gmvIneligible: fromCents(gmv - elegivel),
     commissionEstimated: fromCents(STATUSES.reduce((t, s) => t + toCents(porStatus[s]), 0n)),
     commissionToReceive: porStatus.TO_SETTLE,
     commissionSettled: fromCents(settled),

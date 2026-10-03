@@ -15,7 +15,20 @@ async function iniciarMocks() {
   await worker.start({ onUnhandledRequest: 'bypass' });
 }
 
+/**
+ * Service worker do destino de compartilhamento (manifest → `share_target`).
+ * Só em produção: em desenvolvimento o escopo `/` é do worker do MSW, e dois
+ * workers no mesmo escopo brigam pelo controle da página.
+ */
+function registrarCompartilhamento() {
+  if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('/sw.js').catch(() => {
+    // Sem service worker o app funciona igual; só não aparece no menu de compartilhar.
+  });
+}
+
 void iniciarMocks().then(() => {
+  registrarCompartilhamento();
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>

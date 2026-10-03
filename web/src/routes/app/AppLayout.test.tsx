@@ -5,7 +5,16 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { AppLayout } from './AppLayout';
 
 const sessao = {
-  user: { id: 'u_1', name: 'Carolina Dias', email: 'voce@email.com.br' },
+  user: {
+    id: 'u_1',
+    name: 'Carolina Dias',
+    email: 'voce@email.com.br',
+    emailVerified: true,
+    avatarUrl: null,
+    hasPassword: true,
+    identities: [],
+    acceptedTermsVersion: '2026-09-22',
+  },
   accounts: [
     {
       id: 'acc_1',
@@ -13,6 +22,8 @@ const sessao = {
       avatarUrl: null,
       shopConnected: false,
       connectedAt: '2026-08-02T12:00:00.000Z',
+      lastSyncedAt: null,
+      expiresAt: null,
     },
   ],
 };
