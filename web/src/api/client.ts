@@ -33,17 +33,23 @@ export class ApiError extends Error {
   readonly status: number;
   /** Código de negócio devolvido pelo backend, quando houver. */
   readonly serverCode?: string;
+  /**
+   * Mensagem técnica do backend. Serve para log e suporte: `message` é sempre o texto
+   * em português da categoria, e é ele que a interface mostra.
+   */
+  readonly serverMessage?: string;
   readonly details?: unknown;
 
   constructor(
     code: ApiErrorCode,
-    { status = 0, message, serverCode, details, cause }: ApiErrorOptions = {},
+    { status = 0, serverCode, serverMessage, details, cause }: ApiErrorOptions = {},
   ) {
-    super(message ?? MENSAGEM[code], { cause });
+    super(MENSAGEM[code], { cause });
     this.name = 'ApiError';
     this.code = code;
     this.status = status;
     this.serverCode = serverCode;
+    this.serverMessage = serverMessage;
     this.details = details;
   }
 
@@ -55,8 +61,8 @@ export class ApiError extends Error {
 
 interface ApiErrorOptions {
   status?: number;
-  message?: string;
   serverCode?: string;
+  serverMessage?: string;
   details?: unknown;
   cause?: unknown;
 }
@@ -109,7 +115,7 @@ async function readErrorBody(response: Response) {
       const obj = data as { code?: unknown; message?: unknown; details?: unknown };
       return {
         serverCode: typeof obj.code === 'string' ? obj.code : undefined,
-        message: typeof obj.message === 'string' ? obj.message : undefined,
+        serverMessage: typeof obj.message === 'string' ? obj.message : undefined,
         details: obj.details,
       };
     }
@@ -174,11 +180,11 @@ export async function request<T = void>(
   }
 
   if (!response.ok) {
-    const { serverCode, message, details } = await readErrorBody(response);
+    const { serverCode, serverMessage, details } = await readErrorBody(response);
     throw new ApiError(codeFromStatus(response.status), {
       status: response.status,
       serverCode,
-      message,
+      serverMessage,
       details,
     });
   }
@@ -186,10 +192,7 @@ export async function request<T = void>(
   if (!schema) return undefined as T;
 
   if (response.status === 204) {
-    throw new ApiError('resposta_invalida', {
-      status: 204,
-      message: 'Esperávamos um corpo na resposta e veio vazio.',
-    });
+    throw new ApiError('resposta_invalida', { status: 204 });
   }
 
   let data: unknown;
@@ -260,7 +263,7 @@ export function upload<T>(
           new ApiError(codeFromStatus(xhr.status), {
             status: xhr.status,
             serverCode: typeof obj.code === 'string' ? obj.code : undefined,
-            message: typeof obj.message === 'string' ? obj.message : undefined,
+            serverMessage: typeof obj.message === 'string' ? obj.message : undefined,
             details: obj.details,
           }),
         );

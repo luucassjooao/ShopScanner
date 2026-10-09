@@ -43,8 +43,26 @@ describe('request', () => {
     );
     const erro = await request('/auth/session', { schema }).catch((e: unknown) => e);
     expect(erro).toBeInstanceOf(ApiError);
-    expect(erro).toMatchObject({ code: 'nao_autenticado', status: 401, message: 'expirou' });
+    expect(erro).toMatchObject({
+      code: 'nao_autenticado',
+      status: 401,
+      message: 'A sua sessão expirou. Entre de novo para continuar.',
+      serverMessage: 'expirou',
+    });
     expect((erro as ApiError).isRetryable).toBe(false);
+  });
+
+  it('nunca leva a mensagem técnica do backend para message, nem em 4xx de validação', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        respond({ code: 'X', message: 'Esperávamos um campo que não veio' }, { status: 400 }),
+      ),
+    );
+    const erro = (await request('/x', { schema }).catch((e: unknown) => e)) as ApiError;
+    expect(erro.message).not.toContain('Esperávamos');
+    expect(erro.message).toBe('Algum dado enviado não foi aceito. Revise e tente de novo.');
+    expect(erro.serverCode).toBe('X');
   });
 
   it('transforma 500 em servidor, e esse vale repetir', async () => {

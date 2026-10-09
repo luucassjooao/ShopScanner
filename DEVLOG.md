@@ -18,12 +18,22 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 - **Backend:** `api/` servindo o contrato de dados (`/summary`, `/orders`, `/videos`, `/products`, `/plans`, `/goals`, `/me/notifications`, `/me/export`, `DELETE /me`) sobre o banco, além de conta, sessão, Google e conexão com o TikTok. Falta o import de arquivo (`/imports`, `/reconciliation`, `/payouts`) e a sincronização com o TikTok.
 - **Integração TikTok:** Affiliate Creator API não liberada para o Brasil; ticket aberto com a TikTok. Display API disponível, app ainda não submetido.
 - **Telas prontas:** /, /entrar, /criar-conta, /recuperar, /termos, /privacidade, /inicio-rapido, /inicio, /vendas, /videos, /videos/:id, /produtos, /planejamento, /configuracoes, /avisos, /reconciliacao.
-- **Próximo passo:** apontar o front para a API de verdade (`VITE_API_URL`) e desligar o MSW; depois, import de arquivo na API; no front, decidir as propostas de contrato da entrada de 23/09 e preencher `web/src/lib/textos.ts`.
+- **Próximo passo:** apontar o front para a API de verdade (`VITE_API_URL`) e desligar o MSW; depois, import de arquivo na API; no front, decidir as propostas de contrato da entrada de 23/09, e receber do dono os dados legais de `web/src/lib/textos.ts` (CNPJ, endereço, prazos, comarca).
 - **Bloqueios:** aprovação da categoria "Creator collaborations" para o Brasil; confirmação de que o identificador de conteúdo do pedido é o mesmo id do vídeo.
 
 ---
 
 ## Entradas
+
+### 2026-10-09 · [front] Tirar o texto técnico da API da tela e testar o mapa de erros
+
+**Fiz:** `ApiError.message` passou a ser sempre o texto em português da categoria; a mensagem que vem no corpo do erro foi para `serverMessage`, só para log e suporte. Antes, ~15 telas mostravam `error.message` direto, então qualquer `message` da API ia para a tela. Também criei `lib/textos.test.ts`, cobrindo os nove códigos do contrato (Google, TikTok e `SESSAO_EXPIRADA`) e o fallback.
+**Por quê:** o contrato diz que a mensagem técnica da API não aparece em tela, e a checagem estava só na prosa, não no código.
+**Funcionou:** 128 testes (eram 115), lint, typecheck e prettier limpos. O mapa de `textos.ts` já tinha os nove códigos e o fallback; o que faltava era teste e o caminho do `message`.
+**Não funcionou:** a troca de senha com senha atual errada passou a mostrar o texto genérico "Algum dado enviado não foi aceito…" em vez de "A senha atual não confere.". O contrato não tem código para isso (o MSW manda só `message`), e não inventei um. O teste foi ajustado e a proposta de código fica pendente.
+**Decidi:** a tela trata erro pelo código (`serverCode`) e pela categoria (`code`); texto livre da API não entra em tela. `GOOGLE_ONLY` (409 em `/auth/forgot-password`, em `Recuperar.tsx`) não está no contrato e continua sem entrada em `textos.ts`; a decisão é da raiz.
+**Pendente:** (1) os placeholders de `textos.ts` (`[CNPJ]`, `[E-MAIL DE CONTATO]`, prazos, comarca, provedores, encarregado) precisam dos dados reais do dono — não são código e não invento; (2) código para senha atual errada e para `GOOGLE_ONLY` na raiz; (3) `/payouts` segue sem tela e sem definição de `expected`, `settled` e `pending` no contrato.
+**Commit:** a registrar
 
 ### 2026-10-02 · [front] Dizer nos gráficos que o GMV é bruto, e usar o contrato novo das listas
 
