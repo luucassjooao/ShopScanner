@@ -44,7 +44,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** o `.env` real estava com `JWT_SECRET` e `REFRESH_TOKEN_PEPPER` abaixo de 32 caracteres e chaves do Google e do TikTok vazias, o que recusava o boot. Corrigido pelo dono, não por código.
 **Decidi:** o `.env.example` usa as credenciais de desenvolvimento do compose, que já estão versionadas; não é segredo.
 **Pendente:** tratar string vazia como ausente em `config/env.ts` para as variáveis opcionais do Google e do TikTok. Aguarda a confirmação do líder antes de implementar.
-**Commit:** a registrar
+**Commit:** d5ccbf4
 
 ### 2026-10-09 · [front] Traduzir EMAIL_EM_USO no cadastro e na troca de e-mail
 
