@@ -34,7 +34,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada. Na primeira versão do helper sobrou uma função antiga sem uso; foi removida antes do commit.
 **Decidi:** o teto continua por IP e não ganhou limite por usuário, porque ainda não há usuário real que justifique. A linha de contrato em `CLAUDE.md` foi escrita pelo líder e entra neste commit. Não entra a linha de "Detalhe de produto e de vídeo", que não foi pedida aqui.
 **Pendente:** pergunta do líder sobre como o front exercita o estado "TikTok Shop não conectado" sem desconectar em cascata. Respondida sem implementar; aguarda decisão.
-**Commit:** a registrar
+**Commit:** 8b712e5
 
 ### 2026-10-09 · [api] Tratar opcional vazia como ausente, sem afrouxar segredo
 
