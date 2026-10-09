@@ -34,7 +34,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** duas coisas que só aparecem fora do teste. (1) O `DATABASE_URL` do `.env.example` aponta para `usuario:senha@localhost`, que não é o banco que o `docker-compose.yml` cria (`shopscanner:shopscanner`) — quem segue o README toma `password authentication failed` no primeiro comando. (2) As variáveis opcionais `GOOGLE_*` e `TIKTOK_*` derrubam o boot quando estão **presentes e vazias**, em vez de ausentes; o `api/CLAUDE.MD` promete que são opcionais, mas isso só vale se a linha não existir, e vazio é o estado natural de quem copiou o exemplo. Contornei comentando as quatro linhas; a correção no Zod ficou para a sessão da API.
 **Decidi:** `localhost:5173` e `localhost:3333` são origens diferentes do **mesmo site**, então `SameSite=Lax` não atrapalha e o desenvolvimento não precisa de HTTPS nem de proxy. A varredura das 16 telas contra a API real vai em sessão separada, e a ordem é **anotar tudo antes de corrigir**: medir o tamanho do desalinhamento vale mais que consertar a primeira tela que aparecer.
 **Pendente:** a varredura em si. `POST /me/avatar`, `/imports` e `/reconciliation` ainda não existem, então o painel de import, a reconciliação e o avatar vão falhar — é esperado, e o que importa é *como* falham. Login com Google segue inoperante de propósito: o app no Google ainda não foi criado, então o caminho `GOOGLE_INDISPONIVEL` vai ser exercitado de verdade pela primeira vez. `lastSyncedAt` vem nulo do seed, o que testa o "Atualizado há X" e o lembrete de 5 dias.
-**Commit:** a preencher
+**Commit:** 9baebee
 
 ### 2026-10-09 · [api] Corrigir o DATABASE_URL do .env.example
 
