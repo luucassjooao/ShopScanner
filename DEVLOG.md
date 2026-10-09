@@ -33,7 +33,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada rodado no banco de dev. `db:migrate` segue bloqueado pelo `.env`. Conferido por consulta: o banco de dev tem 1 usuário e nenhuma identidade, todos com e-mail, então a 0005 não encontra linha nula.
 **Decidi:** a troca de e-mail sem senha continua permitida só quando a conta não tem senha (quem só tem Google). Nome e aceite não pedem senha. A linha de contrato em `CLAUDE.md` foi escrita pelo líder do projeto no mesmo commit.
 **Pendente:** `/imports`, multipart e `POST /me/avatar` seguem sem dependência aprovada pela pessoa dona do projeto. Totais de referência não conferidos (ambiente de dev bloqueado).
-**Commit:** a registrar
+**Commit:** 333e8bb
 
 ### 2026-10-09 · [repo] Tirar `/payouts` do contrato e fechar a regra de código de erro
 
