@@ -33,7 +33,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** a troca de senha com senha atual errada passou a mostrar o texto genérico "Algum dado enviado não foi aceito…" em vez de "A senha atual não confere.". O contrato não tem código para isso (o MSW manda só `message`), e não inventei um. O teste foi ajustado e a proposta de código fica pendente.
 **Decidi:** a tela trata erro pelo código (`serverCode`) e pela categoria (`code`); texto livre da API não entra em tela. `GOOGLE_ONLY` (409 em `/auth/forgot-password`, em `Recuperar.tsx`) não está no contrato e continua sem entrada em `textos.ts`; a decisão é da raiz.
 **Pendente:** (1) os placeholders de `textos.ts` (`[CNPJ]`, `[E-MAIL DE CONTATO]`, prazos, comarca, provedores, encarregado) precisam dos dados reais do dono — não são código e não invento; (2) código para senha atual errada e para `GOOGLE_ONLY` na raiz; (3) `/payouts` segue sem tela e sem definição de `expected`, `settled` e `pending` no contrato.
-**Commit:** a registrar
+**Commit:** 87853dc
 
 ### 2026-10-02 · [front] Dizer nos gráficos que o GMV é bruto, e usar o contrato novo das listas
 
