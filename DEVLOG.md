@@ -34,7 +34,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada.
 **Decidi:** `hasSales` ignora `shopConnected` e a procedência do pedido, como o contrato commitado em `18f103f` define.
 **Pendente:** o seed (conta só com `VIDEOS` e pedidos `FILE`) segue aguardando a decisão do líder, com o delete manual da linha `SHOP` no banco de dev.
-**Commit:** a registrar
+**Commit:** 50f980a
 
 ### 2026-10-09 · [api] Mostrar venda do vídeo pelo que existe, não pela loja conectada
 
