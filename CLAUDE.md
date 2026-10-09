@@ -64,9 +64,15 @@ GET  /auth/google/callback     -> cria a sessão e volta para o app
 GET  /auth/identities          -> [{ provider: "GOOGLE", email, linkedAt, canUnlink }]
 DELETE /auth/identities/:provider  -> só quando canUnlink; 409 se for o único acesso
 
-PATCH /me                      { name?, email?, acceptedTermsVersion? } -> SessionUser
+PATCH /me                      { name?, email?, acceptedTermsVersion?, currentPassword? }
+                                 -> SessionUser
                                  acceptedTermsVersion é o aceite de quem criou a conta
                                  pelo Google, pedido no primeiro acesso
+                                 currentPassword é exigido para trocar o email quando
+                                 hasPassword é true: sem isso, uma sessão sequestrada
+                                 troca o email, pede recuperação e fica com a conta.
+                                 Trocar o email marca emailVerified: false, derruba as
+                                 outras sessões e emite cookie novo para a aba atual
 PUT  /me/password              { currentPassword?, newPassword }
                                  currentPassword só é exigido quando hasPassword é true
 POST /me/avatar                multipart -> { avatarUrl }

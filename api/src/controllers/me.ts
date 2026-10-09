@@ -25,6 +25,8 @@ const perfil = z.object({
   name: z.string().trim().min(2).max(120).optional(),
   email: z.email().max(255).optional(),
   acceptedTermsVersion: z.string().min(1).max(40).optional(),
+  // Exigida pelo service só quando há senha e o e-mail muda.
+  currentPassword: z.string().min(1).max(200).optional(),
 });
 
 /** `PATCH /me`: devolve o `SessionUser`. Se o e-mail mudou, a sessão nova vem em cookie. */

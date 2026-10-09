@@ -4,7 +4,7 @@ import { many, sql, type Executor } from '../lib/db.ts';
 const linha = z.object({
   id: z.guid(),
   name: z.string(),
-  email: z.string().nullable(),
+  email: z.string(),
   email_verified_at: z.date().nullable(),
   password_hash: z.string().nullable(),
   avatar_url: z.string().nullable(),
@@ -18,7 +18,7 @@ type Linha = z.infer<typeof linha>;
 export type Usuario = {
   id: string;
   name: string;
-  email: string | null;
+  email: string;
   emailVerified: boolean;
   passwordHash: string | null;
   avatarUrl: string | null;
@@ -151,11 +151,11 @@ export async function trocarSenha(
 
 const linhaIdentidade = z.object({
   provider: z.literal('GOOGLE'),
-  email: z.string().nullable(),
+  email: z.string(),
   created_at: z.date(),
 });
 
-export type Identidade = { provider: 'GOOGLE'; email: string | null; linkedAt: Date };
+export type Identidade = { provider: 'GOOGLE'; email: string; linkedAt: Date };
 
 export async function buscarIdentidade(
   provider: 'GOOGLE',
@@ -171,7 +171,7 @@ export async function buscarIdentidade(
 }
 
 export async function criarIdentidade(
-  dados: { userId: string; provider: 'GOOGLE'; providerUserId: string; email: string | null },
+  dados: { userId: string; provider: 'GOOGLE'; providerUserId: string; email: string },
   db: Executor = sql,
 ): Promise<void> {
   await db`insert into auth_identities (user_id, provider, provider_user_id, email)

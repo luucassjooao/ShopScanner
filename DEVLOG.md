@@ -25,6 +25,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [api] Exigir senha atual para trocar e-mail e tornar e-mail obrigatório
+
+**Fiz:** `PATCH /me` aceita `currentPassword`, exigido quando a conta tem senha e o e-mail muda; errado ou ausente responde 400 `SENHA_ATUAL_INCORRETA` (o mesmo código da troca de senha). Migração `0005` põe `NOT NULL` em `users.email` e `auth_identities.email`.
+**Por quê:** com sessão sequestrada, trocar o e-mail e pedir recuperação entregava a conta de forma permanente. A coluna era nullable por prevenção a login por TikTok, que o contrato descartou; nenhum caminho de criação produz e-mail nulo.
+**Funcionou:** `npm test` com 57 de 57 (2 novos: troca de e-mail em conta com senha exige a senha certa; nome e aceite de termos seguem sem senha). Typecheck, lint e prettier limpos. A 0005 roda como parte do setup do banco de teste.
+**Não funcionou:** nada rodado no banco de dev. `db:migrate` segue bloqueado pelo `.env`. Conferido por consulta: o banco de dev tem 1 usuário e nenhuma identidade, todos com e-mail, então a 0005 não encontra linha nula.
+**Decidi:** a troca de e-mail sem senha continua permitida só quando a conta não tem senha (quem só tem Google). Nome e aceite não pedem senha. A linha de contrato em `CLAUDE.md` foi escrita pelo líder do projeto no mesmo commit.
+**Pendente:** `/imports`, multipart e `POST /me/avatar` seguem sem dependência aprovada pela pessoa dona do projeto. Totais de referência não conferidos (ambiente de dev bloqueado).
+**Commit:** a registrar
+
 ### 2026-10-09 · [repo] Tirar `/payouts` do contrato e fechar a regra de código de erro
 
 **Fiz:** removi `GET /payouts` do contrato e escrevi três decisões em "Decisões de contrato": a recuperação de senha responde sempre 204, erro que o usuário precisa entender tem `code` estável, e `/payouts` só volta com definição e tela.

@@ -2,6 +2,7 @@ import { sql, transaction } from '../lib/db.ts';
 import { AppError } from '../lib/errors.ts';
 import { MOTIVO } from '../config/constants.ts';
 import { listarMetas, listarPlanos, avisos } from './planning.ts';
+import { conferirSenha } from '../lib/password.ts';
 import { abrirSessao, montarSessao, type Contexto, type Tokens } from './auth.ts';
 import * as pedidos from '../repositories/orders.ts';
 import * as sessoes from '../repositories/sessions.ts';
@@ -11,21 +12,35 @@ import type { Usuario } from '../repositories/users.ts';
 
 const TUDO = { from: new Date(0), to: new Date('2100-01-01T00:00:00Z') };
 
+export type AtualizacaoPerfil = {
+  name?: string;
+  email?: string;
+  acceptedTermsVersion?: string;
+  currentPassword?: string;
+};
+
 /**
  * `PATCH /me`. Nome e aceite dos termos são dados comuns. E-mail é credencial:
  * trocá-lo derruba as outras sessões, como a troca de senha. Esta aba ganha
  * sessão nova, para a pessoa não ser expulsa da tela em que está.
  *
- * Decisão: a troca não pede senha atual. O contrato não tem o campo, e a
- * sessão já prova quem é. Se o contrato ganhar `currentPassword`, entra aqui.
+ * Com senha, trocar o e-mail exige a senha atual. Sem isso, uma sessão
+ * sequestrada troca o e-mail, pede recuperação e fica com a conta. Quem só tem
+ * Google não tem senha para pedir, então troca pela sessão.
  */
 export async function atualizarPerfil(
   usuario: Usuario,
-  dados: { name?: string; email?: string; acceptedTermsVersion?: string },
+  { currentPassword, ...dados }: AtualizacaoPerfil,
   ctx: Contexto,
 ): Promise<{ usuario: Usuario; tokens: Tokens | null }> {
   const trocaEmail =
-    dados.email !== undefined && dados.email.toLowerCase() !== usuario.email?.toLowerCase();
+    dados.email !== undefined && dados.email.toLowerCase() !== usuario.email.toLowerCase();
+
+  if (trocaEmail && usuario.passwordHash !== null) {
+    const confere =
+      currentPassword !== undefined && (await conferirSenha(usuario.passwordHash, currentPassword));
+    if (!confere) throw new AppError(400, 'SENHA_ATUAL_INCORRETA', 'A senha atual não confere');
+  }
 
   if (trocaEmail && (await usuarios.buscarPorEmail(dados.email!))) {
     throw new AppError(409, 'EMAIL_EM_USO', 'Já existe uma conta com este e-mail');

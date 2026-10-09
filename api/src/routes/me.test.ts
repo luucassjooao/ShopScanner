@@ -104,6 +104,33 @@ describe('editar perfil', () => {
     }
   });
 
+  it('troca de e-mail de conta com senha exige a senha atual', async () => {
+    const acesso = await registrar('ana@exemplo.com');
+
+    const semSenha = await editar(acesso, { email: 'ana.nova@exemplo.com' });
+    expect(semSenha.statusCode).toBe(400);
+    expect(semSenha.json().error).toBe('SENHA_ATUAL_INCORRETA');
+
+    const errada = await editar(acesso, {
+      email: 'ana.nova@exemplo.com',
+      currentPassword: 'chute-errado',
+    });
+    expect(errada.statusCode).toBe(400);
+    expect(errada.json().error).toBe('SENHA_ATUAL_INCORRETA');
+
+    const certa = await editar(acesso, { email: 'ana.nova@exemplo.com', currentPassword: SENHA });
+    expect(certa.statusCode).toBe(200);
+    expect(certa.json().email).toBe('ana.nova@exemplo.com');
+  });
+
+  it('nome e aceite de termos não pedem senha atual, mesmo com senha', async () => {
+    const acesso = await registrar('ana@exemplo.com');
+
+    const res = await editar(acesso, { name: 'Ana Maria', acceptedTermsVersion: '2026-10-01' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ name: 'Ana Maria', acceptedTermsVersion: '2026-10-01' });
+  });
+
   it('não troca para um e-mail que já é de outra conta', async () => {
     const acesso = await criarContaDoGoogle('cris@gmail.com');
     await registrar('bia@exemplo.com');
