@@ -30,7 +30,10 @@ export async function buildApp() {
   await app.register(rateLimit, {
     // No teste o limite global sai da frente; o que se quer provar lá são os
     // limites de /auth, não o teto por IP.
-    max: env.NODE_ENV === 'test' ? 1000 : 100,
+    // ponytail: teto por IP. NAT de operadora móvel põe muita gente atrás do mesmo
+    // IP, então é o limite conhecido deste modelo. Upgrade: limite por usuário
+    // autenticado, quando houver sinal de que 300 incomoda.
+    max: env.NODE_ENV === 'test' ? 1000 : 300,
     timeWindow: '1 minute',
     // preHandler, e não onRequest, porque o limite do login é por e-mail mais
     // IP — e o e-mail só existe depois do corpo lido.

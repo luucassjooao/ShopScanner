@@ -137,13 +137,19 @@ const cookieOauth = {
   signed: true,
 } as const;
 
-/** Erro sempre volta para a tela de login com um código curto, nunca com detalhe. */
-function paraLogin(reply: FastifyReply, codigo: string) {
-  return reply.redirect(`${env.WEB_ORIGIN}/entrar?erro=${codigo}`, 302);
+/**
+ * Erro sempre volta com um código curto, nunca com detalhe. Com sessão ativa o
+ * fluxo era um vínculo feito em Configurações, então o erro volta para lá; sem
+ * sessão, volta para o login.
+ */
+async function paraErroGoogle(request: FastifyRequest, reply: FastifyReply, codigo: string) {
+  const logado = await lerSessao(request);
+  const destino = logado ? '/configuracoes' : '/entrar';
+  return reply.redirect(`${env.WEB_ORIGIN}${destino}?erro=${codigo}`, 302);
 }
 
-export async function iniciarGoogle(_request: FastifyRequest, reply: FastifyReply) {
-  if (!google.configurado()) return paraLogin(reply, 'GOOGLE_INDISPONIVEL');
+export async function iniciarGoogle(request: FastifyRequest, reply: FastifyReply) {
+  if (!google.configurado()) return paraErroGoogle(request, reply, 'GOOGLE_INDISPONIVEL');
 
   const state = randomBytes(32).toString('base64url');
   const nonce = randomBytes(16).toString('base64url');
@@ -163,7 +169,7 @@ export async function retornoGoogle(request: FastifyRequest, reply: FastifyReply
   const assinado = request.cookies[COOKIE_OAUTH];
   reply.clearCookie(COOKIE_OAUTH, { ...cookieOauth, signed: false });
 
-  if (query.error) return paraLogin(reply, 'GOOGLE_RECUSADO');
+  if (query.error) return paraErroGoogle(request, reply, 'GOOGLE_RECUSADO');
 
   const aberto = assinado ? request.unsignCookie(assinado) : null;
   if (!aberto?.valid || !aberto.value) throw RECUSADO;
@@ -175,7 +181,8 @@ export async function retornoGoogle(request: FastifyRequest, reply: FastifyReply
 
   const idToken = await google.trocarCodigo(query.code, inicio.data.verifier);
   const conta = await google.validarIdToken(idToken, inicio.data.nonce);
-  if (!conta.emailVerificado || !conta.email) return paraLogin(reply, 'EMAIL_NAO_VERIFICADO');
+  if (!conta.emailVerificado || !conta.email)
+    return paraErroGoogle(request, reply, 'EMAIL_NAO_VERIFICADO');
 
   const logado = await lerSessao(request);
   try {
@@ -187,7 +194,8 @@ export async function retornoGoogle(request: FastifyRequest, reply: FastifyReply
     // Sem tokens: já estava logado, era só vincular. A sessão atual continua.
     if (tokens) definirCookiesDeSessao(reply, tokens);
   } catch (erro) {
-    if (erro instanceof AppError && erro.statusCode === 409) return paraLogin(reply, erro.code);
+    if (erro instanceof AppError && erro.statusCode === 409)
+      return paraErroGoogle(request, reply, erro.code);
     throw erro;
   }
   return reply.redirect(env.WEB_ORIGIN, 302);

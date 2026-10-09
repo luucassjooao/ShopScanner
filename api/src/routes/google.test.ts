@@ -2,6 +2,7 @@ import { createHash, generateKeyPairSync, sign } from 'node:crypto';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../app.ts';
 import { COOKIE_ACESSO, COOKIE_OAUTH } from '../config/constants.ts';
+import { env } from '../config/env.ts';
 import { limparCacheDeChaves } from '../lib/google.ts';
 import { AMBIENTE_DE_TESTE } from '../test/env.ts';
 import { comCookies, cookiesDe, CSRF, limparBanco } from '../test/helpers.ts';
@@ -85,6 +86,84 @@ function voltar(inicio: { cookie: string }, query: string) {
     headers: { cookie: inicio.cookie },
   });
 }
+
+/** Com a sessão ativa o erro volta para Configurações; sem ela, para o login. */
+describe('erro do Google: para onde a mensagem volta', () => {
+  const ondeEstou = (acesso?: string) =>
+    acesso
+      ? `${AMBIENTE_DE_TESTE.WEB_ORIGIN}/configuracoes`
+      : `${AMBIENTE_DE_TESTE.WEB_ORIGIN}/entrar`;
+
+  async function registrar() {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      headers: CSRF,
+      payload: {
+        name: 'Eva',
+        email: 'eva@exemplo.com',
+        password: 'senha-bem-longa-1',
+        acceptedTermsVersion: '2026-09-01',
+      },
+    });
+    return cookiesDe(res)[COOKIE_ACESSO]!;
+  }
+
+  /** Sem as chaves, o início responde indisponível. Restaura o que estava antes. */
+  async function semChavesDoGoogle(fn: () => Promise<void>) {
+    const antes = {
+      id: env.GOOGLE_CLIENT_ID,
+      segredo: env.GOOGLE_CLIENT_SECRET,
+      redirect: env.GOOGLE_REDIRECT_URI,
+    };
+    env.GOOGLE_CLIENT_ID = undefined;
+    env.GOOGLE_CLIENT_SECRET = undefined;
+    env.GOOGLE_REDIRECT_URI = undefined;
+    try {
+      await fn();
+    } finally {
+      env.GOOGLE_CLIENT_ID = antes.id;
+      env.GOOGLE_CLIENT_SECRET = antes.segredo;
+      env.GOOGLE_REDIRECT_URI = antes.redirect;
+    }
+  }
+
+  it('recusa com sessão volta para /configuracoes', async () => {
+    const acesso = await registrar();
+    const inicio = await iniciar();
+    const res = await app.inject({
+      method: 'GET',
+      url: '/auth/google/callback?error=access_denied',
+      headers: { cookie: `${inicio.cookie}; ${COOKIE_ACESSO}=${acesso}` },
+    });
+    expect(res.headers.location).toBe(`${ondeEstou(acesso)}?erro=GOOGLE_RECUSADO`);
+  });
+
+  it('recusa sem sessão continua em /entrar', async () => {
+    const inicio = await iniciar();
+    const res = await voltar(inicio, 'error=access_denied');
+    expect(res.headers.location).toBe(`${ondeEstou()}?erro=GOOGLE_RECUSADO`);
+  });
+
+  it('Google indisponível com sessão volta para /configuracoes', async () => {
+    const acesso = await registrar();
+    await semChavesDoGoogle(async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/auth/google/start',
+        headers: { cookie: `${COOKIE_ACESSO}=${acesso}` },
+      });
+      expect(res.headers.location).toBe(`${ondeEstou(acesso)}?erro=GOOGLE_INDISPONIVEL`);
+    });
+  });
+
+  it('Google indisponível sem sessão continua em /entrar', async () => {
+    await semChavesDoGoogle(async () => {
+      const res = await app.inject({ method: 'GET', url: '/auth/google/start' });
+      expect(res.headers.location).toBe(`${ondeEstou()}?erro=GOOGLE_INDISPONIVEL`);
+    });
+  });
+});
 
 describe('login com Google', () => {
   it('entra, cria a conta e confere o PKCE', async () => {

@@ -26,6 +26,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [api] Subir o teto por IP para 300 e devolver erro do Google à tela certa
+
+**Fiz:** o teto global por IP passou de 100 para 300 req/min, com um `ponytail:` dizendo que é por IP, que NAT de operadora é o limite conhecido e qual é o upgrade. Erro do fluxo Google (recusa, e-mail não verificado, conflito de vínculo e Google indisponível no início) volta para `/configuracoes?erro=CODIGO` quando há sessão, e para `/entrar?erro=CODIGO` quando não há.
+**Por quê:** a varredura do front estourou o teto só navegando, porque cada tela faz 8 a 10 consultas. E quem já estava logado e tentava vincular o Google era jogado de volta ao Início sem explicação, porque a guarda de rota tirava a mensagem de `/entrar`.
+**Funcionou:** `google.test.ts` com 4 testes novos cobrindo recusa e Google indisponível, cada um com e sem sessão. Os limites de `/auth` não foram tocados. Suíte 63 de 63, typecheck, lint e prettier limpos.
+**Não funcionou:** nada. Na primeira versão do helper sobrou uma função antiga sem uso; foi removida antes do commit.
+**Decidi:** o teto continua por IP e não ganhou limite por usuário, porque ainda não há usuário real que justifique. A linha de contrato em `CLAUDE.md` foi escrita pelo líder e entra neste commit. Não entra a linha de "Detalhe de produto e de vídeo", que não foi pedida aqui.
+**Pendente:** pergunta do líder sobre como o front exercita o estado "TikTok Shop não conectado" sem desconectar em cascata. Respondida sem implementar; aguarda decisão.
+**Commit:** a registrar
+
 ### 2026-10-09 · [api] Tratar opcional vazia como ausente, sem afrouxar segredo
 
 **Fiz:** `config/env.ts` troca string vazia por ausente em sete variáveis opcionais, por lista explícita: as quatro do Google e do TikTok mais os dois redirects e `TIKTOK_SHOP_ENABLED` (que vazio vira `false`, o default). Segredo ou banco obrigatório continua fora da lista.
