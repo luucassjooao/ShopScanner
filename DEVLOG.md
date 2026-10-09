@@ -34,7 +34,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada. A primeira versão do teste ainda afirmava nulo para tudo sem loja, e o teste falhou como esperado.
 **Decidi:** o critério de nulo é "não há linha de pedido com esse `content_id`". Não há campo novo, e a lista já funcionava assim pela junção.
 **Pendente:** o seed ainda liga a linha `SHOP` da demonstração e marca os pedidos como `API`. Isso espera decisão do líder antes de mexer.
-**Commit:** a registrar
+**Commit:** c9e9d3f
 
 ### 2026-10-09 · [repo] Tirar de `shopConnected` o poder de esconder venda
 
