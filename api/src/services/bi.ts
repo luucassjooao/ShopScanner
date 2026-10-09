@@ -177,11 +177,10 @@ function mapearVideo(v: LinhaVideo) {
 
 export async function listarVideos(
   p: Periodo,
-  opcoes: { comShop: boolean; sort: OrdemVideos; hashtag?: string; page: number; pageSize: number },
+  opcoes: { sort: OrdemVideos; hashtag?: string; page: number; pageSize: number },
 ) {
   const [linhas, total] = await Promise.all([
     videos.listar(p, {
-      comShop: opcoes.comShop,
       ordem: opcoes.sort,
       hashtag: opcoes.hashtag,
       limite: opcoes.pageSize,
@@ -197,16 +196,14 @@ export async function video(userId: string, id: string) {
   if (!linha) throw AppError.naoEncontrado('Vídeo não encontrado');
 
   const snapshots = await videos.snapshots(linha.account_id, linha.id);
-  // Sem Shop conectado, venda por vídeo é "ainda não disponível", não zero.
-  const vendas = linha.shop_connected
-    ? await videos.vendasDoVideo(linha.account_id, linha.id, linha.views)
-    : null;
+  // Sem venda ligada ao vídeo, o repositório devolve nulo: "ainda não há venda", não zero.
+  const vendas = await videos.vendasDoVideo(linha.account_id, linha.id, linha.views);
 
   return {
     ...mapearVideo({ ...linha, gmv: null, commission: null, gpm: null }),
-    gmv: vendas?.gmv ?? null,
-    commission: vendas?.commission ?? null,
-    gpm: vendas?.gpm ?? null,
+    gmv: vendas.gmv,
+    commission: vendas.commission,
+    gpm: vendas.gpm,
     snapshots: snapshots.map((s) => ({ at: s.at.toISOString(), views: s.views, likes: s.likes })),
   };
 }

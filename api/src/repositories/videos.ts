@@ -26,13 +26,10 @@ export type OrdemVideos = 'postedAt' | 'views' | 'gmv' | 'gpm';
 
 /**
  * Venda por vídeo depende da suposição isolada de que `content_id` do pedido é
- * o id do vídeo. Sem o TikTok Shop conectado, as três colunas saem **nulas** —
- * nunca zero, que a tela leria como "vendeu nada".
+ * o id do vídeo. Só há linha para vídeo que tem venda ligada: vídeo sem venda
+ * fica sem linha aqui, e o `left join` da lista devolve nulo, nunca zero.
  */
-function vendasPorVideo(p: Periodo, comShop: boolean) {
-  if (!comShop)
-    return sql`select null::text as video_id, null::numeric as gmv,
-                                  null::numeric as commission where false`;
+function vendasPorVideo(p: Periodo) {
   return sql`select s.content_id as video_id,
                     sum(s.gmv) as gmv,
                     sum(s.commission_estimated) as commission
@@ -65,7 +62,6 @@ export async function contar(p: Periodo, hashtag?: string) {
 export function listar(
   p: Periodo,
   opcoes: {
-    comShop: boolean;
     ordem: OrdemVideos;
     hashtag?: string;
     limite: number;
@@ -77,7 +73,7 @@ export function listar(
     : sql``;
   return many(
     linhaVideo,
-    sql`with vendas as (${vendasPorVideo(p, opcoes.comShop)})
+    sql`with vendas as (${vendasPorVideo(p)})
         select v.id, v.title, v.description, v.posted_at, v.duration, v.cover_url, v.share_url,
                v.views::int as views, v.likes::int as likes, v.comments::int as comments,
                v.shares::int as shares,
@@ -98,18 +94,14 @@ export function listar(
 
 export async function buscarPorId(userId: string, id: string) {
   const [linha] = await many(
-    z.object({ account_id: z.guid(), shop_connected: z.boolean() }).extend(linhaVideo.shape).omit({
+    z.object({ account_id: z.guid() }).extend(linhaVideo.shape).omit({
       gmv: true,
       commission: true,
       gpm: true,
     }),
     sql`select v.account_id, v.id, v.title, v.description, v.posted_at, v.duration,
                v.cover_url, v.share_url, v.views::int as views, v.likes::int as likes,
-               v.comments::int as comments, v.shares::int as shares,
-               exists (select 1 from provider_connections s
-                        where s.user_id = c.user_id and s.provider = c.provider
-                          and s.kind = 'SHOP' and s.provider_user_id = c.provider_user_id
-                          and s.revoked_at is null) as shop_connected
+               v.comments::int as comments, v.shares::int as shares
           from videos v
           join provider_connections c on c.id = v.account_id
          where v.id = ${id} and c.user_id = ${userId}
@@ -122,17 +114,19 @@ export async function buscarPorId(userId: string, id: string) {
 export async function vendasDoVideo(accountId: string, videoId: string, views: number) {
   const [linha] = await many(
     z.object({
-      gmv: dinheiro,
-      commission: dinheiro,
+      gmv: dinheiro.nullable(),
+      commission: dinheiro.nullable(),
       units: z.number().int(),
       gpm: dinheiro.nullable(),
     }),
+    // Sem venda ligada ao vídeo, as três colunas saem nulas: nunca zero.
     // GPM sai do Postgres em numeric: dinheiro não passa por float em lugar nenhum.
-    sql`select coalesce(sum(s.gmv), 0)::numeric(18,2) as gmv,
-               coalesce(sum(s.commission_estimated), 0)::numeric(18,2) as commission,
+    sql`select case when count(*) > 0 then sum(s.gmv)::numeric(18,2) end as gmv,
+               case when count(*) > 0
+                    then sum(s.commission_estimated)::numeric(18,2) end as commission,
                coalesce(sum(s.quantity), 0)::int as units,
-               case when ${views}::bigint > 0
-                    then round(coalesce(sum(s.gmv), 0) * 1000 / ${views}::bigint, 2) end as gpm
+               case when count(*) > 0 and ${views}::bigint > 0
+                    then round(sum(s.gmv) * 1000 / ${views}::bigint, 2) end as gpm
           from order_skus s
          where s.account_id = ${accountId} and s.channel = 'VIDEO' and s.content_id = ${videoId}`,
   );

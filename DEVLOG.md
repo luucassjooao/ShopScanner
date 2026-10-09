@@ -26,6 +26,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [api] Mostrar venda do vídeo pelo que existe, não pela loja conectada
+
+**Fiz:** `gmv`, `commission` e `gpm` de vídeo (lista e detalhe) saem nulos só quando não há venda ligada àquele vídeo. Antes, o detalhe e a lista zeravam o dado quando a parte de pedidos não estava conectada, mesmo com venda do arquivo. `shopConnected` não entra mais nessa conta. Também saiu do repositório o flag `comShop` e a coluna `shop_connected` de `buscarPorId`, que só existiam para isso.
+**Por quê:** a loja não conecta para creator nenhuma enquanto o Brasil não for liberado, então o dado de venda chega pelo arquivo com `shopConnected` falso. Gatear por essa bandeira escondia venda real.
+**Funcionou:** a suíte passa com 63 de 63. O teste que fixava o comportamento antigo foi reescrito: com a loja desconectada, a venda ligada ao vídeo aparece igual na lista e no detalhe, e vídeo sem venda sai nulo, nunca zero. Typecheck, lint e prettier limpos.
+**Não funcionou:** nada. A primeira versão do teste ainda afirmava nulo para tudo sem loja, e o teste falhou como esperado.
+**Decidi:** o critério de nulo é "não há linha de pedido com esse `content_id`". Não há campo novo, e a lista já funcionava assim pela junção.
+**Pendente:** o seed ainda liga a linha `SHOP` da demonstração e marca os pedidos como `API`. Isso espera decisão do líder antes de mexer.
+**Commit:** a registrar
+
 ### 2026-10-09 · [repo] Tirar de `shopConnected` o poder de esconder venda
 
 **Fiz:** escrevi no contrato que `shopConnected` descreve só a conexão viva com o TikTok Shop — cartão de Configurações, aviso de "em liberação", sincronização automática — e **nunca** governa a exibição de venda. Tela de venda mostra venda quando existe venda, com procedência `API` ou `FILE`. O estado "só vídeo" dispara na ausência de dado de venda, e oferece como saída o envio do arquivo.

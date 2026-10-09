@@ -69,7 +69,7 @@ export async function exportar(usuario: Usuario) {
       const [linhas, itens, videos] = await Promise.all([
         pedidos.listar(periodo, {}, { limite: 100000, offset: 0 }),
         sql`select * from order_skus where account_id = ${conta.id} order by order_id, id`,
-        videosRepo.listar(periodo, { comShop: true, ordem: 'postedAt', limite: 100000, offset: 0 }),
+        videosRepo.listar(periodo, { ordem: 'postedAt', limite: 100000, offset: 0 }),
       ]);
       return { account: conta, orders: linhas, orderSkus: itens, videos };
     }),

@@ -87,10 +87,10 @@ export async function pedido(request: FastifyRequest, reply: FastifyReply) {
 
 export async function listarVideos(request: FastifyRequest, reply: FastifyReply) {
   const q = consultaVideos.parse(request.query);
-  const conta = await bi.conferirConta(request.autenticado!.usuario.id, q.accountId);
+  // Conferir a conta é o que garante que ela é da pessoa; não há mais gatilho de loja aqui.
+  await bi.conferirConta(request.autenticado!.usuario.id, q.accountId);
   return reply.send(
     await bi.listarVideos(comDatas(q), {
-      comShop: conta.shopConnected,
       sort: q.sort,
       hashtag: q.hashtag,
       page: q.page,

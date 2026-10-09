@@ -151,17 +151,27 @@ describe('vídeos e produtos', () => {
     expect(comVenda.gmv).toMatch(/^\d+\.\d{2}$/);
   });
 
-  it('sem o Shop conectado, venda por vídeo é nula e nunca zero', async () => {
+  it('venda ligada ao vídeo aparece sem o Shop conectado; vídeo sem venda sai nulo', async () => {
+    const comLoja = (await pegar(`/videos?${PERIODO}`)).json();
     await sql`update provider_connections set revoked_at = now() where id = ${SHOP}`;
     try {
       const corpo = (await pegar(`/videos?${PERIODO}`)).json();
+      // A venda vem do arquivo: a loja conectada não é condição para ela aparecer.
+      const comVenda = corpo.items.find((v: { gmv: string | null }) => v.gmv !== null);
+      expect(comVenda).toBeDefined();
+      const igual = comLoja.items.find((v: { id: string }) => v.id === comVenda.id);
+      expect(comVenda.gmv).toBe(igual.gmv);
+      // Vídeo sem venda ligada sai nulo, nunca zero.
       for (const video of corpo.items) {
-        expect(video.gmv).toBeNull();
-        expect(video.commission).toBeNull();
-        expect(video.gpm).toBeNull();
+        if (video.gmv === null) {
+          expect(video.commission).toBeNull();
+          expect(video.gpm).toBeNull();
+        } else {
+          expect(Number(video.gmv)).toBeGreaterThan(0);
+        }
       }
-      const detalhe = (await pegar(`/videos/${corpo.items[0].id}`)).json();
-      expect(detalhe.gmv).toBeNull();
+      const detalhe = (await pegar(`/videos/${comVenda.id}`)).json();
+      expect(detalhe.gmv).toBe(comVenda.gmv);
       expect(detalhe.snapshots.length).toBeGreaterThan(0);
     } finally {
       await sql`update provider_connections set revoked_at = null where id = ${SHOP}`;
