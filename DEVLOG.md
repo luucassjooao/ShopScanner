@@ -26,6 +26,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [api] Tratar opcional vazia como ausente, sem afrouxar segredo
+
+**Fiz:** `config/env.ts` troca string vazia por ausente em sete variáveis opcionais, por lista explícita: as quatro do Google e do TikTok mais os dois redirects e `TIKTOK_SHOP_ENABLED` (que vazio vira `false`, o default). Segredo ou banco obrigatório continua fora da lista.
+**Por quê:** `.env.example` deixa essas linhas vazias, e quem ainda não criou o app no Google derrubava o boot com `Too small`. O `api/CLAUDE.MD` promete que elas são opcionais.
+**Funcionou:** `env.test.ts` (2 testes) sobe um filho com as opcionais vazias e confere que o boot passa, e que `JWT_SECRET`, `ENCRYPTION_KEY` e `DATABASE_URL` vazios derrubam o boot com o nome da variável na mensagem. Suíte 59 de 59, typecheck, lint e prettier limpos. O boot real com o `.env` do dono sai com código 0.
+**Não funcionou:** nada. A primeira versão da ideia era um filtro genérico sobre o `process.env` inteiro; foi descartada porque um segredo vazio viraria ausente e o default entraria no lugar.
+**Decidi:** a lista é explícita de propósito, e o teste de segredo vazio é o que impede alguém de trocá-la por um filtro genérico no futuro.
+**Pendente:** nada desta tarefa. `POST /me/avatar` e o import seguem esperando `@fastify/multipart`, aprovação do dono.
+**Commit:** a registrar
+
 ### 2026-10-09 · [repo] Ligar o front à API de verdade
 
 **Fiz:** subi o ambiente de desenvolvimento de ponta a ponta pela primeira vez — segredos do `api/.env`, migrações (0003, 0004, 0005), os dois seeds, a API no ar em `:3333` — conferi os totais de referência por HTTP e virei o front para a API real (`VITE_API_URL=http://localhost:3333`, `VITE_ENABLE_MSW=false`).

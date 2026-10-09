@@ -33,7 +33,28 @@ const schema = z.object({
     .transform((v) => v === 'true'),
 });
 
-const parsed = schema.safeParse(process.env);
+/**
+ * Opcionais que, vazias, valem como ausentes: quem copia o `.env.example` e
+ * ainda não criou o app no Google deixa a linha vazia. Lista explícita, de
+ * propósito: um segredo obrigatório vazio (JWT_SECRET, ENCRYPTION_KEY,
+ * DATABASE_URL) tem de continuar derrubando o boot, e nunca virar "ausente".
+ */
+const OPCIONAIS_VAZIAS_SAO_AUSENTES = [
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_CLIENT_SECRET',
+  'GOOGLE_REDIRECT_URI',
+  'TIKTOK_CLIENT_KEY',
+  'TIKTOK_CLIENT_SECRET',
+  'TIKTOK_REDIRECT_URI',
+  'TIKTOK_SHOP_ENABLED',
+] as const;
+
+const ambiente: NodeJS.ProcessEnv = { ...process.env };
+for (const nome of OPCIONAIS_VAZIAS_SAO_AUSENTES) {
+  if (ambiente[nome]?.trim() === '') delete ambiente[nome];
+}
+
+const parsed = schema.safeParse(ambiente);
 
 if (!parsed.success) {
   // Só o nome da variável e o motivo. Valor de segredo nunca vai para o log.
