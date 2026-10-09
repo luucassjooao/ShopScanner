@@ -36,6 +36,8 @@ import {
  */
 
 const url = (path: string) => `${env.apiUrl}${path}`;
+/** E-mail que o mock trata como já cadastrado em outra conta. */
+const EMAIL_EM_USO_NO_MOCK = 'ocupado@email.com.br';
 const ACCOUNT_ID = 'acc_1';
 
 const dia = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString();
@@ -259,7 +261,15 @@ const mesAtual = () => dayKey(new Date().toISOString()).slice(0, 7);
 export const handlers = [
   // --- auth ---
   http.post(url('/auth/register'), async ({ request }) => {
-    if (!registerInput.safeParse(await request.json()).success) return erro(422, 'Dados inválidos.');
+    const corpo = registerInput.safeParse(await request.json());
+    if (!corpo.success) return erro(422, 'Dados inválidos.');
+    // E-mail que já tem conta (o da conta demo, por exemplo) volta com código, como a API.
+    if (corpo.data.email === EMAIL_EM_USO_NO_MOCK) {
+      return HttpResponse.json(
+        { code: 'EMAIL_EM_USO', message: 'E-mail já cadastrado.' },
+        { status: 409 },
+      );
+    }
     db.loggedIn = true;
     return new HttpResponse(null, { status: 204 });
   }),
@@ -502,6 +512,12 @@ export const handlers = [
     if (negado) return negado;
     const body = perfilInput.safeParse(await request.json());
     if (!body.success) return erro(422, 'Dados inválidos.');
+    if (body.data.email === EMAIL_EM_USO_NO_MOCK) {
+      return HttpResponse.json(
+        { code: 'EMAIL_EM_USO', message: 'E-mail já cadastrado.' },
+        { status: 409 },
+      );
+    }
     Object.assign(db.user, body.data);
     return HttpResponse.json(usuario());
   }),

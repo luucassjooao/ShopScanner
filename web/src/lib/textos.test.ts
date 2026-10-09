@@ -36,6 +36,12 @@ describe('mensagemDoErro', () => {
     expect(mensagemDoErro('TIKTOK_SHOP_INDISPONIVEL')).toContain('arquivo');
   });
 
+  it('e-mail já em uso tem texto próprio, que serve ao cadastro e à troca', () => {
+    expect(mensagemDoErro('EMAIL_EM_USO')).toBe(
+      'Esse e-mail já está em uso em outra conta. Confira se digitou certo ou use outro.',
+    );
+  });
+
   it('desvincular o único acesso diz o que fazer antes', () => {
     expect(mensagemDoErro('UNICO_ACESSO')).toBe(
       'Esse é o único jeito de entrar na sua conta. Defina uma senha antes de desvincular o Google.',

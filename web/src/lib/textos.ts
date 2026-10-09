@@ -38,6 +38,8 @@ const ERROS: Record<string, string> = {
   SESSAO_EXPIRADA: 'A sua sessão venceu no meio do caminho. Entre de novo para continuar.',
   // Troca de senha (PUT /me/password)
   SENHA_ATUAL_INCORRETA: 'A senha atual não confere. Confira e tente de novo.',
+  // Cadastro (POST /auth/register) e troca de e-mail (PATCH /me): o mesmo texto serve aos dois
+  EMAIL_EM_USO: 'Esse e-mail já está em uso em outra conta. Confira se digitou certo ou use outro.',
   // Desvincular o Google (DELETE /auth/identities/GOOGLE)
   UNICO_ACESSO:
     'Esse é o único jeito de entrar na sua conta. Defina uma senha antes de desvincular o Google.',

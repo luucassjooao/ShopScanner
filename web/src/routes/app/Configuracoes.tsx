@@ -221,7 +221,9 @@ function AcessoConta({ sessao }: { sessao: Sessao }) {
         </div>
         {salvar.error ? (
           <p role="alert" className={erroTexto}>
-            {salvar.error.message}
+            {salvar.error instanceof ApiError && salvar.error.serverCode
+              ? mensagemDoErro(salvar.error.serverCode)
+              : salvar.error.message}
           </p>
         ) : null}
         <Button type="submit" className="self-start" disabled={salvar.isPending}>

@@ -26,6 +26,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [front] Traduzir EMAIL_EM_USO no cadastro e na troca de e-mail
+
+**Fiz:** `EMAIL_EM_USO` (409) ganhou um texto só em `textos.ts`, que serve ao cadastro e à troca de e-mail. As duas telas traduzem pelo código, e não pelo texto da API. O MSW manda o código nos dois caminhos, para o e-mail `ocupado@email.com.br`.
+**Por quê:** a API passou a responder `code` (envelope corrigido), então o código chega de verdade à tela. Sem tradução, cairia no texto genérico.
+**Funcionou:** lint, typecheck e prettier limpos; 143 testes (eram 140). Cobertos: texto de `EMAIL_EM_USO`, cadastro com e-mail já usado (fica em `/criar-conta`), e troca de e-mail para um já usado (a conta não muda).
+**Não funcionou:** nada travou.
+**Decidi:** um texto só para os dois caminhos. Ele diz o que fazer em seguida ("use outro"), que vale para os dois.
+**Pendente:** nada desta tarefa. O restante está travado pelos segredos do `api/.env`, pela aprovação do `@fastify/multipart` e pelos dados legais de `textos.ts`; a varredura das 16 telas espera o banco semeado.
+**Commit:** a registrar
+
 ### 2026-10-09 · [front] Alinhar o nome do cadastro a 2 letras e traduzir UNICO_ACESSO
 
 **Fiz:** `registerInput` e o formulário de criar conta exigem 2 letras, como o perfil e a API. `UNICO_ACESSO` (409 ao desvincular o único acesso) ganhou texto em `textos.ts`, e a tela de desvincular passou a traduzir pelo código, não pelo texto da API. O MSW manda `code: 'UNICO_ACESSO'` no 409.

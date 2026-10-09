@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
+import { ApiError } from '@/api/client';
 import { useRegister } from '@/api/queries';
 import { sessionQuery } from '@/api/session';
 import {
@@ -15,7 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { forcaDaSenha, ROTULO_FORCA } from '@/lib/senha';
-import { VERSAO_TERMOS } from '@/lib/textos';
+import { mensagemDoErro, VERSAO_TERMOS } from '@/lib/textos';
 import { cn } from '@/lib/utils';
 
 const formulario = z.object({
@@ -194,7 +195,9 @@ export function CriarConta() {
           </div>
           {criar.error ? (
             <p role="alert" className="text-sm text-status-reembolsado">
-              {criar.error.message}
+              {criar.error instanceof ApiError && criar.error.serverCode
+                ? mensagemDoErro(criar.error.serverCode)
+                : criar.error.message}
             </p>
           ) : null}
           <Button type="submit" disabled={!aceitou || criar.isPending}>

@@ -104,6 +104,20 @@ describe('/planejamento', () => {
 });
 
 describe('/configuracoes', () => {
+  it('trocar para um e-mail já usado mostra o aviso e não muda a conta', async () => {
+    abrir('/configuracoes');
+    const email = await screen.findByLabelText('E-mail');
+    await userEvent.clear(email);
+    await userEvent.type(email, 'ocupado@email.com.br');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+    expect(
+      await screen.findByText(
+        'Esse e-mail já está em uso em outra conta. Confira se digitou certo ou use outro.',
+      ),
+    ).toBeInTheDocument();
+    expect(db.user.email).toBe('voce@email.com.br');
+  });
+
   it('edita o perfil', async () => {
     abrir('/configuracoes');
     const nome = await screen.findByLabelText('Nome');

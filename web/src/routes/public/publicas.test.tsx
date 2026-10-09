@@ -140,6 +140,22 @@ describe('/criar-conta', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/inicio-rapido'));
   });
 
+  it('e-mail já cadastrado mostra o aviso e não entra na conta', async () => {
+    db.loggedIn = false;
+    const router = abrir('/criar-conta');
+    await userEvent.type(await screen.findByLabelText('Nome'), 'Ana');
+    await userEvent.type(screen.getByLabelText('E-mail'), 'ocupado@email.com.br');
+    await userEvent.type(screen.getByLabelText('Senha'), 'Abcdef1!');
+    await userEvent.click(screen.getByRole('checkbox'));
+    await userEvent.click(screen.getByRole('button', { name: 'Criar conta' }));
+    expect(
+      await screen.findByText(
+        'Esse e-mail já está em uso em outra conta. Confira se digitou certo ou use outro.',
+      ),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/criar-conta');
+  });
+
   it('nome de 1 letra para na validação do front, sem ir para a API', async () => {
     db.loggedIn = false;
     const router = abrir('/criar-conta');
