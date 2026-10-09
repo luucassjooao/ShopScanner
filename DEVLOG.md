@@ -34,7 +34,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada. A primeira versão da ideia era um filtro genérico sobre o `process.env` inteiro; foi descartada porque um segredo vazio viraria ausente e o default entraria no lugar.
 **Decidi:** a lista é explícita de propósito, e o teste de segredo vazio é o que impede alguém de trocá-la por um filtro genérico no futuro.
 **Pendente:** nada desta tarefa. `POST /me/avatar` e o import seguem esperando `@fastify/multipart`, aprovação do dono.
-**Commit:** a registrar
+**Commit:** 32d8eb1
 
 ### 2026-10-09 · [repo] Ligar o front à API de verdade
 
