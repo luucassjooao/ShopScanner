@@ -26,6 +26,26 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [repo] Ligar o front à API de verdade
+
+**Fiz:** subi o ambiente de desenvolvimento de ponta a ponta pela primeira vez — segredos do `api/.env`, migrações (0003, 0004, 0005), os dois seeds, a API no ar em `:3333` — conferi os totais de referência por HTTP e virei o front para a API real (`VITE_API_URL=http://localhost:3333`, `VITE_ENABLE_MSW=false`).
+**Por quê:** as duas pontas existiam há semanas e nunca tinham se falado. Todo teste das duas era contra si mesmo: o front contra o MSW, a API contra `fastify.inject`. Nada provava que o contrato era o mesmo dos dois lados.
+**Funcionou:** os totais de referência batem nos endpoints, por HTTP e com sessão de verdade: GMV R$ 11.378,50, comissão estimada R$ 1.424,55, a receber R$ 1.023,89, liquidada R$ 181,22, ticket médio R$ 142,23, 80 pedidos, 115 itens, e a quebra por status exata em 57 a liquidar, 13 liquidados, 7 reembolsados, 2 aguardando e 1 retido. A identidade `gmvEligible + gmvIneligible = gmv` fecha (9.625,10 + 1.753,40). O envelope de erro novo chega como `code` no ar (`NAO_AUTENTICADO` em 401, `NAO_ENCONTRADO` em 404 para conta alheia). Os cookies saem **sem** `Domain`, então o prefixo `__Host-` é aceito pelo navegador, e o CORS libera `localhost:5173` com credenciais.
+**Não funcionou:** duas coisas que só aparecem fora do teste. (1) O `DATABASE_URL` do `.env.example` aponta para `usuario:senha@localhost`, que não é o banco que o `docker-compose.yml` cria (`shopscanner:shopscanner`) — quem segue o README toma `password authentication failed` no primeiro comando. (2) As variáveis opcionais `GOOGLE_*` e `TIKTOK_*` derrubam o boot quando estão **presentes e vazias**, em vez de ausentes; o `api/CLAUDE.MD` promete que são opcionais, mas isso só vale se a linha não existir, e vazio é o estado natural de quem copiou o exemplo. Contornei comentando as quatro linhas; a correção no Zod ficou para a sessão da API.
+**Decidi:** `localhost:5173` e `localhost:3333` são origens diferentes do **mesmo site**, então `SameSite=Lax` não atrapalha e o desenvolvimento não precisa de HTTPS nem de proxy. A varredura das 16 telas contra a API real vai em sessão separada, e a ordem é **anotar tudo antes de corrigir**: medir o tamanho do desalinhamento vale mais que consertar a primeira tela que aparecer.
+**Pendente:** a varredura em si. `POST /me/avatar`, `/imports` e `/reconciliation` ainda não existem, então o painel de import, a reconciliação e o avatar vão falhar — é esperado, e o que importa é *como* falham. Login com Google segue inoperante de propósito: o app no Google ainda não foi criado, então o caminho `GOOGLE_INDISPONIVEL` vai ser exercitado de verdade pela primeira vez. `lastSyncedAt` vem nulo do seed, o que testa o "Atualizado há X" e o lembrete de 5 dias.
+**Commit:** a preencher
+
+### 2026-10-09 · [api] Corrigir o DATABASE_URL do .env.example
+
+**Fiz:** o `.env.example` trazia `usuario:senha`, que não é o banco que o `docker-compose.yml` sobe. Agora traz `shopscanner:shopscanner`, o mesmo do compose. O `api/README.md` não repetia o valor errado.
+**Por quê:** quem copia o exemplo e segue o README leva `password authentication failed` no primeiro comando. Aconteceu com a sessão do líder ao subir o ambiente.
+**Funcionou:** o valor do exemplo é o do compose (conferido por leitura dos dois arquivos). A subida do ambiente foi feita pelo dono, com `.env` corrigido, migrate 0003 a 0005 e os dois seeds; os totais de referência bateram por HTTP, número por número.
+**Não funcionou:** o `.env` real estava com `JWT_SECRET` e `REFRESH_TOKEN_PEPPER` abaixo de 32 caracteres e chaves do Google e do TikTok vazias, o que recusava o boot. Corrigido pelo dono, não por código.
+**Decidi:** o `.env.example` usa as credenciais de desenvolvimento do compose, que já estão versionadas; não é segredo.
+**Pendente:** tratar string vazia como ausente em `config/env.ts` para as variáveis opcionais do Google e do TikTok. Aguarda a confirmação do líder antes de implementar.
+**Commit:** a registrar
+
 ### 2026-10-09 · [front] Traduzir EMAIL_EM_USO no cadastro e na troca de e-mail
 
 **Fiz:** `EMAIL_EM_USO` (409) ganhou um texto só em `textos.ts`, que serve ao cadastro e à troca de e-mail. As duas telas traduzem pelo código, e não pelo texto da API. O MSW manda o código nos dois caminhos, para o e-mail `ocupado@email.com.br`.
