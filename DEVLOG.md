@@ -34,7 +34,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** o seed esconde o defeito, e é por isso que ele sobreviveu a duas sessões e a uma varredura tela por tela. `db/seed.sql:28` insere a linha `SHOP` direto no banco, driblando a rota que recusa: a conta de demonstração nasce com `shopConnected: true`, que é o único estado em que o app funciona e o único que usuário real nunca terá. Fixture que não pode existir em produção não é fixture, é máscara.
 **Decidi:** o gatilho do estado vazio é "tem dado de venda?", e vazio de período ("nenhuma venda neste período, amplie o filtro") é tela diferente de conta sem venda alguma ("envie seu relatório"). Vale também por item: `gmv`, `commission` e `gpm` de vídeo vêm nulos quando não há venda ligada àquele vídeo, não quando `shopConnected` é falso — `bi.ts:201` tem a mesma inversão em escala menor. O seed passa a representar a forma real do produto: conta só com `VIDEOS` e pedidos com `source: "FILE"`.
 **Pendente:** o front troca o gatilho nas cinco telas (plano pedido antes do código, porque mexe no estado de quatro telas principais e muda carregamento síncrono em assíncrono); a API corrige `bi.ts` e o seed. Se a mudança de procedência do seed conflitar com os testes de dados, os **totais de referência** mandam.
-**Commit:** a preencher
+**Commit:** befe909
 
 ### 2026-10-09 · [front] Tirar código cru da tela de erro e corrigir copy que afirmava o que não existe
 
