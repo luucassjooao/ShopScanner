@@ -33,7 +33,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada. Mas recusei uma proposta que veio da sessão do front e já estava implementada: o código `GOOGLE_ONLY` em `/auth/forgot-password`, para quem tem conta só pelo Google. Conferi a API antes de decidir — `controllers/auth.ts` responde 204 em todo caso, com ou sem usuário, e está certa. Responder diferente para "só Google" entrega ao atacante duas informações de graça: que aquele e-mail tem conta aqui, e por onde ele entra. É enumeração de conta, e vai contra o `api/CLAUDE.MD`, que já exige resposta igual para e-mail inexistente e senha errada. O front e o MSW implementaram antes de a rota existir no contrato — o código saiu, e a regra entrou no contrato para ninguém reinventar.
 **Decidi:** `SENHA_ATUAL_INCORRETA` (422) em `PUT /me/password` entra no contrato, essa sim: a pessoa já está autenticada, então não há nada a enumerar, e sem código a tela cai no genérico "algum dado não foi aceito" para uma falha que tem explicação exata. A regra geral ficou escrita: erro que a tela precisa explicar tem `code`; o `message` da API é técnico e nunca chega à tela.
 **Pendente:** a API tem de emitir `SENHA_ATUAL_INCORRETA`, e é esse commit que carrega a linha do contrato. Os placeholders legais de `textos.ts` (CNPJ, razão social, endereço, e-mail de contato, comarca, encarregado) seguem esperando os dados do dono.
-**Commit:** a preencher
+**Commit:** 5052402
 
 ### 2026-10-09 · [api] Criar PATCH /me, e trocar o e-mail derruba as outras sessões
 
