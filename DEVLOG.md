@@ -40,7 +40,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 - `POST /me/avatar`: precisa de `@fastify/multipart` (dependência nova, aguardando aprovação) e de uma decisão de armazenamento (disco local ou outro).
 - Ambiente: corrigir os segredos curtos do `.env` e tirar as chaves vazias. O `.env.example` traz as mesmas linhas vazias, então copiá-lo quebra o boot; o `env.ts` deveria tratar string vazia como ausente.
 - Divergências com o front (não corrigidas): `perfilInput` aceita nome de 1 caractere, e a API exige 2 (o cadastro já exigia 2). O `usuario` do front declara `email` como texto obrigatório, e a API devolve nulo quando a conta não tem e-mail.
-**Commit:** a registrar
+**Commit:** 02470c2
 
 ### 2026-10-09 · [front] Tirar o texto técnico da API da tela e testar o mapa de erros
 
