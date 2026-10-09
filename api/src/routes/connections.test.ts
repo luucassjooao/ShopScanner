@@ -111,6 +111,8 @@ describe('conexões com o TikTok', () => {
         avatarUrl: 'https://cdn/ana.jpg',
         // A parte de pedidos continua desligada: é o estado "sem Shop" das telas.
         shopConnected: false,
+        // Sem pedido nenhum: a conta acabou de ser conectada.
+        hasSales: false,
         connectedAt: expect.any(String),
         lastSyncedAt: null,
         expiresAt: expect.any(String),

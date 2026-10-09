@@ -13,6 +13,7 @@ const linhaConta = z.object({
   last_synced_at: z.date().nullable(),
   expires_at: z.date().nullable(),
   shop_connected: z.boolean(),
+  has_sales: z.boolean(),
 });
 
 export type Conta = {
@@ -20,6 +21,8 @@ export type Conta = {
   username: string | null;
   avatarUrl: string | null;
   shopConnected: boolean;
+  /** Existe pedido nesta conta, de qualquer fonte: API ou arquivo. Independe do Shop. */
+  hasSales: boolean;
   connectedAt: Date;
   lastSyncedAt: Date | null;
   expiresAt: Date | null;
@@ -37,7 +40,8 @@ export async function listarContas(userId: string, db: Executor = sql): Promise<
               exists (select 1 from provider_connections s
                        where s.user_id = c.user_id and s.provider = c.provider
                          and s.kind = 'SHOP' and s.provider_user_id = c.provider_user_id
-                         and s.revoked_at is null) as shop_connected
+                         and s.revoked_at is null) as shop_connected,
+              exists (select 1 from orders o where o.account_id = c.id) as has_sales
          from provider_connections c
         where c.user_id = ${userId} and c.provider = 'TIKTOK'
           and c.kind = 'VIDEOS' and c.revoked_at is null
@@ -48,6 +52,7 @@ export async function listarContas(userId: string, db: Executor = sql): Promise<
     username: l.username,
     avatarUrl: l.avatar_url,
     shopConnected: l.shop_connected,
+    hasSales: l.has_sales,
     connectedAt: l.connected_at,
     lastSyncedAt: l.last_synced_at,
     expiresAt: l.expires_at,

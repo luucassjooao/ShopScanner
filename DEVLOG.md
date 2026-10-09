@@ -26,6 +26,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [api] Expor hasSales em /accounts
+
+**Fiz:** `GET /accounts` ganhou `hasSales`, que é `true` quando existe pedido nesta conta, de qualquer fonte. É um `exists` na mesma consulta que já deriva `shopConnected`.
+**Por quê:** o front precisa saber se a conta tem venda para refazer o estado de cinco telas, e `/accounts` já é consultado uma vez no seletor de conta. Assim não cria hook, cache nem data mágica para medir pedidos.
+**Funcionou:** teste de conta com pedido de arquivo e Shop desconectado devolve `hasSales: true` (trava a regressão de depender de `shopConnected`); conta sem pedido devolve `false`; o teste de conexão passou a esperar o campo. Suíte 65 de 65, typecheck, lint e prettier limpos.
+**Não funcionou:** nada.
+**Decidi:** `hasSales` ignora `shopConnected` e a procedência do pedido, como o contrato commitado em `18f103f` define.
+**Pendente:** o seed (conta só com `VIDEOS` e pedidos `FILE`) segue aguardando a decisão do líder, com o delete manual da linha `SHOP` no banco de dev.
+**Commit:** a registrar
+
 ### 2026-10-09 · [api] Mostrar venda do vídeo pelo que existe, não pela loja conectada
 
 **Fiz:** `gmv`, `commission` e `gpm` de vídeo (lista e detalhe) saem nulos só quando não há venda ligada àquele vídeo. Antes, o detalhe e a lista zeravam o dado quando a parte de pedidos não estava conectada, mesmo com venda do arquivo. `shopConnected` não entra mais nessa conta. Também saiu do repositório o flag `comShop` e a coluna `shop_connected` de `buscarPorId`, que só existiam para isso.

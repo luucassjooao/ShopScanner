@@ -46,6 +46,35 @@ afterAll(() => app.close());
 
 const pegar = (url: string) => app.inject({ method: 'GET', url, headers: autenticado });
 
+describe('contas', () => {
+  it('hasSales é true com pedido de arquivo, mesmo sem o Shop conectado', async () => {
+    await sql`update provider_connections set revoked_at = now() where id = ${SHOP}`;
+    try {
+      const contas = (await pegar('/accounts')).json();
+      const demo = contas.find((c: { id: string }) => c.id === CONTA);
+      expect(demo.shopConnected).toBe(false);
+      expect(demo.hasSales).toBe(true);
+    } finally {
+      await sql`update provider_connections set revoked_at = null where id = ${SHOP}`;
+    }
+  });
+
+  it('hasSales é false em conta sem pedido nenhum', async () => {
+    const SEM_PEDIDO = '00000000-0000-0000-0000-0000000000b9';
+    await sql`insert into provider_connections
+                (id, user_id, provider, kind, provider_user_id, username, access_token, scopes)
+              values (${SEM_PEDIDO}, '00000000-0000-0000-0000-000000000001', 'TIKTOK', 'VIDEOS',
+                      'sem-pedido', '@sem.pedido', null, '{}')`;
+    try {
+      const contas = (await pegar('/accounts')).json();
+      const nova = contas.find((c: { id: string }) => c.id === SEM_PEDIDO);
+      expect(nova.hasSales).toBe(false);
+    } finally {
+      await sql`delete from provider_connections where id = ${SEM_PEDIDO}`;
+    }
+  });
+});
+
 describe('resumo', () => {
   it('reproduz os totais de referência dos mocks', async () => {
     const res = await pegar(`/summary?${PERIODO}`);

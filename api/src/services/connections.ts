@@ -13,6 +13,7 @@ export async function contasDoUsuario(userId: string) {
     username: c.username,
     avatarUrl: c.avatarUrl,
     shopConnected: c.shopConnected,
+    hasSales: c.hasSales,
     connectedAt: c.connectedAt.toISOString(),
     lastSyncedAt: c.lastSyncedAt?.toISOString() ?? null,
     expiresAt: c.expiresAt?.toISOString() ?? null,
