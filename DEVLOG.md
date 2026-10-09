@@ -34,7 +34,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada travou.
 **Decidi:** um texto só para os dois caminhos. Ele diz o que fazer em seguida ("use outro"), que vale para os dois.
 **Pendente:** nada desta tarefa. O restante está travado pelos segredos do `api/.env`, pela aprovação do `@fastify/multipart` e pelos dados legais de `textos.ts`; a varredura das 16 telas espera o banco semeado.
-**Commit:** a registrar
+**Commit:** a0f9b1d
 
 ### 2026-10-09 · [front] Alinhar o nome do cadastro a 2 letras e traduzir UNICO_ACESSO
 
