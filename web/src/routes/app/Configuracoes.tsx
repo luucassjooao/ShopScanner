@@ -520,7 +520,7 @@ function ContasConectadas() {
               {c.username} · conectado em {formatData(c.connectedAt)}
               {c.lastSyncedAt
                 ? ` · última leitura ${haQuanto(c.lastSyncedAt)}`
-                : ' · primeira leitura em andamento'}
+                : ' · ainda sem leitura'}
             </span>
           </span>
           {conexaoExpirada(c) ? (
@@ -803,17 +803,24 @@ function MetaDoMes() {
 
 // --- avisos ---
 
-/** Estado das integrações (CLAUDE.md → "Estado da integração"). Só leitura, sem endpoint. */
-const INTEGRACOES = [
-  {
-    nome: 'TikTok Shop (vendas e comissões)',
-    estado: 'Ainda não liberado para o Brasil. Assim que o TikTok liberar, você conecta aqui.',
-  },
-  {
-    nome: 'Vídeos do TikTok',
-    estado: 'Disponível, dependendo da revisão do app pelo TikTok.',
-  },
-];
+/**
+ * Estado das integrações (CLAUDE.md → "Estado da integração"). Só leitura, sem endpoint.
+ * O estado do TikTok Shop vem de `shopConnected`: texto fixo aqui contradiria a conta conectada.
+ */
+function integracoes(shopConectado: boolean) {
+  return [
+    {
+      nome: 'TikTok Shop (vendas e comissões)',
+      estado: shopConectado
+        ? 'Conectado. Pedidos e comissões entram sozinhos.'
+        : 'Ainda não liberado para o Brasil. Assim que o TikTok liberar, você conecta aqui.',
+    },
+    {
+      nome: 'Vídeos do TikTok',
+      estado: 'Disponível, dependendo da revisão do app pelo TikTok.',
+    },
+  ];
+}
 
 type Chave = Exclude<keyof NotificationSettings, 'channels'>;
 const TIPOS: { chaves: Chave[]; titulo: string; texto: string }[] = [
@@ -847,6 +854,7 @@ const TIPOS: { chaves: Chave[]; titulo: string; texto: string }[] = [
 function Avisos() {
   const prefs = useNotifications();
   const salvar = useSaveNotifications();
+  const conta = useConta();
   const atual = salvar.isPending ? salvar.variables : prefs.data;
   const alternar = (mudanca: Partial<NotificationSettings>) =>
     atual && salvar.mutate({ ...atual, ...mudanca });
@@ -856,7 +864,7 @@ function Avisos() {
       <section className="flex flex-col gap-2" aria-label="Estado das integrações">
         <h3 className="text-sm font-bold text-texto">Estado das integrações</h3>
         <ul className="grid gap-2 sm:grid-cols-2">
-          {INTEGRACOES.map((i) => (
+          {(conta ? integracoes(conta.shopConnected) : []).map((i) => (
             <li key={i.nome} className="rounded-campo bg-fundo p-3">
               <p className="text-sm font-semibold text-texto">{i.nome}</p>
               <p className="text-[13px] text-texto-secundario">{i.estado}</p>

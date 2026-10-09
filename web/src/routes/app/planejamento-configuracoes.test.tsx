@@ -104,6 +104,38 @@ describe('/planejamento', () => {
 });
 
 describe('/configuracoes', () => {
+  it('o estado do TikTok Shop vem de shopConnected, não de texto fixo', async () => {
+    abrir('/configuracoes');
+    const integracoes = await screen.findByRole('region', { name: 'Estado das integrações' });
+    expect(
+      within(integracoes).getByText('Conectado. Pedidos e comissões entram sozinhos.'),
+    ).toBeInTheDocument();
+    expect(within(integracoes).queryByText(/Ainda não liberado/)).not.toBeInTheDocument();
+  });
+
+  it('sem TikTok Shop conectado, o estado diz que ainda não foi liberado', async () => {
+    db.shopConnected = false;
+    abrir('/configuracoes');
+    const integracoes = await screen.findByRole('region', { name: 'Estado das integrações' });
+    expect(within(integracoes).getByText(/Ainda não liberado para o Brasil/)).toBeInTheDocument();
+  });
+
+  it('conta sem leitura diz "ainda sem leitura", sem afirmar uma leitura em andamento', async () => {
+    db.lastSyncedAt = null;
+    abrir('/configuracoes');
+    expect(await screen.findByText(/ainda sem leitura/)).toBeInTheDocument();
+    expect(screen.queryByText(/em andamento/)).not.toBeInTheDocument();
+  });
+
+  it('erro do Google com sessão ativa volta para /configuracoes, traduzido', async () => {
+    abrir('/configuracoes?erro=GOOGLE_INDISPONIVEL');
+    expect(
+      await screen.findByText(
+        'Entrar pelo Google está fora do ar agora. Use e-mail e senha, ou tente de novo em alguns minutos.',
+      ),
+    ).toBeInTheDocument();
+  });
+
   it('trocar para um e-mail já usado mostra o aviso e não muda a conta', async () => {
     abrir('/configuracoes');
     const email = await screen.findByLabelText('E-mail');

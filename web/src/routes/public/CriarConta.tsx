@@ -187,9 +187,7 @@ export function CriarConta() {
               id="forca-senha"
               className={cn('text-[13px]', senha ? TEXTO_FORCA[forca] : 'text-texto-secundario')}
             >
-              {senha
-                ? `Força da senha: ${ROTULO_FORCA[forca]}`
-                : 'Use ao menos 8 caracteres, com letra maiúscula, número e símbolo.'}
+              {senha ? `Força da senha: ${ROTULO_FORCA[forca]}` : 'Use ao menos 8 caracteres.'}
             </span>
             {errors.password ? <span className={erroTexto}>{errors.password.message}</span> : null}
           </div>

@@ -392,6 +392,9 @@ function ConteudoVideo({ video: v }: { video: VideoDetail }) {
             <VendasBloqueadas />
           ) : (
             <Bloco titulo="Vendas e GPM">
+              <p className="text-[13px] leading-relaxed text-texto-secundario">
+                Valores desde o início da conta, não do período escolhido na lista.
+              </p>
               <dl className="grid grid-cols-2 gap-3.5 lg:grid-cols-3">
                 {(
                   [

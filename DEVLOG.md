@@ -26,6 +26,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [front] Tirar código cru da tela de erro e corrigir copy que afirmava o que não existe
+
+**Fiz:** seis correções da varredura contra a API real, em um commit. (1) `EstadoErro` deixou de mostrar `Código do erro: nao_encontrado` — ele é compartilhado por todas as telas de dados, não só a Reconciliação. (2) O estado do TikTok Shop em Avisos vem de `shopConnected`: conectado mostra "Conectado. Pedidos e comissões entram sozinhos.", e o texto de "ainda não liberado" só aparece quando a conta não está conectada. (3) "primeira leitura em andamento" virou "ainda sem leitura": nada no sistema sustenta uma leitura rodando. (4) Detalhe de produto e de vídeo dizem "desde o início da conta"; o contrato não tem período nesses endpoints, e o número é correto para o que mede. (5) A dica da senha diz só "Use ao menos 8 caracteres", que é o que a API exige. (6) Conta sem leitura reusa o lembrete de 5 dias do Início, com copy "Ainda sem leitura nesta conta" e o atalho para o import.
+**Por quê:** código interno na tela contraria o `web/CLAUDE.MD`, e a contradição de Shop na mesma tela era um texto fixo esperando virar bug. Os outros quatro eram afirmações que o sistema não sustenta.
+**Funcionou:** lint, typecheck e prettier limpos; 153 testes (eram 143). Cobertos: `EstadoErro` sem código para 404 e para erro genérico; Shop conectado e desconectado; conta sem leitura no Configurações e no Início; rótulos de desde o início no vídeo e no produto; dica da senha; e a volta do Google com `?erro=GOOGLE_INDISPONIVEL` traduzida em `/configuracoes`.
+**Não funcionou:** nada travou. Não corrigi "primeira sincronização" e "o painel se preenche sozinho quando a primeira leitura terminar" no `PrimeiroAcesso` do Início: são frases futuras, para quem ainda não conectou; ficam para a próxima revisão de copy.
+**Decidi:** erro sem código na tela fica no texto da categoria, sem número nem código. O rastro para suporte, se for preciso, vai em `console.error`, nunca na tela — não implementei agora. A mensagem de Google indisponível, que diz "use e-mail e senha", também aparece logado em Configurações; é copy e fica para depois.
+**Pendente:** página 2 de Vendas e layout no celular, depois destas correções. Estado "Shop não conectado" exercitado sem destruir o seed, a combinar com a API.
+**Commit:** a registrar
+
 ### 2026-10-09 · [api] Subir o teto por IP para 300 e devolver erro do Google à tela certa
 
 **Fiz:** o teto global por IP passou de 100 para 300 req/min, com um `ponytail:` dizendo que é por IP, que NAT de operadora é o limite conhecido e qual é o upgrade. Erro do fluxo Google (recusa, e-mail não verificado, conflito de vínculo e Google indisponível no início) volta para `/configuracoes?erro=CODIGO` quando há sessão, e para `/entrar?erro=CODIGO` quando não há.

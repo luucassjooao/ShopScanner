@@ -220,6 +220,41 @@ describe('/videos', () => {
   });
 });
 
+describe('leitura e detalhes sem período', () => {
+  it('conta que nunca leu: o lembrete de import diz "ainda sem leitura", sem contar dias', async () => {
+    db.lastSyncedAt = null;
+    abrir('/inicio');
+    expect(
+      await screen.findByText(
+        'Ainda sem leitura nesta conta. Envie o relatório para trazer as vendas para o painel.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Enviar relatório/ })).toHaveAttribute(
+      'href',
+      '/configuracoes?secao=import',
+    );
+    expect(screen.queryByText(/dias só entram/)).not.toBeInTheDocument();
+  });
+
+  it('detalhe do vídeo diz que os valores são desde o início da conta', async () => {
+    abrir('/videos/7547697027617764647');
+    expect(
+      await screen.findByText(
+        'Valores desde o início da conta, não do período escolhido na lista.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('detalhe do produto diz que os totais são desde o início da conta', async () => {
+    abrir('/produtos?produto=1731645747364469463');
+    expect(
+      await screen.findByText(
+        'Totais desde o início da conta. A lista mostra o período escolhido.',
+      ),
+    ).toBeInTheDocument();
+  });
+});
+
 describe('/avisos', () => {
   it('deriva os avisos dos pedidos e marca como lidos ao abrir', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });

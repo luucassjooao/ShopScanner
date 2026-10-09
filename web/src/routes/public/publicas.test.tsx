@@ -156,6 +156,13 @@ describe('/criar-conta', () => {
     expect(router.state.location.pathname).toBe('/criar-conta');
   });
 
+  it('a dica da senha promete só o que a API exige: 8 caracteres', async () => {
+    db.loggedIn = false;
+    abrir('/criar-conta');
+    expect(await screen.findByText('Use ao menos 8 caracteres.')).toBeInTheDocument();
+    expect(screen.queryByText(/letra maiúscula/)).not.toBeInTheDocument();
+  });
+
   it('nome de 1 letra para na validação do front, sem ir para a API', async () => {
     db.loggedIn = false;
     const router = abrir('/criar-conta');

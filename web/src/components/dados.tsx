@@ -6,7 +6,7 @@ import type { OrderStatus, Source } from '@/api/schemas';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { formatData, formatDataHora, formatHora } from '@/lib/format';
+import { formatData, formatHora } from '@/lib/format';
 import { STATUS_LABEL } from '@/lib/labels';
 import { EMAIL_CONTATO } from '@/lib/textos';
 import { cn } from '@/lib/utils';
@@ -210,7 +210,7 @@ export function Bloco({
   );
 }
 
-/** Estado de erro do design: o que houve, tentar de novo, suporte e o código para o suporte. */
+/** Estado de erro do design: o que houve, tentar de novo e falar com o suporte. Código cru nunca vai para a tela. */
 export function EstadoErro({
   titulo,
   error,
@@ -220,7 +220,6 @@ export function EstadoErro({
   error: unknown;
   onRetry: () => void;
 }) {
-  const codigo = error instanceof ApiError ? error.code : 'desconhecido';
   return (
     <div className="flex flex-col items-center gap-3.5 rounded-card border border-borda bg-superficie px-6 py-10 text-center">
       <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-status-reembolsado-suave">
@@ -238,9 +237,6 @@ export function EstadoErro({
           <a href={`mailto:${EMAIL_CONTATO}`}>Falar com o suporte</a>
         </Button>
       </div>
-      <p className="text-[13px] text-texto-secundario">
-        Código do erro: {codigo} · {formatDataHora(new Date())}
-      </p>
     </div>
   );
 }

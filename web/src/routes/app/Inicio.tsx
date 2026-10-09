@@ -95,15 +95,22 @@ const DIAS_SEM_LEITURA = 5;
  * depende de a creator enviar o relatório — e ninguém lembra sozinho.
  */
 function LembreteImport({ conta }: { conta: Conta }) {
-  if (!conta.lastSyncedAt) return null;
-  const dias = Math.floor((Date.now() - Date.parse(conta.lastSyncedAt)) / 86_400_000);
-  if (dias < DIAS_SEM_LEITURA) return null;
+  // Conta que nunca leu não tem "dias sem leitura": mesmo lembrete, com a copy que diz isso.
+  const ultima = conta.lastSyncedAt;
+  const dias = ultima ? Math.floor((Date.now() - Date.parse(ultima)) / 86_400_000) : 0;
+  if (ultima && dias < DIAS_SEM_LEITURA) return null;
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-card border border-borda bg-status-a-liquidar-suave px-4 py-3.5">
       <TriangleAlert className="size-5 shrink-0 text-status-a-liquidar" aria-hidden />
       <p className="min-w-48 flex-1 text-[15px] leading-relaxed text-texto">
-        A última leitura foi {haQuanto(conta.lastSyncedAt)}. As vendas destes {dias} dias só entram
-        no painel depois que você enviar o relatório.
+        {ultima ? (
+          <>
+            A última leitura foi {haQuanto(ultima)}. As vendas destes {dias} dias só entram no
+            painel depois que você enviar o relatório.
+          </>
+        ) : (
+          'Ainda sem leitura nesta conta. Envie o relatório para trazer as vendas para o painel.'
+        )}
       </p>
       <Button size="sm" asChild>
         <Link to="/configuracoes?secao=import">

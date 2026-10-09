@@ -419,6 +419,9 @@ function ConteudoProduto({ produto: p }: { produto: ProductDetail }) {
         </div>
       </div>
 
+      <p className="-mb-2 text-[13px] leading-relaxed text-texto-secundario">
+        Totais desde o início da conta. A lista mostra o período escolhido.
+      </p>
       <dl className="grid grid-cols-2 gap-3">
         {indicadores.map(([rotulo, valor]) => (
           <div key={rotulo} className="flex flex-col gap-1 rounded-campo bg-fundo px-3.5 py-3">
