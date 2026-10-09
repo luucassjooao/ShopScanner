@@ -10,16 +10,17 @@ Regras curtas: entrada nova sempre no topo, uma por tarefa concluída, no mesmo 
 
 _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê ao voltar ao projeto._
 
-- **Fase:** 0 — fundação das duas pontas: front pronto, backend recém-nascido.
-- **Rodando:** front em `web/` com o design do canvas aplicado: área logada completa, páginas legais e públicas; acesso por e-mail ou Google, TikTok só como conexão, e a entrada de pedidos por arquivo `.xlsx` (lint, typecheck, build e 115 testes passando). O front está alinhado ao contrato fechado da API e à especificação do parser.
+- **Fase:** 1 — ligar as duas pontas. As duas existem e nunca se falaram: o front roda inteiro contra o MSW, a API serve o contrato sobre o banco, e a virada ainda não aconteceu.
+- **Rodando:** front em `web/` com a área logada completa, páginas legais e públicas, acesso por e-mail ou Google, TikTok só como conexão, e a entrada de pedidos por arquivo `.xlsx` (lint, typecheck, build e 136 testes passando, contra o MSW).
 - **Números:** o topo do Início é o GMV elegível; os gráficos são brutos e dizem isso no título e na nota.
-- **Repositório:** git iniciado na raiz (branch `main`), hook do devlog ativo via `core.hooksPath`.
-- **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. O backend em `api/` já sobe, mas ainda não serve nenhuma rota do contrato.
-- **Backend:** `api/` com `PATCH /me` (aceite dos termos e troca de e-mail) e o contrato de dados (`/summary`, `/orders`, `/videos`, `/products`, `/plans`, `/goals`, `/me/notifications`, `/me/export`, `DELETE /me`) sobre o banco, além de conta, sessão, Google e conexão com o TikTok. Falta o import de arquivo (`/imports`, `/reconciliation`), `PATCH /me`, `POST /me/avatar` e a sincronização com o TikTok. `/payouts` saiu do contrato.
-- **Integração TikTok:** Affiliate Creator API não liberada para o Brasil; ticket aberto com a TikTok. Display API disponível, app ainda não submetido.
+- **Repositório:** git na raiz (branch `main`), hook do devlog ativo via `core.hooksPath`. Três sessões trabalham no mesmo repositório em paralelo: front só em `web/`, API só em `api/`, e o `CLAUDE.md` da raiz só pela sessão líder. `DEVLOG.md` é compartilhado e cada sessão commita a entrada dela junto com a mudança.
+- **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. O banco de desenvolvimento ainda não foi semeado.
+- **Backend:** `api/` serve conta, sessão, Google, conexão com o TikTok, `PATCH /me`, e o contrato de dados (`/summary`, `/orders`, `/videos`, `/products`, `/plans`, `/goals`, `/me/notifications`, `/me/export`, `DELETE /me`) sobre o banco. 57 testes. Falta `POST /me/avatar`, o import de arquivo (`/imports`, `/reconciliation`) e a sincronização com o TikTok. `/payouts` saiu do contrato.
+- **Erro:** corpo de erro é `{ code, message }` em toda rota, definido no contrato. O `code` é traduzido no front por `lib/textos.ts`; o `message` é técnico e nunca chega à tela.
+- **Integração TikTok:** Affiliate Creator API não liberada para o Brasil; ticket aberto. Display API disponível, app ainda não submetido.
 - **Telas prontas:** /, /entrar, /criar-conta, /recuperar, /termos, /privacidade, /inicio-rapido, /inicio, /vendas, /videos, /videos/:id, /produtos, /planejamento, /configuracoes, /avisos, /reconciliacao.
-- **Próximo passo:** apontar o front para a API de verdade (`VITE_API_URL`) e desligar o MSW; depois, import de arquivo na API; no front, decidir as propostas de contrato da entrada de 23/09, e receber do dono os dados legais de `web/src/lib/textos.ts` (CNPJ, endereço, prazos, comarca).
-- **Bloqueios:** aprovação da categoria "Creator collaborations" para o Brasil; confirmação de que o identificador de conteúdo do pedido é o mesmo id do vídeo.
+- **Próximo passo:** semear o banco de desenvolvimento e conferir os totais de referência nos endpoints; só então desligar o MSW (`VITE_ENABLE_MSW=false`) e varrer as 16 telas contra a API de verdade. Depois: `POST /me/avatar` e o import de arquivo.
+- **Bloqueios:** (1) segredos do `api/.env` — `JWT_SECRET` e `REFRESH_TOKEN_PEPPER` abaixo de 32 caracteres e as quatro variáveis `GOOGLE_*`/`TIKTOK_*` presentes e vazias em vez de ausentes, o que impede migrate e seed; (2) aprovação de `@fastify/multipart`, que `/imports` exige; (3) os dados legais de `web/src/lib/textos.ts` (CNPJ, razão social, endereço, e-mail de contato, comarca, encarregado) — `/termos` e `/privacidade` vão para a revisão do app no TikTok; (4) o `affiliate_orders.xlsx` real, que fecha a seção 3 de `docs/parser-affiliate-orders.md`; (5) aprovação da categoria "Creator collaborations" para o Brasil; (6) confirmação de que o `contentId` do pedido é o mesmo id do vídeo.
 
 ---
 
