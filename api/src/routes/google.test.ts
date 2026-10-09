@@ -136,7 +136,7 @@ describe('login com Google', () => {
 
     const res = await voltar(inicio, 'code=codigo-bom&state=outro-state');
     expect(res.statusCode).toBe(400);
-    expect(res.json()).toEqual({ error: 'REQUISICAO_INVALIDA', message: 'Requisição inválida' });
+    expect(res.json()).toMatchObject({ code: 'REQUISICAO_INVALIDA' });
     expect(cookiesDe(res)[COOKIE_ACESSO]).toBeUndefined();
   });
 
@@ -295,7 +295,7 @@ describe('login com Google', () => {
       headers: { ...CSRF, ...autenticado },
     });
     expect(res.statusCode).toBe(409);
-    expect(res.json().error).toBe('UNICO_ACESSO');
+    expect(res.json().code).toBe('UNICO_ACESSO');
   });
 
   it('desvincula quando ainda sobra a senha', async () => {

@@ -51,20 +51,20 @@ export async function buildApp() {
   app.setErrorHandler((error: FastifyError, request, reply) => {
     if (error instanceof AppError) {
       request.log.warn({ err: error, code: error.code }, 'erro tratado');
-      return reply.status(error.statusCode).send({ error: error.code, message: error.message });
+      return reply.status(error.statusCode).send({ code: error.code, message: error.message });
     }
     if (error instanceof ZodError || error.validation) {
       request.log.warn({ err: error }, 'entrada inválida');
-      return reply.status(400).send({ error: 'VALIDACAO', message: 'Dados inválidos' });
+      return reply.status(400).send({ code: 'VALIDACAO', message: 'Dados inválidos' });
     }
     if (error.statusCode === 429) {
       return reply
         .status(429)
-        .send({ error: 'MUITAS_REQUISICOES', message: 'Tente de novo em instantes' });
+        .send({ code: 'MUITAS_REQUISICOES', message: 'Tente de novo em instantes' });
     }
     // Daqui para baixo é erro nosso: o detalhe fica no log, o cliente vê genérico.
     request.log.error({ err: error }, 'erro não tratado');
-    return reply.status(500).send({ error: 'INTERNO', message: 'Erro interno' });
+    return reply.status(500).send({ code: 'INTERNO', message: 'Erro interno' });
   });
 
   await app.register(routes);

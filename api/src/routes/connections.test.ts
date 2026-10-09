@@ -153,7 +153,7 @@ describe('conexões com o TikTok', () => {
       payload: { kind: 'SHOP' },
     });
     expect(res.statusCode).toBe(503);
-    expect(res.json().error).toBe('TIKTOK_SHOP_INDISPONIVEL');
+    expect(res.json().code).toBe('TIKTOK_SHOP_INDISPONIVEL');
   });
 
   it('desconecta e apaga o token; conexão de outra pessoa não existe', async () => {

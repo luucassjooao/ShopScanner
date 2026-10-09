@@ -46,6 +46,10 @@ Base: `VITE_API_URL` no front. Autenticação por **cookie httpOnly** de sessão
 
 Convenções: dinheiro como **texto decimal** (`"11378.50"`) com `currency` ao lado; datas em **ISO 8601 UTC**; taxas como **inteiro em centésimos de %** (`1500` = 15%), igual ao TikTok.
 
+**Corpo de erro, em toda rota:** `{ code: string, message: string }`. O `code` é estável e é o que a interface traduz; o `message` é técnico, serve para log e suporte, e **nunca** vai para a tela. Campo extra só quando o contrato declarar (como `columnsFound` e `columnsMissing` do import). O nome do campo é `code`, não `error`: `ImportBatch.error.code` já usava `code`, e o front inteiro lê `code`.
+
+Códigos transversais: `VALIDACAO` (400), `NAO_ENCONTRADO` (404), `MUITAS_REQUISICOES` (429, com `Retry-After` **em segundos** — data HTTP é ignorada pelo front), `INTERNO` (500).
+
 ```
 POST /auth/register            { name, email, password, acceptedTermsVersion }
 POST /auth/login               { email, password }

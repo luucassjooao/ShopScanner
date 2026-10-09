@@ -258,7 +258,9 @@ describe('conta e sessão', () => {
       respostas.push((await entrar('iza@exemplo.com', 'chute-errado-aqui')).res);
     }
     expect(respostas.at(-1)!.statusCode).toBe(429);
-    expect(respostas.at(-1)!.json().error).toBe('MUITAS_REQUISICOES');
+    expect(respostas.at(-1)!.json().code).toBe('MUITAS_REQUISICOES');
+    // Em segundos, nunca data HTTP: o front não lê data.
+    expect(respostas.at(-1)!.headers['retry-after']).toMatch(/^\d+$/);
     expect(respostas.filter((r) => r.statusCode === 401)).toHaveLength(10);
   });
 });

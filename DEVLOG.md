@@ -25,6 +25,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [api] Responder erro com `code`, não `error`
+
+**Fiz:** todo erro sai como `{ code, message }`, nas quatro respostas do handler central (`AppError`, validação, 429 e 500). Oito asserções de teste passaram a conferir o `code`, e a de corpo inteiro em `google.test.ts` também. O teste de 429 agora confere que `Retry-After` é número de segundos.
+**Por quê:** a API mandava `error` com o código, e o front lê `code`. Contra a API real, nenhum código de erro chegaria à tela; o MSW mascarava isso, mandando `code`. O contrato não tinha definido o corpo de erro, e as duas pontas inventaram um cada. A decisão de nome está no `CLAUDE.md`, logo depois das convenções.
+**Funcionou:** `npm test` com 57 de 57, typecheck, lint e prettier limpos. O `Retry-After` já era em segundos, porque `@fastify/rate-limit` grava `ttlInSeconds`; o teste só trava isso.
+**Não funcionou:** nada. Só não tinha reparado antes que `google.test.ts` comparava o corpo inteiro, e a busca por `.error` não pegou essa forma.
+**Decidi:** conferir `code` nos testes e não `message`, porque `message` é técnico e pode mudar.
+**Pendente:** nada desta tarefa. Continua pendente o que já estava no devlog: `.env` do dono, totais de referência e `POST /me/avatar`.
+**Commit:** a registrar
+
 ### 2026-10-09 · [front] Tirar GOOGLE_ONLY, traduzir senha errada pelo código, avisar 429 com o tempo
 
 **Fiz:** GOOGLE_ONLY saiu de `Recuperar.tsx` e do MSW, que agora responde 204 sempre, como a API. A recuperação mostra a mesma confirmação para qualquer e-mail ("se existir uma conta com o e-mail…"). A troca de senha traduz `SENHA_ATUAL_INCORRETA` (400) por `textos.ts`. O cliente ganhou a categoria `limitado` para 429, com `Retry-After` em segundos; `Entrar`, a recuperação e a troca de senha mostram o tempo de espera e nunca "não conferem" para um 429. `perfilInput` aceita nome de 2 letras no mínimo, e o formulário de perfil avisa antes de enviar.

@@ -109,14 +109,14 @@ describe('editar perfil', () => {
 
     const semSenha = await editar(acesso, { email: 'ana.nova@exemplo.com' });
     expect(semSenha.statusCode).toBe(400);
-    expect(semSenha.json().error).toBe('SENHA_ATUAL_INCORRETA');
+    expect(semSenha.json().code).toBe('SENHA_ATUAL_INCORRETA');
 
     const errada = await editar(acesso, {
       email: 'ana.nova@exemplo.com',
       currentPassword: 'chute-errado',
     });
     expect(errada.statusCode).toBe(400);
-    expect(errada.json().error).toBe('SENHA_ATUAL_INCORRETA');
+    expect(errada.json().code).toBe('SENHA_ATUAL_INCORRETA');
 
     const certa = await editar(acesso, { email: 'ana.nova@exemplo.com', currentPassword: SENHA });
     expect(certa.statusCode).toBe(200);
@@ -137,7 +137,7 @@ describe('editar perfil', () => {
 
     const res = await editar(acesso, { email: 'BIA@exemplo.com' });
     expect(res.statusCode).toBe(409);
-    expect(res.json().error).toBe('EMAIL_EM_USO');
+    expect(res.json().code).toBe('EMAIL_EM_USO');
   });
 
   it('recusa e-mail malformado e nome curto demais', async () => {
@@ -145,7 +145,7 @@ describe('editar perfil', () => {
 
     const email = await editar(acesso, { email: 'nao-e-email' });
     expect(email.statusCode).toBe(400);
-    expect(email.json().error).toBe('VALIDACAO');
+    expect(email.json().code).toBe('VALIDACAO');
 
     const nome = await editar(acesso, { name: 'A' });
     expect(nome.statusCode).toBe(400);
@@ -158,7 +158,7 @@ describe('definir senha', () => {
 
     const semAtual = await trocar(acesso, { newPassword: 'outra-senha-longa-2' });
     expect(semAtual.statusCode).toBe(400);
-    expect(semAtual.json().error).toBe('SENHA_ATUAL_INCORRETA');
+    expect(semAtual.json().code).toBe('SENHA_ATUAL_INCORRETA');
 
     const errada = await trocar(acesso, {
       currentPassword: 'chute-errado',
