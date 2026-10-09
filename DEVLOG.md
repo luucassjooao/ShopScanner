@@ -33,7 +33,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada. Só não tinha reparado antes que `google.test.ts` comparava o corpo inteiro, e a busca por `.error` não pegou essa forma.
 **Decidi:** conferir `code` nos testes e não `message`, porque `message` é técnico e pode mudar.
 **Pendente:** nada desta tarefa. Continua pendente o que já estava no devlog: `.env` do dono, totais de referência e `POST /me/avatar`.
-**Commit:** a registrar
+**Commit:** 09b68dc
 
 ### 2026-10-09 · [front] Tirar GOOGLE_ONLY, traduzir senha errada pelo código, avisar 429 com o tempo
 
