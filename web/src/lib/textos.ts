@@ -38,6 +38,9 @@ const ERROS: Record<string, string> = {
   SESSAO_EXPIRADA: 'A sua sessão venceu no meio do caminho. Entre de novo para continuar.',
   // Troca de senha (PUT /me/password)
   SENHA_ATUAL_INCORRETA: 'A senha atual não confere. Confira e tente de novo.',
+  // Desvincular o Google (DELETE /auth/identities/GOOGLE)
+  UNICO_ACESSO:
+    'Esse é o único jeito de entrar na sua conta. Defina uma senha antes de desvincular o Google.',
   // Conexão com o TikTok
   TIKTOK_RECUSADO:
     'A autorização foi recusada no TikTok. Para trazer os seus dados, é preciso aceitar o acesso de leitura.',

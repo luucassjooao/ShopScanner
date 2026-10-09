@@ -36,6 +36,12 @@ describe('mensagemDoErro', () => {
     expect(mensagemDoErro('TIKTOK_SHOP_INDISPONIVEL')).toContain('arquivo');
   });
 
+  it('desvincular o único acesso diz o que fazer antes', () => {
+    expect(mensagemDoErro('UNICO_ACESSO')).toBe(
+      'Esse é o único jeito de entrar na sua conta. Defina uma senha antes de desvincular o Google.',
+    );
+  });
+
   it('troca de senha: senha atual incorreta tem texto próprio', () => {
     expect(mensagemDoErro('SENHA_ATUAL_INCORRETA')).toBe(
       'A senha atual não confere. Confira e tente de novo.',

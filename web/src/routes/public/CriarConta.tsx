@@ -19,7 +19,11 @@ import { VERSAO_TERMOS } from '@/lib/textos';
 import { cn } from '@/lib/utils';
 
 const formulario = z.object({
-  name: z.string().trim().min(1, 'Como podemos te chamar?'),
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Como podemos te chamar?')
+    .min(2, 'O nome precisa ter pelo menos 2 letras.'),
   email: z.email('Informe um e-mail válido.'),
   password: z.string().min(8, 'A senha precisa ter pelo menos 8 caracteres.'),
   aceite: z.literal(true, { error: 'Para criar a conta, aceite os Termos e a Política.' }),

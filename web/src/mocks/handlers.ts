@@ -290,7 +290,12 @@ export const handlers = [
     const negado = semSessao();
     if (negado) return negado;
     if (!db.google) return erro(404, 'O Google não está vinculado.');
-    if (db.password === null) return erro(409, 'Defina uma senha antes de desvincular o Google.');
+    if (db.password === null) {
+      return HttpResponse.json(
+        { code: 'UNICO_ACESSO', message: 'Defina uma senha antes de desvincular o Google.' },
+        { status: 409 },
+      );
+    }
     db.google = null;
     return new HttpResponse(null, { status: 204 });
   }),

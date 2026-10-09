@@ -139,6 +139,18 @@ describe('/criar-conta', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Criar conta' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/inicio-rapido'));
   });
+
+  it('nome de 1 letra para na validação do front, sem ir para a API', async () => {
+    db.loggedIn = false;
+    const router = abrir('/criar-conta');
+    await userEvent.type(await screen.findByLabelText('Nome'), 'A');
+    await userEvent.type(screen.getByLabelText('E-mail'), 'ana@email.com.br');
+    await userEvent.type(screen.getByLabelText('Senha'), 'Abcdef1!');
+    await userEvent.click(screen.getByRole('checkbox'));
+    await userEvent.click(screen.getByRole('button', { name: 'Criar conta' }));
+    expect(await screen.findByText('O nome precisa ter pelo menos 2 letras.')).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/criar-conta');
+  });
 });
 
 describe('/recuperar', () => {

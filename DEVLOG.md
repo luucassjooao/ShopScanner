@@ -25,6 +25,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [front] Alinhar o nome do cadastro a 2 letras e traduzir UNICO_ACESSO
+
+**Fiz:** `registerInput` e o formulário de criar conta exigem 2 letras, como o perfil e a API. `UNICO_ACESSO` (409 ao desvincular o único acesso) ganhou texto em `textos.ts`, e a tela de desvincular passou a traduzir pelo código, não pelo texto da API. O MSW manda `code: 'UNICO_ACESSO'` no 409.
+**Por quê:** a API exige 2 letras no cadastro, então o front deixava passar um nome que o servidor recusava. E com o envelope de erro agora em `code`, `UNICO_ACESSO` chega de verdade à tela; a tela esconder o botão não cobre a corrida entre duas abas.
+**Funcionou:** lint, typecheck e prettier limpos; 140 testes (eram 136). Cobertos: cadastro com 1 letra para no formulário sem ir à API, `registerInput` recusa 1 letra e aceita 2, e o texto de `UNICO_ACESSO`.
+**Não funcionou:** nada travou.
+**Decidi:** o cliente (`client.ts`) não mudou: lê `code`, que é o contrato. O texto genérico continua sendo o último recurso.
+**Pendente:** `EMAIL_EM_USO` (409 ao trocar e-mail na API) ainda não tem texto em `textos.ts`; cai no texto genérico. Não adicionei porque o pedido foi outro; é uma linha com teste quando a API confirmar o código.
+**Commit:** a registrar
+
 ### 2026-10-09 · [api] Responder erro com `code`, não `error`
 
 **Fiz:** todo erro sai como `{ code, message }`, nas quatro respostas do handler central (`AppError`, validação, 429 e 500). Oito asserções de teste passaram a conferir o `code`, e a de corpo inteiro em `google.test.ts` também. O teste de 429 agora confere que `Retry-After` é número de segundos.

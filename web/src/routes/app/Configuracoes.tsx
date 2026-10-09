@@ -297,7 +297,9 @@ function AcessoConta({ sessao }: { sessao: Sessao }) {
         ) : null}
         {desvincular.error ? (
           <p role="alert" className={cn(erroTexto, 'w-full')}>
-            {desvincular.error.message}
+            {desvincular.error instanceof ApiError && desvincular.error.serverCode
+              ? mensagemDoErro(desvincular.error.serverCode)
+              : desvincular.error.message}
           </p>
         ) : null}
       </LinhaAcesso>

@@ -83,7 +83,7 @@ export const loginInput = z.object({ email: z.email(), password: z.string().min(
 export type LoginInput = z.infer<typeof loginInput>;
 
 export const registerInput = z.object({
-  name: z.string().min(1),
+  name: z.string().trim().min(2),
   email: z.email(),
   password: z.string().min(8),
   acceptedTermsVersion: z.string().min(1),
