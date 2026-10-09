@@ -92,8 +92,11 @@ PUT  /me/password              { currentPassword?, newPassword }
                                  currentPassword só é exigido quando hasPassword é true
 POST /me/avatar                multipart -> { avatarUrl }
 
-GET  /accounts                 -> [{ id, username, avatarUrl, shopConnected,
+GET  /accounts                 -> [{ id, username, avatarUrl, shopConnected, hasSales,
                                      connectedAt, lastSyncedAt, expiresAt }]
+                                 hasSales: existe pedido nesta conta, de qualquer fonte.
+                                 É o que decide se a tela de venda mostra venda ou
+                                 convida a enviar o relatório — nunca shopConnected
 POST /connections/tiktok/start { kind?: "VIDEOS" | "SHOP" } -> { authorizeUrl }
                                  o front navega para authorizeUrl; "SHOP" responde 503
 GET  /connections/tiktok/callback  cria a conexão e volta para /configuracoes
@@ -140,7 +143,7 @@ GET  /me/export                -> arquivo JSON com todos os dados
 DELETE /me                     -> exclusão de conta
 ```
 
-Campos opcionais (`gmv`, `commission`, `gpm` em vídeos) vêm nulos quando a conta do TikTok Shop não está conectada. A interface trata isso como "ainda não disponível", **nunca como zero**.
+Campos opcionais (`gmv`, `commission`, `gpm` em vídeos) vêm nulos quando **não há venda ligada àquele vídeo** — e não quando `shopConnected` é falso. A API preenche a partir dos pedidos de **qualquer** procedência, `API` ou `FILE`: venda que entrou por arquivo e tem `contentId` conta igual. A interface trata o nulo como "ainda não disponível", **nunca como zero**, e nunca como "conecte o Shop".
 
 ### Identidade de acesso e conexões
 
