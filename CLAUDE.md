@@ -114,7 +114,6 @@ GET  /imports?accountId&kind&status&page&pageSize
 GET  /imports/:id              -> ImportBatch, para acompanhar o processamento
 GET  /reconciliation?accountId&from&to
   -> [{ orderId, skuId, field, fromFile, fromApi, resolvedWith, at }]
-GET  /payouts?accountId        -> [{ week, expected, settled, pending }]
 
 GET  /me/export                -> arquivo JSON com todos os dados
 DELETE /me                     -> exclusão de conta
@@ -308,6 +307,9 @@ Decisões de contrato que valem para as duas pontas:
 - No MVP só o canal no app funciona, então nenhuma tela escreve "por e-mail". Resumo semanal e novidades do produto ficam fora até a API enviar e-mail.
 - O campo `title` da pauta continua obrigatório no contrato, mas o formulário não pede: o front deriva das primeiras palavras do gancho. Gancho vazio vira "Pauta sem nome".
 - "Marcar para regravar" não é campo novo: cria uma pauta em `/plans` com `status: "IDEA"` e o `productId` do produto.
+- **`/auth/forgot-password` responde sempre 204**, com e-mail existente ou não, com senha ou só com Google. Nenhum código de erro, nenhuma distinção: a resposta que varia conta ao atacante quais e-mails têm conta aqui e quais entram pelo Google. Não existe, e não pode existir, um `GOOGLE_ONLY` nessa rota. Quem só tem Google descobre isso ao tentar entrar, não ao pedir recuperação.
+- **Erro que o usuário precisa entender tem `code` estável.** O front nunca mostra o `message` da API — ele é técnico, vai para log e suporte. Falha sem `code` cai no texto genérico, que é pior experiência: se a tela precisa explicar algo específico, a API manda `code`, e o front traduz em `lib/textos.ts`. Hoje: `SENHA_ATUAL_INCORRETA` (422) em `PUT /me/password`.
+- **`GET /payouts` saiu do contrato** (09/10/2026). Nunca teve `expected`, `settled` e `pending` definidos em "Definições dos números", nunca foi servido pela API e nenhuma tela usou. `/summary` já entrega `commissionToReceive` e `commissionSettled`. Volta só com a definição escrita primeiro e uma tela que a use.
 
 ## Fontes do dado: API, arquivo e estimativa
 

@@ -15,7 +15,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 - **Números:** o topo do Início é o GMV elegível; os gráficos são brutos e dizem isso no título e na nota.
 - **Repositório:** git iniciado na raiz (branch `main`), hook do devlog ativo via `core.hooksPath`.
 - **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. O backend em `api/` já sobe, mas ainda não serve nenhuma rota do contrato.
-- **Backend:** `api/` com `PATCH /me` (aceite dos termos e troca de e-mail) e o contrato de dados (`/summary`, `/orders`, `/videos`, `/products`, `/plans`, `/goals`, `/me/notifications`, `/me/export`, `DELETE /me`) sobre o banco, além de conta, sessão, Google e conexão com o TikTok. Falta o import de arquivo (`/imports`, `/reconciliation`, `/payouts`) e a sincronização com o TikTok.
+- **Backend:** `api/` com `PATCH /me` (aceite dos termos e troca de e-mail) e o contrato de dados (`/summary`, `/orders`, `/videos`, `/products`, `/plans`, `/goals`, `/me/notifications`, `/me/export`, `DELETE /me`) sobre o banco, além de conta, sessão, Google e conexão com o TikTok. Falta o import de arquivo (`/imports`, `/reconciliation`), `PATCH /me`, `POST /me/avatar` e a sincronização com o TikTok. `/payouts` saiu do contrato.
 - **Integração TikTok:** Affiliate Creator API não liberada para o Brasil; ticket aberto com a TikTok. Display API disponível, app ainda não submetido.
 - **Telas prontas:** /, /entrar, /criar-conta, /recuperar, /termos, /privacidade, /inicio-rapido, /inicio, /vendas, /videos, /videos/:id, /produtos, /planejamento, /configuracoes, /avisos, /reconciliacao.
 - **Próximo passo:** apontar o front para a API de verdade (`VITE_API_URL`) e desligar o MSW; depois, import de arquivo na API; no front, decidir as propostas de contrato da entrada de 23/09, e receber do dono os dados legais de `web/src/lib/textos.ts` (CNPJ, endereço, prazos, comarca).
@@ -24,6 +24,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 ---
 
 ## Entradas
+
+### 2026-10-09 · [repo] Tirar `/payouts` do contrato e fechar a regra de código de erro
+
+**Fiz:** removi `GET /payouts` do contrato e escrevi três decisões em "Decisões de contrato": a recuperação de senha responde sempre 204, erro que o usuário precisa entender tem `code` estável, e `/payouts` só volta com definição e tela.
+**Por quê:** três sessões de devlog seguidas registraram `/payouts` como pendente. Ele nunca teve `expected`, `settled` e `pending` definidos em "Definições dos números", nunca foi servido pela API e nenhuma tela chegou a usar — `grep` por `payout` em `web/src`, `mocks/` e `api/src` não acha nada. Rota que ninguém implementou e ninguém consumiu não é pendência, é linha de contrato errada: ela obriga toda sessão futura a reabrir a mesma discussão.
+**Funcionou:** a remoção é uma linha e não toca em código nenhum, nas duas pontas. Por isso não exigiu commit conjunto com a API, como manda a regra de mudança de contrato.
+**Não funcionou:** nada. Mas recusei uma proposta que veio da sessão do front e já estava implementada: o código `GOOGLE_ONLY` em `/auth/forgot-password`, para quem tem conta só pelo Google. Conferi a API antes de decidir — `controllers/auth.ts` responde 204 em todo caso, com ou sem usuário, e está certa. Responder diferente para "só Google" entrega ao atacante duas informações de graça: que aquele e-mail tem conta aqui, e por onde ele entra. É enumeração de conta, e vai contra o `api/CLAUDE.MD`, que já exige resposta igual para e-mail inexistente e senha errada. O front e o MSW implementaram antes de a rota existir no contrato — o código saiu, e a regra entrou no contrato para ninguém reinventar.
+**Decidi:** `SENHA_ATUAL_INCORRETA` (422) em `PUT /me/password` entra no contrato, essa sim: a pessoa já está autenticada, então não há nada a enumerar, e sem código a tela cai no genérico "algum dado não foi aceito" para uma falha que tem explicação exata. A regra geral ficou escrita: erro que a tela precisa explicar tem `code`; o `message` da API é técnico e nunca chega à tela.
+**Pendente:** a API tem de emitir `SENHA_ATUAL_INCORRETA`, e é esse commit que carrega a linha do contrato. Os placeholders legais de `textos.ts` (CNPJ, razão social, endereço, e-mail de contato, comarca, encarregado) seguem esperando os dados do dono.
+**Commit:** a preencher
 
 ### 2026-10-09 · [api] Criar PATCH /me, e trocar o e-mail derruba as outras sessões
 
