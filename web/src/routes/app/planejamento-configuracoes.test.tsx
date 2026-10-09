@@ -121,10 +121,9 @@ describe('/configuracoes', () => {
     await userEvent.type(within(modal).getByLabelText('Senha nova'), 'nova-senha-123');
     await userEvent.type(within(modal).getByLabelText('Repita a senha nova'), 'nova-senha-123');
     await userEvent.click(within(modal).getByRole('button', { name: 'Trocar senha' }));
-    // A API manda só `message` (sem código) para senha errada: a tela não mostra texto técnico.
-    // Ver DEVLOG — proposta de código `SENHA_ATUAL_INCORRETA` pendente com a raiz.
+    // A API manda o código SENHA_ATUAL_INCORRETA (400): a tela traduz pelo código, não pelo texto.
     expect(
-      await within(modal).findByText('Algum dado enviado não foi aceito. Revise e tente de novo.'),
+      await within(modal).findByText('A senha atual não confere. Confira e tente de novo.'),
     ).toBeInTheDocument();
 
     await userEvent.clear(within(modal).getByLabelText('Senha atual'));

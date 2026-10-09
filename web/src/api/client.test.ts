@@ -65,6 +65,33 @@ describe('request', () => {
     expect(erro.serverCode).toBe('X');
   });
 
+  it('transforma 429 em limitado, com o Retry-After em segundos, e não repete sozinho', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        respond({ message: 'rate limited' }, { status: 429, headers: { 'Retry-After': '90' } }),
+      ),
+    );
+    const erro = (await request('/auth/login', { schema }).catch((e: unknown) => e)) as ApiError;
+    expect(erro.code).toBe('limitado');
+    expect(erro.retryAfterSegundos).toBe(90);
+    expect(erro.isRetryable).toBe(false);
+  });
+
+  it('ignora Retry-After que não é número de segundos', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        respond(undefined, {
+          status: 429,
+          headers: { 'Retry-After': 'Wed, 21 Oct 2026 07:28:00 GMT' },
+        }),
+      ),
+    );
+    const erro = (await request('/auth/login', { schema }).catch((e: unknown) => e)) as ApiError;
+    expect(erro.retryAfterSegundos).toBeUndefined();
+  });
+
   it('transforma 500 em servidor, e esse vale repetir', async () => {
     vi.stubGlobal(
       'fetch',

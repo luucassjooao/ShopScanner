@@ -25,6 +25,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [front] Tirar GOOGLE_ONLY, traduzir senha errada pelo código, avisar 429 com o tempo
+
+**Fiz:** GOOGLE_ONLY saiu de `Recuperar.tsx` e do MSW, que agora responde 204 sempre, como a API. A recuperação mostra a mesma confirmação para qualquer e-mail ("se existir uma conta com o e-mail…"). A troca de senha traduz `SENHA_ATUAL_INCORRETA` (400) por `textos.ts`. O cliente ganhou a categoria `limitado` para 429, com `Retry-After` em segundos; `Entrar`, a recuperação e a troca de senha mostram o tempo de espera e nunca "não conferem" para um 429. `perfilInput` aceita nome de 2 letras no mínimo, e o formulário de perfil avisa antes de enviar.
+**Por quê:** resposta que varia em `/auth/forgot-password` entrega quais e-mails têm conta; 429 mostrado como senha errada mente para quem acertou.
+**Funcionou:** lint, typecheck e prettier limpos; 136 testes (eram 128). Cobertos: 204 igual para conta só com Google, 429 no login com `Retry-After` de 120 s, `Retry-After` que não é número ignorado, `SENHA_ATUAL_INCORRETA` com texto próprio, nome de 1 caractere recusado.
+**Não funcionou:** nada travou. O código desta tarefa entrou no commit `2504b70`, junto com a mudança de contrato do repo; os testes e esta entrada ficaram no commit seguinte.
+**Decidi:** `limitado` não repete sozinho (não é `isRetryable`). Sem `Retry-After`, o aviso não tem número. E-mail só troca pela API, que vai exigir senha atual.
+**Pendente:** `registerInput` e o formulário de criar conta ainda aceitam nome de 1 caractere; não mudei porque o pedido foi só para `perfilInput`. Desvincular o Google responde 409 sem `code` no MSW, então cai no texto genérico (a tela já esconde o botão quando não cabe). A tela de perfil não mostra `emailVerified`, então não afirma e-mail verificado depois da troca; quando a troca de e-mail chegar, o formulário ganha `currentPassword`, só depois do aviso da raiz.
+**Commit:** 2504b70 (código) e o commit seguinte (testes e devlog)
+
 ### 2026-10-09 · [api] Exigir senha atual para trocar e-mail e tornar e-mail obrigatório
 
 **Fiz:** `PATCH /me` aceita `currentPassword`, exigido quando a conta tem senha e o e-mail muda; errado ou ausente responde 400 `SENHA_ATUAL_INCORRETA` (o mesmo código da troca de senha). Migração `0005` põe `NOT NULL` em `users.email` e `auth_identities.email`.
