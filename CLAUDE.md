@@ -38,7 +38,17 @@ Os prompts de construção ficam em `docs/PROMPTS.md` (front) e `docs/PROMPTS-AP
 | APIs de live room                                                 | Não confirmado se aceitam token de creator do Brasil.                                                                                   |
 | Import do `affiliate_orders.xlsx`                                 | **É a espinha de dados do MVP** enquanto a API não libera. Especificação em `docs/parser-affiliate-orders.md` (seção 3 ainda pendente). |
 
-Consequência para o front: toda tela precisa de um estado "TikTok Shop não conectado", em que só os dados de vídeo aparecem. Consequência para a API: o cliente do TikTok nasce pronto e **desligado por variável de ambiente**, com as rotas respondendo indisponibilidade clara.
+Consequência para o front: toda tela de dados precisa de um estado em que só os dados de vídeo aparecem — **mas quem dispara esse estado é a ausência de dado de venda, nunca `shopConnected`.**
+
+> **`shopConnected` não governa exibição de venda.** Ele descreve só a conexão viva com o TikTok Shop: serve ao cartão de Configurações, ao aviso de "em liberação no Brasil" e à sincronização automática. Nada mais.
+>
+> O motivo é aritmético. `POST /connections/tiktok/start` com `kind: "SHOP"` responde **503** enquanto a Affiliate Creator API não liberar o Brasil, então **nenhuma creator real consegue ter `shopConnected: true`**. Se as telas de venda dependessem dessa bandeira, Início, Vendas, Produtos e Planejamento diriam "conecte o TikTok Shop" para 100% dos usuários, para sempre — inclusive depois de um import de `.xlsx` bem-sucedido, que é justamente a espinha de dados do MVP. O dado entraria no banco e as telas se recusariam a mostrá-lo.
+>
+> Então: **tela de venda mostra venda quando existe venda**, não importa a procedência (`API` ou `FILE`). O estado "só vídeo" aparece quando não há venda nenhuma, e a saída que ele oferece é **enviar o relatório em arquivo** — o caminho que existe —, não conectar o Shop, que hoje é um caminho fechado.
+>
+> Vale também por item: `gmv`, `commission` e `gpm` de vídeo vêm nulos quando **não há venda ligada àquele vídeo**, não quando `shopConnected` é falso.
+>
+> Isso passou despercebido porque `db/seed.sql` insere a linha `SHOP` direto no banco, sem passar pela rota que recusa: a conta de demonstração nasce com `shopConnected: true` e esconde o estado real de todo usuário. Consequência para a API: o cliente do TikTok nasce pronto e **desligado por variável de ambiente**, com as rotas respondendo indisponibilidade clara.
 
 ## Contrato
 
@@ -318,6 +328,7 @@ Decisões de contrato que valem para as duas pontas:
 - No MVP só o canal no app funciona, então nenhuma tela escreve "por e-mail". Resumo semanal e novidades do produto ficam fora até a API enviar e-mail.
 - O campo `title` da pauta continua obrigatório no contrato, mas o formulário não pede: o front deriva das primeiras palavras do gancho. Gancho vazio vira "Pauta sem nome".
 - "Marcar para regravar" não é campo novo: cria uma pauta em `/plans` com `status: "IDEA"` e o `productId` do produto.
+- **Detalhe de produto e de vídeo não tem período**: `GET /products/:id` e `GET /videos/:id` devolvem o total **desde o início**, enquanto a lista que levou até ele é do período filtrado. Os dois números aparecem na mesma tela e não batem, então o detalhe **diz em tela que é desde o início**. Não é o mesmo caso do GMV elegível: lá o número do topo estava errado para a creator, aqui os dois estão certos e medem coisas diferentes. Passa a aceitar período só se alguém pedir — e então muda nos dois endpoints de uma vez.
 - **Erro do Google quando já existe sessão** volta para `/configuracoes?erro=CODIGO`, não para `/entrar`: quem está logado e vai vincular o Google seria redirecionado de `/entrar` para `/inicio` pela guarda de rota, e a mensagem se perderia. Sem sessão continua em `/entrar?erro=CODIGO`.
 - **`/auth/forgot-password` responde sempre 204**, com e-mail existente ou não, com senha ou só com Google. Nenhum código de erro, nenhuma distinção: a resposta que varia conta ao atacante quais e-mails têm conta aqui e quais entram pelo Google. Não existe, e não pode existir, um `GOOGLE_ONLY` nessa rota. Quem só tem Google descobre isso ao tentar entrar, não ao pedir recuperação.
 - **Erro que o usuário precisa entender tem `code` estável.** O front nunca mostra o `message` da API — ele é técnico, vai para log e suporte. Falha sem `code` cai no texto genérico, que é pior experiência: se a tela precisa explicar algo específico, a API manda `code`, e o front traduz em `lib/textos.ts`. Hoje: `SENHA_ATUAL_INCORRETA` (400) em `PUT /me/password` — o status não distingue nada para o front, que mapeia todo 4xx que não é 401/408/429 para a mesma categoria; é o `code` que decide o texto.
