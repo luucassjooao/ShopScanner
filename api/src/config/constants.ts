@@ -32,5 +32,6 @@ export const MOTIVO = {
   logoutAll: 'LOGOUT_ALL',
   revogadaPeloUsuario: 'REVOGADA_PELO_USUARIO',
   trocaDeSenha: 'TROCA_DE_SENHA',
+  trocaDeEmail: 'TROCA_DE_EMAIL',
   reusoDeRefresh: 'REUSO_DE_REFRESH',
 } as const;

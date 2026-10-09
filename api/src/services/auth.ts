@@ -49,7 +49,7 @@ async function emitirTokens(
   return { tokens: { acesso, refresh }, refreshId: linha.id };
 }
 
-async function abrirSessao(usuario: Usuario, ctx: Contexto): Promise<Tokens> {
+export async function abrirSessao(usuario: Usuario, ctx: Contexto): Promise<Tokens> {
   return transaction(async (tx) => {
     const sessao = await sessoes.criarSessao(
       { userId: usuario.id, userAgent: ctx.userAgent, ip: ctx.ip },
@@ -293,24 +293,26 @@ export async function desvincularIdentidade(usuario: Usuario, provider: 'GOOGLE'
   if (removidas === 0) throw AppError.naoEncontrado('Vínculo não encontrado');
 }
 
-/** O `user` e as `accounts` do contrato, do jeito que `/auth/session` devolve. */
-export async function montarSessao(usuario: Usuario) {
+/** O `SessionUser` do contrato. Também é a resposta de `PATCH /me`. */
+export async function montarUsuario(usuario: Usuario) {
   const identidades = await usuarios.listarIdentidades(usuario.id);
   return {
-    user: {
-      id: usuario.id,
-      name: usuario.name,
-      email: usuario.email,
-      emailVerified: usuario.emailVerified,
-      avatarUrl: usuario.avatarUrl,
-      hasPassword: usuario.passwordHash !== null,
-      identities: identidades.map((i) => ({
-        provider: i.provider,
-        email: i.email,
-        linkedAt: i.linkedAt.toISOString(),
-      })),
-      acceptedTermsVersion: usuario.acceptedTermsVersion,
-    },
-    accounts: await contasDoUsuario(usuario.id),
+    id: usuario.id,
+    name: usuario.name,
+    email: usuario.email,
+    emailVerified: usuario.emailVerified,
+    avatarUrl: usuario.avatarUrl,
+    hasPassword: usuario.passwordHash !== null,
+    identities: identidades.map((i) => ({
+      provider: i.provider,
+      email: i.email,
+      linkedAt: i.linkedAt.toISOString(),
+    })),
+    acceptedTermsVersion: usuario.acceptedTermsVersion,
   };
+}
+
+/** O `user` e as `accounts` do contrato, do jeito que `/auth/session` devolve. */
+export async function montarSessao(usuario: Usuario) {
+  return { user: await montarUsuario(usuario), accounts: await contasDoUsuario(usuario.id) };
 }

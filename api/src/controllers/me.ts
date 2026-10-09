@@ -21,6 +21,23 @@ export async function definirSenha(request: FastifyRequest, reply: FastifyReply)
   return reply.status(204).send();
 }
 
+const perfil = z.object({
+  name: z.string().trim().min(2).max(120).optional(),
+  email: z.email().max(255).optional(),
+  acceptedTermsVersion: z.string().min(1).max(40).optional(),
+});
+
+/** `PATCH /me`: devolve o `SessionUser`. Se o e-mail mudou, a sessão nova vem em cookie. */
+export async function atualizarPerfil(request: FastifyRequest, reply: FastifyReply) {
+  const dados = perfil.parse(request.body);
+  const { usuario, tokens } = await me.atualizarPerfil(request.autenticado!.usuario, dados, {
+    userAgent: request.headers['user-agent'] ?? null,
+    ip: request.ip || null,
+  });
+  if (tokens) definirCookiesDeSessao(reply, tokens);
+  return reply.send(await auth.montarUsuario(usuario));
+}
+
 export async function exportar(request: FastifyRequest, reply: FastifyReply) {
   const dados = await me.exportar(request.autenticado!.usuario);
   return reply.header('content-disposition', 'attachment; filename="shopscanner.json"').send(dados);

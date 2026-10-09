@@ -1,11 +1,46 @@
-import { sql } from '../lib/db.ts';
+import { sql, transaction } from '../lib/db.ts';
+import { AppError } from '../lib/errors.ts';
+import { MOTIVO } from '../config/constants.ts';
 import { listarMetas, listarPlanos, avisos } from './planning.ts';
-import { montarSessao } from './auth.ts';
+import { abrirSessao, montarSessao, type Contexto, type Tokens } from './auth.ts';
 import * as pedidos from '../repositories/orders.ts';
+import * as sessoes from '../repositories/sessions.ts';
+import * as usuarios from '../repositories/users.ts';
 import * as videosRepo from '../repositories/videos.ts';
 import type { Usuario } from '../repositories/users.ts';
 
 const TUDO = { from: new Date(0), to: new Date('2100-01-01T00:00:00Z') };
+
+/**
+ * `PATCH /me`. Nome e aceite dos termos são dados comuns. E-mail é credencial:
+ * trocá-lo derruba as outras sessões, como a troca de senha. Esta aba ganha
+ * sessão nova, para a pessoa não ser expulsa da tela em que está.
+ *
+ * Decisão: a troca não pede senha atual. O contrato não tem o campo, e a
+ * sessão já prova quem é. Se o contrato ganhar `currentPassword`, entra aqui.
+ */
+export async function atualizarPerfil(
+  usuario: Usuario,
+  dados: { name?: string; email?: string; acceptedTermsVersion?: string },
+  ctx: Contexto,
+): Promise<{ usuario: Usuario; tokens: Tokens | null }> {
+  const trocaEmail =
+    dados.email !== undefined && dados.email.toLowerCase() !== usuario.email?.toLowerCase();
+
+  if (trocaEmail && (await usuarios.buscarPorEmail(dados.email!))) {
+    throw new AppError(409, 'EMAIL_EM_USO', 'Já existe uma conta com este e-mail');
+  }
+
+  const atualizado = await transaction(async (tx) => {
+    const novo = await usuarios.atualizarDados(usuario.id, dados, tx);
+    if (!trocaEmail) return novo;
+    const comEmailNovo = await usuarios.trocarEmail(usuario.id, dados.email!, tx);
+    await sessoes.revogarSessoesDoUsuario(usuario.id, MOTIVO.trocaDeEmail, tx);
+    return comEmailNovo;
+  });
+
+  return { usuario: atualizado, tokens: trocaEmail ? await abrirSessao(atualizado, ctx) : null };
+}
 
 /**
  * `GET /me/export`: tudo que é da pessoa, em JSON. Sem token e sem hash de

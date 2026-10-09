@@ -20,6 +20,25 @@ async function registrar(email: string) {
   return cookiesDe(res)[COOKIE_ACESSO]!;
 }
 
+function editar(acesso: string, payload: Record<string, string>) {
+  return app.inject({
+    method: 'PATCH',
+    url: '/me',
+    headers: { ...CSRF, ...comCookies({ [COOKIE_ACESSO]: acesso }) },
+    payload,
+  });
+}
+
+/** Conta criada pelo Google: nasce sem senha, com e-mail verificado e sem aceite dos termos. */
+async function criarContaDoGoogle(email: string) {
+  const { tokens } = await entrarComGoogle(
+    { providerUserId: `g-${email}`, email, nome: 'Cris' },
+    { userAgent: null, ip: null },
+    null,
+  );
+  return tokens!.acesso;
+}
+
 function trocar(acesso: string, payload: Record<string, string>) {
   return app.inject({
     method: 'PUT',
@@ -28,6 +47,83 @@ function trocar(acesso: string, payload: Record<string, string>) {
     payload,
   });
 }
+
+describe('editar perfil', () => {
+  it('grava o aceite dos termos de quem entrou pelo Google, sem derrubar a sessão', async () => {
+    const acesso = await criarContaDoGoogle('cris@gmail.com');
+
+    const res = await editar(acesso, { acceptedTermsVersion: '2026-09-01' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({
+      email: 'cris@gmail.com',
+      acceptedTermsVersion: '2026-09-01',
+      hasPassword: false,
+      emailVerified: true,
+    });
+    // Sem troca de e-mail, nenhum cookie novo: a sessão atual segue valendo.
+    expect(cookiesDe(res)[COOKIE_ACESSO]).toBeUndefined();
+
+    const sessao = await app.inject({
+      method: 'GET',
+      url: '/auth/session',
+      headers: comCookies({ [COOKIE_ACESSO]: acesso }),
+    });
+    expect(sessao.json().user.acceptedTermsVersion).toBe('2026-09-01');
+  });
+
+  it('troca o e-mail: desverifica o novo, derruba as outras sessões e mantém esta', async () => {
+    const acesso = await criarContaDoGoogle('cris@gmail.com');
+    const outroAparelho = (
+      await entrarComGoogle(
+        { providerUserId: 'g-cris@gmail.com', email: 'cris@gmail.com', nome: 'Cris' },
+        { userAgent: null, ip: null },
+        null,
+      )
+    ).tokens!.acesso;
+
+    const res = await editar(acesso, { email: 'cris.nova@exemplo.com' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ email: 'cris.nova@exemplo.com', emailVerified: false });
+
+    const novo = cookiesDe(res)[COOKIE_ACESSO]!;
+    expect(novo).toBeTruthy();
+    const atual = await app.inject({
+      method: 'GET',
+      url: '/auth/session',
+      headers: comCookies({ [COOKIE_ACESSO]: novo }),
+    });
+    expect(atual.statusCode).toBe(200);
+
+    for (const antigo of [acesso, outroAparelho]) {
+      const velho = await app.inject({
+        method: 'GET',
+        url: '/auth/session',
+        headers: comCookies({ [COOKIE_ACESSO]: antigo }),
+      });
+      expect(velho.statusCode).toBe(401);
+    }
+  });
+
+  it('não troca para um e-mail que já é de outra conta', async () => {
+    const acesso = await criarContaDoGoogle('cris@gmail.com');
+    await registrar('bia@exemplo.com');
+
+    const res = await editar(acesso, { email: 'BIA@exemplo.com' });
+    expect(res.statusCode).toBe(409);
+    expect(res.json().error).toBe('EMAIL_EM_USO');
+  });
+
+  it('recusa e-mail malformado e nome curto demais', async () => {
+    const acesso = await criarContaDoGoogle('cris@gmail.com');
+
+    const email = await editar(acesso, { email: 'nao-e-email' });
+    expect(email.statusCode).toBe(400);
+    expect(email.json().error).toBe('VALIDACAO');
+
+    const nome = await editar(acesso, { name: 'A' });
+    expect(nome.statusCode).toBe(400);
+  });
+});
 
 describe('definir senha', () => {
   it('exige a senha atual de quem já tem senha', async () => {

@@ -94,6 +94,43 @@ export async function buscarPorId(id: string, db: Executor = sql): Promise<Usuar
   return linhas[0] ? mapear(linhas[0]) : null;
 }
 
+/** Nome e aceite dos termos. Campo ausente fica como está (`coalesce`). */
+export async function atualizarDados(
+  id: string,
+  dados: { name?: string; acceptedTermsVersion?: string },
+  db: Executor = sql,
+): Promise<Usuario> {
+  const linhas = await many(
+    linha,
+    db`update users
+          set name = coalesce(${dados.name ?? null}, name),
+              accepted_terms_version = coalesce(${dados.acceptedTermsVersion ?? null},
+                                                accepted_terms_version),
+              updated_at = now()
+        where id = ${id} and deleted_at is null
+        returning ${colunas()}`,
+  );
+  return mapear(linhas[0]!);
+}
+
+/**
+ * Troca o e-mail. O endereço novo ainda não foi provado, então sai sem
+ * verificação; e a versão das credenciais sobe, o que derruba os tokens antigos.
+ */
+export async function trocarEmail(id: string, email: string, db: Executor = sql): Promise<Usuario> {
+  const linhas = await many(
+    linha,
+    db`update users
+          set email = ${email},
+              email_verified_at = null,
+              credentials_version = credentials_version + 1,
+              updated_at = now()
+        where id = ${id} and deleted_at is null
+        returning ${colunas()}`,
+  );
+  return mapear(linhas[0]!);
+}
+
 /** Troca a senha e invalida tudo que foi emitido com a versão anterior. */
 export async function trocarSenha(
   id: string,

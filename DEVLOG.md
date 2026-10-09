@@ -15,7 +15,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 - **Números:** o topo do Início é o GMV elegível; os gráficos são brutos e dizem isso no título e na nota.
 - **Repositório:** git iniciado na raiz (branch `main`), hook do devlog ativo via `core.hooksPath`.
 - **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. O backend em `api/` já sobe, mas ainda não serve nenhuma rota do contrato.
-- **Backend:** `api/` servindo o contrato de dados (`/summary`, `/orders`, `/videos`, `/products`, `/plans`, `/goals`, `/me/notifications`, `/me/export`, `DELETE /me`) sobre o banco, além de conta, sessão, Google e conexão com o TikTok. Falta o import de arquivo (`/imports`, `/reconciliation`, `/payouts`) e a sincronização com o TikTok.
+- **Backend:** `api/` com `PATCH /me` (aceite dos termos e troca de e-mail) e o contrato de dados (`/summary`, `/orders`, `/videos`, `/products`, `/plans`, `/goals`, `/me/notifications`, `/me/export`, `DELETE /me`) sobre o banco, além de conta, sessão, Google e conexão com o TikTok. Falta o import de arquivo (`/imports`, `/reconciliation`, `/payouts`) e a sincronização com o TikTok.
 - **Integração TikTok:** Affiliate Creator API não liberada para o Brasil; ticket aberto com a TikTok. Display API disponível, app ainda não submetido.
 - **Telas prontas:** /, /entrar, /criar-conta, /recuperar, /termos, /privacidade, /inicio-rapido, /inicio, /vendas, /videos, /videos/:id, /produtos, /planejamento, /configuracoes, /avisos, /reconciliacao.
 - **Próximo passo:** apontar o front para a API de verdade (`VITE_API_URL`) e desligar o MSW; depois, import de arquivo na API; no front, decidir as propostas de contrato da entrada de 23/09, e receber do dono os dados legais de `web/src/lib/textos.ts` (CNPJ, endereço, prazos, comarca).
@@ -24,6 +24,23 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 ---
 
 ## Entradas
+
+### 2026-10-09 · [api] Criar PATCH /me, e trocar o e-mail derruba as outras sessões
+
+**Fiz:** `PATCH /me` com `name`, `email` e `acceptedTermsVersion`, devolvendo o `SessionUser`. Trocar o e-mail desverifica o endereço novo, sobe `credentials_version`, derruba as outras sessões e emite sessão nova para esta aba.
+**Por quê:** quem cria conta pelo Google nasce com aceite dos termos nulo, e o front só libera a área logada depois de gravar esse aceite por esta rota. Sem ela, a pessoa ficava presa no diálogo.
+**Funcionou:** `npm test` com 55 de 55 (4 novos em `routes/me.test.ts`: aceite sem cookie novo; troca de e-mail derrubando sessão antiga e mantendo a nova; e-mail de outra conta responde 409; e-mail malformado e nome curto respondem 400). `typecheck`, `lint` e `prettier --check` limpos.
+**Não funcionou:** o ambiente de desenvolvimento não subiu. `db:migrate` e os seeds recusam o `api/.env` na validação: `JWT_SECRET` e `REFRESH_TOKEN_PEPPER` têm menos de 32 caracteres, e as chaves opcionais do Google e do TikTok estão presentes e vazias (o `min(1)` recusa). A troca desses valores foi bloqueada na tentativa de escrita, e a decisão ficou com a pessoa dona do `.env`. Os testes não dependem dele: usam `src/test/env.ts`.
+**Decidi:**
+- A troca de e-mail não pede senha atual, porque o contrato não tem o campo. Proposta para o `CLAUDE.md` da raiz: `currentPassword` opcional, exigido quando `hasPassword` for verdadeiro.
+- Trocar o e-mail põe `emailVerified` em falso. Ainda não existe fluxo de verificação, então ele fica falso até existir.
+- Aceite dos termos grava a versão mais recente (sobrescreve).
+- Entre a checagem de e-mail em uso e o `update` pode haver corrida; um empate perdido cai em 500 genérico, não em 409. Aceito por ora.
+**Pendente:**
+- `POST /me/avatar`: precisa de `@fastify/multipart` (dependência nova, aguardando aprovação) e de uma decisão de armazenamento (disco local ou outro).
+- Ambiente: corrigir os segredos curtos do `.env` e tirar as chaves vazias. O `.env.example` traz as mesmas linhas vazias, então copiá-lo quebra o boot; o `env.ts` deveria tratar string vazia como ausente.
+- Divergências com o front (não corrigidas): `perfilInput` aceita nome de 1 caractere, e a API exige 2 (o cadastro já exigia 2). O `usuario` do front declara `email` como texto obrigatório, e a API devolve nulo quando a conta não tem e-mail.
+**Commit:** a registrar
 
 ### 2026-10-09 · [front] Tirar o texto técnico da API da tela e testar o mapa de erros
 
