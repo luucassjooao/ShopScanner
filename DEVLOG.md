@@ -34,7 +34,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada travou.
 **Decidi:** o cliente (`client.ts`) não mudou: lê `code`, que é o contrato. O texto genérico continua sendo o último recurso.
 **Pendente:** `EMAIL_EM_USO` (409 ao trocar e-mail na API) ainda não tem texto em `textos.ts`; cai no texto genérico. Não adicionei porque o pedido foi outro; é uma linha com teste quando a API confirmar o código.
-**Commit:** a registrar
+**Commit:** d380e09
 
 ### 2026-10-09 · [api] Responder erro com `code`, não `error`
 
