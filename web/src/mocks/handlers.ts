@@ -275,10 +275,7 @@ export const handlers = [
   http.post(url('/auth/forgot-password'), async ({ request }) => {
     const corpo = forgotPasswordInput.safeParse(await request.json());
     if (!corpo.success) return erro(422, 'E-mail inválido.');
-    // Proposta de contrato: conta só com Google não tem senha para recuperar.
-    if (db.password === null && corpo.data.email === db.user.email) {
-      return HttpResponse.json({ code: 'GOOGLE_ONLY', message: 'Conta sem senha.' }, { status: 409 });
-    }
+    // Como a API: 204 sempre, com ou sem conta, com senha ou só com Google.
     return new HttpResponse(null, { status: 204 });
   }),
   http.get(url('/auth/session'), () => {
@@ -509,7 +506,10 @@ export const handlers = [
     const body = senhaInput.safeParse(await request.json());
     if (!body.success) return erro(422, 'A senha nova precisa ter pelo menos 8 caracteres.');
     if (db.password !== null && body.data.currentPassword !== db.password) {
-      return erro(422, 'A senha atual não confere.');
+      return HttpResponse.json(
+        { code: 'SENHA_ATUAL_INCORRETA', message: 'Senha atual não confere.' },
+        { status: 400 },
+      );
     }
     db.password = body.data.newPassword;
     return new HttpResponse(null, { status: 204 });

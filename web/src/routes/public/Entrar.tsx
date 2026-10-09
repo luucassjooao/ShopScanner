@@ -14,7 +14,7 @@ import {
   ListaComChecks,
   Separador,
 } from '@/components/publico';
-import { mensagemDoErro } from '@/lib/textos';
+import { avisoLimite, mensagemDoErro } from '@/lib/textos';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -43,11 +43,14 @@ export function Entrar() {
   // Já tem sessão: vai direto para o app.
   if (sessao.data) return <Navigate to={destino} replace />;
 
+  // 429 não é senha errada: dizer "não conferem" para quem acertou mentiria para a pessoa.
   const falha =
-    login.error instanceof ApiError &&
-    (login.error.code === 'nao_autenticado' || login.error.code === 'invalido')
-      ? 'E-mail ou senha não conferem.'
-      : (login.error?.message ?? (erroDaUrl ? mensagemDoErro(erroDaUrl) : undefined));
+    login.error instanceof ApiError && login.error.code === 'limitado'
+      ? avisoLimite(login.error.retryAfterSegundos)
+      : login.error instanceof ApiError &&
+          (login.error.code === 'nao_autenticado' || login.error.code === 'invalido')
+        ? 'E-mail ou senha não conferem.'
+        : (login.error?.message ?? (erroDaUrl ? mensagemDoErro(erroDaUrl) : undefined));
 
   return (
     <LayoutAcesso

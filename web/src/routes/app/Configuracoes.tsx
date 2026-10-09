@@ -49,7 +49,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { formatData, formatDecimal, formatMoeda, haQuanto, parseMoeda } from '@/lib/format';
 import { divRound, fromCents, toCents } from '@/lib/money';
-import { mensagemDoErro, PRAZO_EXCLUSAO, PRAZO_RESPOSTA } from '@/lib/textos';
+import { avisoLimite, mensagemDoErro, PRAZO_EXCLUSAO, PRAZO_RESPOSTA } from '@/lib/textos';
 import { cn } from '@/lib/utils';
 import { conexaoExpirada, hojeSP, useConta, useFiltros } from './filtros';
 
@@ -143,12 +143,15 @@ function AcessoConta({ sessao }: { sessao: Sessao }) {
   const foto = useUploadAvatar();
   const arquivo = useRef<HTMLInputElement>(null);
   const [senhaAberta, setSenhaAberta] = useState(false);
+  const [erroNome, setErroNome] = useState<string | null>(null);
 
   function enviar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const dados = new FormData(e.currentTarget);
     const name = String(dados.get('name') ?? '').trim();
     const email = String(dados.get('email') ?? '').trim();
+    if (name.length < 2) return setErroNome('O nome precisa ter pelo menos 2 letras.');
+    setErroNome(null);
     salvar.mutate(
       {
         ...(name !== user.name ? { name } : {}),
@@ -203,6 +206,7 @@ function AcessoConta({ sessao }: { sessao: Sessao }) {
           <label className="flex flex-col gap-1.5 text-sm font-semibold text-texto">
             Nome
             <Input name="name" defaultValue={user.name} autoComplete="name" required />
+            {erroNome ? <span className={erroTexto}>{erroNome}</span> : null}
           </label>
           <label className="flex flex-col gap-1.5 text-sm font-semibold text-texto">
             E-mail
@@ -307,6 +311,13 @@ function AcessoConta({ sessao }: { sessao: Sessao }) {
   );
 }
 
+/** Texto da falha ao trocar senha: a API manda código para senha atual errada e limite de tentativas. */
+function textoDeFalhaSenha(error: Error | null): string | null {
+  if (!(error instanceof ApiError)) return null;
+  if (error.code === 'limitado') return avisoLimite(error.retryAfterSegundos);
+  return error.serverCode ? mensagemDoErro(error.serverCode) : error.message;
+}
+
 function TrocarSenha({
   aberto,
   primeira,
@@ -373,7 +384,7 @@ function TrocarSenha({
             ))}
           {erro || trocar.error ? (
             <p role="alert" className={erroTexto}>
-              {erro ?? trocar.error?.message}
+              {erro ?? textoDeFalhaSenha(trocar.error)}
             </p>
           ) : null}
           <DialogFooter>

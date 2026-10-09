@@ -98,7 +98,7 @@ export const conexaoTiktok = z.object({ authorizeUrl: z.string() });
 
 export const perfilInput = z
   .object({
-    name: z.string().trim().min(1),
+    name: z.string().trim().min(2),
     email: z.email(),
     /** Aceite de quem criou a conta pelo Google, pedido depois do primeiro acesso. */
     acceptedTermsVersion: z.string().min(1),

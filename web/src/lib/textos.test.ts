@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mensagemDoErro } from './textos';
+import { avisoLimite, mensagemDoErro } from './textos';
 
 // Códigos do contrato da raiz (CLAUDE.md): login pelo Google, conexão com o TikTok e sessão.
 const CODIGOS_DO_CONTRATO = [
@@ -34,5 +34,24 @@ describe('mensagemDoErro', () => {
 
   it('aponta o envio em arquivo quando o Shop ainda não está liberado', () => {
     expect(mensagemDoErro('TIKTOK_SHOP_INDISPONIVEL')).toContain('arquivo');
+  });
+
+  it('troca de senha: senha atual incorreta tem texto próprio', () => {
+    expect(mensagemDoErro('SENHA_ATUAL_INCORRETA')).toBe(
+      'A senha atual não confere. Confira e tente de novo.',
+    );
+  });
+});
+
+describe('avisoLimite', () => {
+  it('diz o tempo do Retry-After em segundos e em minutos, arredondando para cima', () => {
+    expect(avisoLimite(30)).toBe('Muitas tentativas seguidas. Espere 30 segundos e tente de novo.');
+    expect(avisoLimite(1)).toBe('Muitas tentativas seguidas. Espere 1 segundo e tente de novo.');
+    expect(avisoLimite(120)).toBe('Muitas tentativas seguidas. Espere 2 minutos e tente de novo.');
+    expect(avisoLimite(61)).toBe('Muitas tentativas seguidas. Espere 2 minutos e tente de novo.');
+  });
+
+  it('sem Retry-After, não inventa número', () => {
+    expect(avisoLimite()).toBe('Muitas tentativas seguidas. Espere um pouco e tente de novo.');
   });
 });

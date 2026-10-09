@@ -1,5 +1,6 @@
 import type { ZodType } from 'zod';
 import { env } from '@/env';
+import { AVISO_LIMITE } from '@/lib/textos';
 
 /** Categorias de erro que a interface precisa distinguir. */
 export type ApiErrorCode =
@@ -9,6 +10,7 @@ export type ApiErrorCode =
   | 'nao_autenticado' // 401 — sessão expirada
   | 'sem_permissao' // 403
   | 'nao_encontrado' // 404
+  | 'limitado' // 429 — tentativas demais; não repete sozinho
   | 'invalido' // 4xx de validação
   | 'servidor' // 5xx
   | 'resposta_invalida' // veio 2xx, mas fora do contrato (Zod reprovou)
@@ -23,6 +25,7 @@ const MENSAGEM: Record<ApiErrorCode, string> = {
   nao_encontrado: 'Não encontramos o que você procura.',
   invalido: 'Algum dado enviado não foi aceito. Revise e tente de novo.',
   servidor: 'Tivemos um problema do nosso lado. Tente de novo em alguns instantes.',
+  limitado: AVISO_LIMITE,
   resposta_invalida: 'O servidor respondeu em um formato que não reconhecemos.',
   desconhecido: 'Algo deu errado. Tente de novo.',
 };
@@ -38,11 +41,20 @@ export class ApiError extends Error {
    * em português da categoria, e é ele que a interface mostra.
    */
   readonly serverMessage?: string;
+  /** Segundos do `Retry-After`, quando o servidor manda (429 e 503). */
+  readonly retryAfterSegundos?: number;
   readonly details?: unknown;
 
   constructor(
     code: ApiErrorCode,
-    { status = 0, serverCode, serverMessage, details, cause }: ApiErrorOptions = {},
+    {
+      status = 0,
+      serverCode,
+      serverMessage,
+      retryAfterSegundos,
+      details,
+      cause,
+    }: ApiErrorOptions = {},
   ) {
     super(MENSAGEM[code], { cause });
     this.name = 'ApiError';
@@ -50,6 +62,7 @@ export class ApiError extends Error {
     this.status = status;
     this.serverCode = serverCode;
     this.serverMessage = serverMessage;
+    this.retryAfterSegundos = retryAfterSegundos;
     this.details = details;
   }
 
@@ -63,8 +76,16 @@ interface ApiErrorOptions {
   status?: number;
   serverCode?: string;
   serverMessage?: string;
+  retryAfterSegundos?: number;
   details?: unknown;
   cause?: unknown;
+}
+
+/** `Retry-After` em segundos. Data HTTP não é aceita: o backend manda segundos. */
+function retryAfter(valor: string | null): number | undefined {
+  if (!valor) return undefined;
+  const segundos = Number(valor);
+  return Number.isInteger(segundos) && segundos >= 0 ? segundos : undefined;
 }
 
 function codeFromStatus(status: number): ApiErrorCode {
@@ -72,6 +93,7 @@ function codeFromStatus(status: number): ApiErrorCode {
   if (status === 403) return 'sem_permissao';
   if (status === 404) return 'nao_encontrado';
   if (status === 408 || status === 504) return 'timeout';
+  if (status === 429) return 'limitado';
   if (status >= 500) return 'servidor';
   if (status >= 400) return 'invalido';
   return 'desconhecido';
@@ -185,6 +207,7 @@ export async function request<T = void>(
       status: response.status,
       serverCode,
       serverMessage,
+      retryAfterSegundos: retryAfter(response.headers.get('Retry-After')),
       details,
     });
   }
@@ -264,6 +287,7 @@ export function upload<T>(
             status: xhr.status,
             serverCode: typeof obj.code === 'string' ? obj.code : undefined,
             serverMessage: typeof obj.message === 'string' ? obj.message : undefined,
+            retryAfterSegundos: retryAfter(xhr.getResponseHeader('Retry-After')),
             details: obj.details,
           }),
         );

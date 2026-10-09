@@ -1,6 +1,8 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
+import { env } from '@/env';
 import { db, resetDb } from '@/mocks/handlers';
 import { server } from '@/mocks/server';
 import { abrir } from '@/test/app';
@@ -8,6 +10,7 @@ import { abrir } from '@/test/app';
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 afterEach(() => {
   resetDb();
+  server.resetHandlers();
   vi.unstubAllGlobals();
 });
 afterAll(() => server.close());
@@ -53,6 +56,26 @@ describe('/entrar', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Entrar' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/inicio'));
     expect(db.loggedIn).toBe(true);
+  });
+
+  it('429 no login diz para esperar, e nunca diz que a senha não confere', async () => {
+    db.loggedIn = false;
+    server.use(
+      http.post(`${env.apiUrl}/auth/login`, () =>
+        HttpResponse.json(
+          { message: 'rate limited' },
+          { status: 429, headers: { 'Retry-After': '120' } },
+        ),
+      ),
+    );
+    abrir('/entrar');
+    await userEvent.type(screen.getByLabelText('E-mail'), 'voce@email.com.br');
+    await userEvent.type(screen.getByLabelText('Senha'), 'senha-demo-123');
+    await userEvent.click(screen.getByRole('button', { name: 'Entrar' }));
+    expect(
+      await screen.findByText('Muitas tentativas seguidas. Espere 2 minutos e tente de novo.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('E-mail ou senha não conferem.')).not.toBeInTheDocument();
   });
 
   it('Google no topo, sem TikTok, e navega para o início do login social', async () => {
@@ -131,18 +154,16 @@ describe('/recuperar', () => {
     expect(screen.getByRole('button', { name: 'Reenviar o link' })).toBeInTheDocument();
   });
 
-  it('conta só com Google: não há senha para recuperar', async () => {
+  it('conta só com Google recebe a mesma confirmação: a API não diz quem tem conta', async () => {
     db.loggedIn = false;
     db.password = null;
     abrir('/recuperar');
     await userEvent.type(screen.getByLabelText('E-mail'), 'voce@email.com.br');
     await userEvent.click(screen.getByRole('button', { name: 'Enviar link de recuperação' }));
     expect(
-      await screen.findByRole('heading', { name: 'Esse e-mail entra pelo Google' }),
+      await screen.findByRole('heading', { name: 'Confira o seu e-mail' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Continuar com Google' })).toBeEnabled();
-    await userEvent.click(screen.getByRole('button', { name: 'Usar outro e-mail' }));
-    expect(screen.getByRole('heading', { name: 'Recuperar a senha' })).toBeInTheDocument();
+    expect(screen.queryByText(/Google/)).not.toBeInTheDocument();
   });
 });
 

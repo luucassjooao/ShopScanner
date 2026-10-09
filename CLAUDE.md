@@ -71,8 +71,9 @@ PATCH /me                      { name?, email?, acceptedTermsVersion?, currentPa
                                  currentPassword é exigido para trocar o email quando
                                  hasPassword é true: sem isso, uma sessão sequestrada
                                  troca o email, pede recuperação e fica com a conta.
-                                 Trocar o email marca emailVerified: false, derruba as
-                                 outras sessões e emite cookie novo para a aba atual
+                                 Trocar o email marca emailVerified: false e derruba
+                                 todas as sessões; a aba que pediu a troca continua
+                                 logada com a sessão nova, igual à troca de senha
 PUT  /me/password              { currentPassword?, newPassword }
                                  currentPassword só é exigido quando hasPassword é true
 POST /me/avatar                multipart -> { avatarUrl }

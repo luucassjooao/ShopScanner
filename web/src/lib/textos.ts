@@ -36,6 +36,8 @@ const ERROS: Record<string, string> = {
   JA_VINCULADO:
     'Essa conta do Google já está ligada a outro cadastro. Entre com e-mail e senha, ou use outra conta do Google.',
   SESSAO_EXPIRADA: 'A sua sessão venceu no meio do caminho. Entre de novo para continuar.',
+  // Troca de senha (PUT /me/password)
+  SENHA_ATUAL_INCORRETA: 'A senha atual não confere. Confira e tente de novo.',
   // Conexão com o TikTok
   TIKTOK_RECUSADO:
     'A autorização foi recusada no TikTok. Para trazer os seus dados, é preciso aceitar o acesso de leitura.',
@@ -50,3 +52,20 @@ const ERROS: Record<string, string> = {
 /** Mensagem em português de um código de erro vindo da URL. */
 export const mensagemDoErro = (codigo: string) =>
   ERROS[codigo] ?? 'Não conseguimos concluir. Tente de novo em alguns instantes.';
+
+/** Aviso de limite de tentativas (429) quando o servidor não diz quanto esperar. */
+export const AVISO_LIMITE = 'Muitas tentativas seguidas. Espere um pouco e tente de novo.';
+
+const plural = (n: number, unidade: string) => `${n} ${n === 1 ? unidade : `${unidade}s`}`;
+
+/**
+ * Aviso de 429 com o tempo do `Retry-After`. Sem o cabeçalho, não inventa número.
+ */
+export const avisoLimite = (segundos?: number) => {
+  if (segundos === undefined) return AVISO_LIMITE;
+  const tempo =
+    segundos < 60
+      ? plural(Math.max(1, segundos), 'segundo')
+      : plural(Math.ceil(segundos / 60), 'minuto');
+  return `Muitas tentativas seguidas. Espere ${tempo} e tente de novo.`;
+};
