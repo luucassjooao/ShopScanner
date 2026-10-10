@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import { ApiError, request } from './client';
+import { env } from '@/env';
+import { ApiError, request, urlDeImagem } from './client';
 
 function respond(body: unknown, init: ResponseInit = {}) {
   return new Response(body === undefined ? null : JSON.stringify(body), {
@@ -122,5 +123,21 @@ describe('request', () => {
     const erro = (await request('/x', { schema }).catch((e: unknown) => e)) as ApiError;
     expect(erro.code).toBe('rede');
     expect(erro.status).toBe(0);
+  });
+});
+
+describe('urlDeImagem', () => {
+  it('caminho relativo do upload próprio ganha o domínio da API, com o hash', () => {
+    expect(urlDeImagem('/me/avatar?v=3f9a')).toBe(`${env.apiUrl}/me/avatar?v=3f9a`);
+  });
+
+  it('URL absoluta do TikTok passa intacta: prefixar tudo quebraria a foto da creator', () => {
+    const tiktok = 'https://p16-sign.tiktokcdn.com/aweme/avatar.jpeg?x=1';
+    expect(urlDeImagem(tiktok)).toBe(tiktok);
+  });
+
+  it('protocolo relativo não é caminho da API; ausência continua null', () => {
+    expect(urlDeImagem('//cdn.exemplo.com/a.jpg')).toBe('//cdn.exemplo.com/a.jpg');
+    expect(urlDeImagem(null)).toBeNull();
   });
 });

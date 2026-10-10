@@ -48,7 +48,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Decidi:** o `?v=<hash>` vem da API e não recebe cache-busting do front. O MSW continua devolvendo um blob absoluto no upload, então não exercita o caminho relativo; isso fica para a varredura contra a API real.
 **Pendente:** nada neste ponto.
 **Commit:** —
-
+**Commit:** a seguir
 ### 2026-10-09 · [repo] Escrever o avatar no contrato, com as duas procedências separadas
 
 **Fiz:** `GET /me/avatar` entrou no contrato (imagem com o `Content-Type` dela, 404 sem avatar), e `avatarUrl` ganhou a regra das duas procedências: no `SessionUser` é upload próprio e vem relativo (`/me/avatar?v=<hash>`); em `GET /accounts` é a foto da creator no TikTok e vem absoluta.

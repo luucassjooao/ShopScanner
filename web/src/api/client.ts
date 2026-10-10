@@ -118,6 +118,16 @@ const TIMEOUT_PADRAO_MS = 20_000;
 /** Vai em `X-Requested-With` nas rotas que mudam estado (CLAUDE.md → CSRF). */
 const CLIENTE = 'shopscanner';
 
+/**
+ * `avatarUrl` tem duas procedências: o upload próprio vem relativo (`/me/avatar?v=…`) e a foto
+ * do TikTok vem absoluta. Só o relativo ganha o domínio da API; o resto passa intacto.
+ * Fica aqui, e não nas telas, para não haver um prefixo diferente em cada `<img>`.
+ */
+export function urlDeImagem(url: string | null): string | null {
+  if (url === null || !url.startsWith('/') || url.startsWith('//')) return url;
+  return `${env.apiUrl}${url}`;
+}
+
 function buildUrl(path: string, query?: Record<string, QueryValue>): string {
   const base = `${env.apiUrl}${path.startsWith('/') ? path : `/${path}`}`;
   if (!query) return base;

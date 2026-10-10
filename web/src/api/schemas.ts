@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { urlDeImagem } from './client';
 
 /**
  * Schemas do contrato com o backend (CLAUDE.md → "Contrato com o backend" e "Tipos do contrato").
@@ -47,12 +48,15 @@ const paginado = <T extends z.ZodTypeAny>(item: T) =>
 
 // --- auth e contas ---
 
+/** Relativo (upload próprio) ou absoluto (foto do TikTok): ver `urlDeImagem`. */
+const imagem = z.string().nullable().transform(urlDeImagem);
+
 export const usuario = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string(),
   emailVerified: z.boolean(),
-  avatarUrl: z.string().nullable(),
+  avatarUrl: imagem,
   /** Falso quando a conta nasceu pelo Google e nunca definiu senha. */
   hasPassword: z.boolean(),
   identities: z.array(
@@ -66,7 +70,7 @@ export type Usuario = z.infer<typeof usuario>;
 export const conta = z.object({
   id: z.string(),
   username: z.string(),
-  avatarUrl: z.string().nullable(),
+  avatarUrl: imagem,
   shopConnected: z.boolean(),
   /** Existe pedido nesta conta, de qualquer fonte (API ou arquivo). Não depende de Shop conectado. */
   hasSales: z.boolean(),

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { perfilInput, registerInput } from './schemas';
+import { conta, perfilInput, registerInput, usuario } from './schemas';
+import { env } from '@/env';
 
 describe('registerInput', () => {
   const base = {
@@ -25,5 +26,39 @@ describe('perfilInput', () => {
 
   it('aceita nome de 2 caracteres', () => {
     expect(perfilInput.safeParse({ name: 'Al' }).success).toBe(true);
+  });
+});
+
+describe('avatarUrl tem duas procedências', () => {
+  const user = {
+    id: 'u_1',
+    name: 'Ana Lima',
+    email: 'ana@email.com.br',
+    emailVerified: true,
+    hasPassword: true,
+    identities: [],
+    acceptedTermsVersion: '2026-09-22',
+  };
+
+  it('no usuário, o upload relativo vira absoluto na API; ausência fica null', () => {
+    expect(usuario.parse({ ...user, avatarUrl: '/me/avatar?v=3f9a' }).avatarUrl).toBe(
+      `${env.apiUrl}/me/avatar?v=3f9a`,
+    );
+    expect(usuario.parse({ ...user, avatarUrl: null }).avatarUrl).toBeNull();
+  });
+
+  it('na conta, a foto do TikTok passa intacta', () => {
+    const foto = 'https://p16-sign.tiktokcdn.com/aweme/avatar.jpeg';
+    const parsed = conta.parse({
+      id: 'acc_1',
+      username: '@creator',
+      avatarUrl: foto,
+      shopConnected: false,
+      hasSales: true,
+      connectedAt: '2026-08-02T12:00:00.000Z',
+      lastSyncedAt: null,
+      expiresAt: null,
+    });
+    expect(parsed.avatarUrl).toBe(foto);
   });
 });
