@@ -33,6 +33,29 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-10 · [repo] Expor `lineNo` no item do pedido, porque `id` não identifica linha
+
+**Fiz:** `OrderSku` ganhou `lineNo` (posição da linha no pedido, a partir de 1) e o contrato passou a dizer, com estas palavras, que `id` **não** é único dentro do pedido. A chave de um item é pedido mais `lineNo`.
+**Por quê:** o relatório do TikTok repete o mesmo id de SKU em linhas diferentes do mesmo pedido, e o `api/CLAUDE.MD` já registrava isso — a chave de `order_skus` carrega `line_no` justamente por causa disso. Mas o contrato expunha só `id`, então o front não tinha como montar chave única, usou `pedido.id + sku.id`, e o React descartou a linha repetida: uma linha de dinheiro desapareceu de `/vendas` sem erro, sem log, sem nada estourar. O número só ficou menor.
+**Funcionou:** achado pelo agente do front durante a reestruturação, e confirmado por mim na origem: `api/src/repositories/orders.ts:220` seleciona `order_skus.id` como `id`, e `line_no` só aparece no `order by`. Não era defeito de mock — a API real devolve o duplicado igual.
+**Não funcionou:** a correção de primeira hora foi a posição no array, que funciona e não mente, mas depende da ordem da resposta e não está escrita em lugar nenhum. Trocada por um campo do contrato, que é o que o banco já tinha.
+**Decidi:** expor o campo em vez de só documentar a armadilha. Documentar deixaria todo consumidor futuro derivando chave por conta própria, e o dado existe no banco desde a migração — é uma coluna no `select`.
+**Pendente:** a API devolve `lineNo` em `/orders` e `/orders/:id`; depois o front chaveia por ele, no schema e na tela, e o MSW passa a mandar.
+**Commit:** a registrar
+
+### 2026-10-10 · [repo] Registrar os três riscos de segurança que a auditoria deixou de propósito
+
+**Fiz:** anotei, para não evaporarem no relatório de um agente, os três pontos que a auditoria de autenticação identificou e decidiu não mexer. Nenhum é defeito hoje; todos viram defeito em produção.
+**Por quê:** risco conhecido que só existe na memória de quem auditou é risco esquecido. Os três:
+1. **`trustProxy: isProd` (`api/src/app.ts:25`)** confia na cadeia inteira de `X-Forwarded-For`. Em produção isso permite forjar o IP de origem e escapar do teto por IP e da trava de tentativas de login. O certo é `trustProxy: 1` ou o CIDR do proxy — e depende de saber qual é a hospedagem, que ainda não existe.
+2. **`SameSite=Lax` só funciona enquanto front e API ficarem no mesmo domínio registrável.** Hoje são `localhost:5173` e `:3333`, e `app.dominio` com `api.dominio` continuaria valendo. Em domínios diferentes o navegador deixa de mandar o cookie em qualquer chamada da SPA e a sessão simplesmente não existe; aí o atributo vira `SameSite=None` e o anti-CSRF passa a depender só do `X-Requested-With` mais o CORS.
+3. **O cookie do fluxo OAuth é assinado com o mesmo `JWT_SECRET` do access token** (`api/src/app.ts:38`). A auditoria procurou caminho explorável e não achou, mas é separação de chave que falta. Custa uma variável de ambiente nova.
+**Funcionou:** os três saíram de uma auditoria em que sete dos oito pontos estavam corretos — o valor dela foi tanto o defeito que achou quanto estes riscos que soube não consertar agora.
+**Não funcionou:** nada tentado. Consertar o 1 sem saber a hospedagem seria chutar o formato do proxy.
+**Decidi:** nenhum dos três entra agora. O 1 e o 2 são condição de implantação e entram no mesmo trabalho em que a produção for definida; o 3 é decisão do dono, porque mexe em variável de ambiente dele.
+**Pendente:** os três, nos termos acima.
+**Commit:** a registrar
+
 ### 2026-10-10 · [front] Renovar a sessão no 401 antes de mandar entrar de novo
 
 **Fiz:** `request()` e `upload()`, em `src/api/client.ts`, passaram a chamar `POST /auth/refresh` **uma vez** ao tomar 401 e a repetir a requisição original. Só se a renovação falhar o `nao_autenticado` chega à tela. A renovação é uma promessa compartilhada (`renovarSessao`): a primeira chamada dispara, as outras esperam a mesma promessa. `/auth/refresh` e `/auth/login` ficam fora — 401 ali é credencial morta, não token vencido. O MSW ganhou o handler de `/auth/refresh` (204 com sessão, 401 sem).

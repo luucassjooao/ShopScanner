@@ -201,7 +201,8 @@ type Channel =
   | "PROMOTION_PAGE";
 
 type OrderSku = {
-  id: string;
+  id: string; // id do SKU no TikTok. NÃO é único dentro do pedido: ver lineNo
+  lineNo: number; // posição da linha no pedido, começando em 1. Único com o pedido
   productId: string;
   name: string;
   shopName: string;
@@ -335,6 +336,7 @@ Em `/summary`, `goal` é `{ gmv: Money | null; commission: Money | null } | null
 
 Decisões de contrato que valem para as duas pontas:
 
+- **`OrderSku.id` não identifica um item.** O relatório do TikTok repete o mesmo id de SKU em linhas diferentes do mesmo pedido — quantidades separadas do mesmo produto —, então `id` se repete e quem o usa como chave perde uma linha de dinheiro **em silêncio**: nada estoura, o número só fica menor. O que identifica é `lineNo`, a posição da linha no pedido, e a chave de um item é pedido mais `lineNo`. O banco já guardava isso em `order_skus.line_no` e o contrato não expunha; foi assim que uma linha sumiu de `/vendas` sem ninguém ver.
 - **Avatar: o campo `avatarUrl` tem duas procedências e o front não pode presumir uma só.** No `SessionUser` é upload próprio, guardado pela API, e vem **relativo** (`/me/avatar?v=<hash>`); em `GET /accounts` é a foto da creator no TikTok e vem **absoluta**, do domínio do TikTok. O front prefixa com `VITE_API_URL` só o que começa com `/`, e isso vive em um lugar só. O `?v=<hash>` existe porque a URL não muda de nome quando a imagem muda: sem ele, o navegador mostra o avatar antigo depois da troca. Trocar a imagem muda o hash, e `GET /me/avatar` responde 404 enquanto não houver avatar — nunca uma imagem de espaço reservado, que o front não saberia distinguir de foto de verdade.
 - Status do TikTok convertidos **pela API**: `AWAITING PAYMENT` → `AWAITING_PAYMENT`, `To-SETTLE` → `TO_SETTLE`, o resto igual. A API sempre manda a chave; o front traduz para o rótulo em português.
 - `canUnlink` é derivado na API, não no front: desvincular o Google só é permitido quando `hasPassword` é verdadeiro.
