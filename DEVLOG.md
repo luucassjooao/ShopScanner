@@ -34,6 +34,36 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-10 · [api] Tornar explícita a confiança no proxy e recusar segredos públicos em produção
+
+**Fiz:** três ajustes de boot. (1) `trustProxy` sai de `isProd` (`true` em produção) para `TRUST_PROXY`, que aceita `false` ou os IPs/faixas dos proxies, é obrigatória em produção e recusa `true`. (2) Em produção, o boot recusa `JWT_SECRET`, `REFRESH_TOKEN_PEPPER` e `ENCRYPTION_KEY` iguais aos padrões do `docker-compose.yml`. (3) A API escuta em `HOST`, padrão `127.0.0.1`; o compose passa `0.0.0.0`.
+**Por quê:** (1) a auditoria subiu a API com `NODE_ENV=production` e trocou o `X-Forwarded-For` a cada tentativa de login: 15 tentativas, nenhum 429; sem o header, o 11º já era 429. Com `true`, o IP é o que o cliente escreve, e o rate limit inteiro depende do IP. (2) os padrões do compose passam na validação de tamanho, e quem lê o repositório forjaria o JWT e abriria os tokens do TikTok de um deploy feito com o compose. (3) com `0.0.0.0` fixo, `npm run dev` deixava a API aberta para a rede Wi-Fi.
+**Funcionou:** `proxy.test.ts` com três casos (sem proxy declarado, com proxy declarado e header vindo de fora do proxy), todos com o 11º login em 429 apesar do IP forjado. O caso do meio **falha** se a app subir com `trustProxy: true` (conferido trocando a linha e voltando). `env.test.ts` cobre a produção sem `TRUST_PROXY`, com `true`, com número, com lixo e com cada segredo do compose.
+**Não funcionou:** aceitar número de saltos (`TRUST_PROXY=1`, o formato mais comum em guia de deploy). O Fastify 5.12.5 trata número como "não confiar em nada", de propósito: conta de saltos não confere quem conectou. Passaria no tipo com um cast e viraria `false` em silêncio em produção. Ficou só lista de IPs/faixas, mais `loopback`, `linklocal` e `uniquelocal` do `@fastify/proxy-addr`.
+**Decidi:** produção não sobe sem dizer em quem confia. Para o provedor em que a API for, `uniquelocal` costuma ser o valor (rede privada do balanceador); confira o IP de onde a conexão chega antes de escolher.
+**Pendente:** escolher o `TRUST_PROXY` do deploy real.
+**Commit:** a seguir
+
+### 2026-10-10 · [api] Pôr um teto por IP no login, além do de e-mail mais IP
+
+**Fiz:** `/auth/login` ganhou um segundo limite, 30 tentativas em 5 minutos por IP, por cima do de 10 por e-mail mais IP que já existia.
+**Por quê:** a auditoria mandou 40 logins de um IP só, cada um com um e-mail diferente, e nenhum tomou 429. Cada e-mail tinha o seu contador; só o teto global de 300/min segurava. É o formato de password spraying: uma senha comum contra muitas contas.
+**Funcionou:** teste novo com 31 e-mails de um mesmo IP: 30 respondem 401, o 31º responde 429 `MUITAS_REQUISICOES` com `Retry-After` em segundos, e outro IP segue normal. O teste antigo do limite por e-mail continua passando.
+**Não funcionou:** a primeira versão usou `app.rateLimit()` como `preHandler`. O plugin marca a requisição na primeira passagem (`rateLimitRan`) e ignora qualquer limitador seguinte: o teto por e-mail **parou de contar**, sem erro. Quem pegou foi o teste antigo, que esperava 429 na 11ª tentativa e recebeu 401. `app.createRateLimit()` só conta e deixa o 429 com a gente; com ela os dois contam.
+**Decidi:** segundo limitador numa rota é sempre `createRateLimit`. Anotado no `api/CLAUDE.md`.
+**Pendente:** o teto por IP sofre do mesmo problema de NAT de operadora do global. Se aparecer reclamação, contar falhas em vez de tentativas.
+**Commit:** a seguir
+
+### 2026-10-10 · [repo] Fechar o pré-sequestro de conta pelo vínculo do Google
+
+**Fiz:** o login com Google só vincula sozinho, pelo e-mail, a cadastro cujo e-mail já é verificado. Com o mesmo e-mail **não** verificado, nada é vinculado e o callback volta em `/entrar?erro=CONTA_EXISTENTE`. Código novo no contrato da raiz e traduzido em `web/src/lib/textos.ts`.
+**Por quê:** auditoria de segurança achou, e provou com teste, um pré-sequestro de conta. O cadastro por senha não confirma e-mail, então qualquer pessoa cadastrava o e-mail de outra; quando a dona entrava pelo Google, o callback vinculava a identidade àquele cadastro e abria sessão nele. Quem cadastrou continuava dentro: a sessão antiga respondia 200 e a senha dele continuava entrando. O mesmo valia trocando o e-mail de uma conta só-Google em `PATCH /me`, que zera a verificação. O `api/CLAUDE.md` já dizia "mesmo e-mail **verificado**"; o código não conferia.
+**Funcionou:** dois testes novos em `google.test.ts`, um por caminho do ataque (cadastro e troca de e-mail), os dois falham sem a trava. O teste "vincula à conta que já existe" passou a marcar o e-mail como verificado antes, que é o caso legítimo. O de desvincular usava o vínculo por e-mail como atalho de preparação e agora vincula pela sessão, como em Configurações.
+**Não funcionou:** vincular e "limpar" o cadastro (apagar a senha e derrubar as sessões) em vez de recusar. Resolvia o ataque, mas tirava de quem é dono de verdade a senha que ele criou, sem aviso. Recusar e mandar vincular logado não tira nada de ninguém.
+**Decidi:** vínculo automático por e-mail exige o e-mail do cadastro verificado. Cadastro não verificado só vincula pela sessão. Quando o envio de e-mail existir, a confirmação no cadastro faz o caminho automático voltar a valer para quem confirmar.
+**Pendente:** confirmação de e-mail no cadastro. Até lá, quem criou conta com senha e tenta entrar pelo Google vê `CONTA_EXISTENTE` e precisa vincular logado. Este commit toca o `CLAUDE.md` da raiz, que é da sessão líder: revisar antes de mesclar.
+**Commit:** a seguir
+
 ### 2026-10-10 · [repo] Corrigir o dano que eu atribuí à chave repetida, e levar `lineNo` para a reconciliação
 
 **Fiz:** duas coisas. (1) Registro aqui que eu afirmei um dano que não se confirmou: disse, ao dono e nas instruções das sessões, que a chave de React repetida fazia **a linha de dinheiro desaparecer da tela**. Não desaparece. (2) `GET /reconciliation` ganhou `lineNo` na linha de divergência, pelo mesmo motivo de `OrderSku`.

@@ -22,7 +22,9 @@ export async function buildApp() {
     // Request id reaproveita o header do proxy quando existe; senão, gera um.
     requestIdHeader: 'x-request-id',
     genReqId: () => randomUUID(),
-    trustProxy: isProd,
+    // Explícito, nunca `true`: ver TRUST_PROXY em config/env.ts. Fora de produção a
+    // ausência vale false; em produção o boot exige a escolha.
+    trustProxy: env.TRUST_PROXY ?? false,
   });
 
   await app.register(helmet);

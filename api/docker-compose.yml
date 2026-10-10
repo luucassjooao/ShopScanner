@@ -27,6 +27,10 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3333
+      # Dentro do contêiner precisa ouvir em todas as interfaces para a porta publicada funcionar.
+      HOST: 0.0.0.0
+      # Os segredos abaixo têm padrão de desenvolvimento, público aqui. Em produção o
+      # boot recusa esses valores: não suba produção com este arquivo sem trocá-los.
       DATABASE_URL: postgres://shopscanner:shopscanner@db:5432/shopscanner
       JWT_SECRET: ${JWT_SECRET:-desenvolvimento-troque-isto-com-32-chars}
       REFRESH_TOKEN_PEPPER: ${REFRESH_TOKEN_PEPPER:-desenvolvimento-troque-isto-32-chars}

@@ -237,9 +237,21 @@ export async function entrarComGoogle(
     return { usuario, tokens: null };
   }
 
-  // Mesmo e-mail: o Google já provou que é dele, então vincula em vez de criar
-  // uma segunda conta — e aproveita para marcar o e-mail como verificado.
+  // Mesmo e-mail: o Google provou que o e-mail é de quem está entrando, mas não
+  // que o cadastro é. Só vincula sozinho quando o cadastro também já provou o
+  // e-mail. O cadastro por senha não confirma e-mail, e trocar o e-mail em
+  // PATCH /me zera a verificação: sem esta trava, quem cadastrasse o e-mail de
+  // outra pessoa antes dela ficaria dentro da conta, com a senha e as sessões
+  // que já tinha, no dia em que ela entrasse pelo Google (pré-sequestro de conta).
+  // A dona do cadastro vincula de dentro, em Configurações, já logada.
   const existente = await usuarios.buscarPorEmail(conta.email);
+  if (existente && !existente.emailVerified) {
+    throw new AppError(
+      409,
+      'CONTA_EXISTENTE',
+      'Cadastro com este e-mail não verificado: entrar com a senha e vincular em Configurações',
+    );
+  }
   if (existente) {
     await usuarios.criarIdentidade({
       userId: existente.id,

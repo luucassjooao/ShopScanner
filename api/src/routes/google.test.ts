@@ -3,6 +3,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 import { buildApp } from '../app.ts';
 import { COOKIE_ACESSO, COOKIE_OAUTH } from '../config/constants.ts';
 import { env } from '../config/env.ts';
+import { sql } from '../lib/db.ts';
 import { limparCacheDeChaves } from '../lib/google.ts';
 import { AMBIENTE_DE_TESTE } from '../test/env.ts';
 import { comCookies, cookiesDe, CSRF, limparBanco } from '../test/helpers.ts';
@@ -267,7 +268,7 @@ describe('login com Google', () => {
     );
   });
 
-  it('vincula à conta que já existe com o mesmo e-mail', async () => {
+  it('vincula à conta que já existe com o mesmo e-mail, quando o e-mail dela já é verificado', async () => {
     const criada = await app.inject({
       method: 'POST',
       url: '/auth/register',
@@ -280,6 +281,8 @@ describe('login com Google', () => {
       },
     });
     const idOriginal = criada.json().user.id;
+    // Ainda não há envio de e-mail de confirmação: a verificação entra direto no banco.
+    await sql`update users set email_verified_at = now() where id = ${idOriginal}`;
 
     const inicio = await iniciar();
     claimsDoProvedor = {
@@ -299,6 +302,85 @@ describe('login com Google', () => {
     expect(sessao.json().user.id).toBe(idOriginal);
     expect(sessao.json().user.hasPassword).toBe(true);
     expect(sessao.json().user.identities).toHaveLength(1);
+  });
+
+  /**
+   * Pré-sequestro de conta: o cadastro por senha não confirma e-mail, então
+   * qualquer pessoa cadastra o e-mail de outra. Se o Google vinculasse sozinho,
+   * a dona do e-mail entraria numa conta em que o autor do cadastro continua
+   * com a senha e as sessões.
+   */
+  it('não vincula sozinho a cadastro com e-mail não verificado (pré-sequestro)', async () => {
+    const doAtacante = await app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      headers: CSRF,
+      payload: {
+        name: 'Atacante',
+        email: 'vitima@gmail.com',
+        password: 'senha-do-atacante',
+        acceptedTermsVersion: '2026-09-01',
+      },
+    });
+    const acessoDoAtacante = cookiesDe(doAtacante)[COOKIE_ACESSO]!;
+
+    const inicio = await iniciar();
+    claimsDoProvedor = {
+      sub: 'g-vitima',
+      email: 'vitima@gmail.com',
+      email_verified: true,
+      nonce: inicio.nonce,
+    };
+    const res = await voltar(inicio, `code=codigo-bom&state=${inicio.state}`);
+
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe(
+      `${AMBIENTE_DE_TESTE.WEB_ORIGIN}/entrar?erro=CONTA_EXISTENTE`,
+    );
+    // A vítima não recebe sessão na conta do atacante...
+    expect(cookiesDe(res)[COOKIE_ACESSO]).toBeUndefined();
+    // ...e a identidade do Google dela não foi parar lá.
+    const sessao = await app.inject({
+      method: 'GET',
+      url: '/auth/session',
+      headers: comCookies({ [COOKIE_ACESSO]: acessoDoAtacante }),
+    });
+    expect(sessao.json().user.identities).toEqual([]);
+    expect(sessao.json().user.emailVerified).toBe(false);
+  });
+
+  it('trocar o e-mail para o de outra pessoa não abre a mesma porta', async () => {
+    // Conta só com Google: troca o e-mail sem senha, e a troca zera a verificação.
+    const inicio = await iniciar();
+    claimsDoProvedor = {
+      sub: 'g-atacante',
+      email: 'atacante@gmail.com',
+      email_verified: true,
+      nonce: inicio.nonce,
+    };
+    const entrou = await voltar(inicio, `code=codigo-bom&state=${inicio.state}`);
+    const acesso = cookiesDe(entrou)[COOKIE_ACESSO]!;
+    const troca = await app.inject({
+      method: 'PATCH',
+      url: '/me',
+      headers: { ...CSRF, ...comCookies({ [COOKIE_ACESSO]: acesso }) },
+      payload: { email: 'vitima@gmail.com' },
+    });
+    expect(troca.statusCode).toBe(200);
+    expect(troca.json().emailVerified).toBe(false);
+
+    const daVitima = await iniciar();
+    claimsDoProvedor = {
+      sub: 'g-vitima',
+      email: 'vitima@gmail.com',
+      email_verified: true,
+      nonce: daVitima.nonce,
+    };
+    const res = await voltar(daVitima, `code=codigo-bom&state=${daVitima.state}`);
+    expect(res.headers.location).toBe(
+      `${AMBIENTE_DE_TESTE.WEB_ORIGIN}/entrar?erro=CONTA_EXISTENTE`,
+    );
+    expect(cookiesDe(res)[COOKIE_ACESSO]).toBeUndefined();
   });
 
   it('usuário logado vincula o Google sem trocar de sessão', async () => {
@@ -379,7 +461,7 @@ describe('login com Google', () => {
   });
 
   it('desvincula quando ainda sobra a senha', async () => {
-    await app.inject({
+    const criada = await app.inject({
       method: 'POST',
       url: '/auth/register',
       headers: CSRF,
@@ -390,6 +472,9 @@ describe('login com Google', () => {
         acceptedTermsVersion: '2026-09-01',
       },
     });
+    const acesso = cookiesDe(criada)[COOKIE_ACESSO]!;
+    // Vínculo pelo caminho de Configurações: já logada. O e-mail do cadastro não é
+    // verificado, então o vínculo automático por e-mail não serve mais de atalho.
     const inicio = await iniciar();
     claimsDoProvedor = {
       sub: 'g-6',
@@ -397,8 +482,12 @@ describe('login com Google', () => {
       email_verified: true,
       nonce: inicio.nonce,
     };
-    const entrada = await voltar(inicio, `code=codigo-bom&state=${inicio.state}`);
-    const autenticado = comCookies({ [COOKIE_ACESSO]: cookiesDe(entrada)[COOKIE_ACESSO] });
+    await app.inject({
+      method: 'GET',
+      url: `/auth/google/callback?code=codigo-bom&state=${inicio.state}`,
+      headers: { cookie: `${inicio.cookie}; ${COOKIE_ACESSO}=${acesso}` },
+    });
+    const autenticado = comCookies({ [COOKIE_ACESSO]: acesso });
 
     const lista = await app.inject({
       method: 'GET',
