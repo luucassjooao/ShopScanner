@@ -145,7 +145,8 @@ GET  /imports?accountId&kind&status&page&pageSize
                                -> { items: ImportBatch[], total, page }
 GET  /imports/:id              -> ImportBatch, para acompanhar o processamento
 GET  /reconciliation?accountId&from&to
-  -> [{ orderId, skuId, field, fromFile, fromApi, resolvedWith, at }]
+  -> [{ orderId, skuId, lineNo, field, fromFile, fromApi, resolvedWith, at }]
+     lineNo pelo mesmo motivo de OrderSku: orderId + skuId não identifica a linha
 
 GET  /me/export                -> arquivo JSON com todos os dados
 DELETE /me                     -> exclusão de conta

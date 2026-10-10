@@ -11,13 +11,14 @@ Regras curtas: entrada nova sempre no topo, uma por tarefa concluída, no mesmo 
 _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê ao voltar ao projeto._
 
 - **Fase:** 2 — alinhar as duas pontas já ligadas. O front fala com a API de verdade desde `9baebee`; os totais de referência batem por HTTP. O que resta é varredura de tela e as rotas que faltam.
-- **Rodando:** front em `web/` com a área logada completa, páginas legais e públicas, acesso por e-mail ou Google, TikTok só como conexão, e a entrada de pedidos por arquivo `.xlsx` (lint, typecheck e 183 testes passando). Estrutura: uma pasta por página em `src/pages/`, cascas em `src/layouts/`, `src/routes/router.tsx` só com rota e guarda, `src/auth/guarda.ts` com a guarda.
+- **Rodando:** front em `web/` com a área logada completa, páginas legais e públicas, acesso por e-mail ou Google, TikTok só como conexão, e a entrada de pedidos por arquivo `.xlsx` (lint, typecheck e 186 testes passando). Estrutura: uma pasta por página em `src/pages/`, cascas em `src/layouts/`, `src/routes/router.tsx` só com rota e guarda, `src/auth/guarda.ts` com a guarda.
 - **Números:** o topo do Início é o GMV elegível; os gráficos são brutos e dizem isso no título e na nota.
 - **Repositório:** git na raiz (branch `main`), hook do devlog ativo via `core.hooksPath`. Três sessões trabalham no mesmo repositório em paralelo: front só em `web/`, API só em `api/`, e o `CLAUDE.md` da raiz só pela sessão líder. `DEVLOG.md` é compartilhado e cada sessão commita a entrada dela junto com a mudança.
 - **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. O banco de desenvolvimento está semeado: a conta demo tem só `VIDEOS` e os pedidos entram como `FILE`.
 - **Backend:** `api/` serve conta, sessão, Google, conexão com o TikTok, `PATCH /me`, e o contrato de dados (`/summary`, `/orders`, `/videos`, `/products`, `/plans`, `/goals`, `/me/notifications`, `/me/export`, `DELETE /me`) sobre o banco, e agora `/imports` (envio, listagem e lote) e o avatar (`POST` e `GET /me/avatar`), com 91 testes. Falta o parser do `.xlsx` (espera a planilha real), `/reconciliation` e a sincronização com o TikTok. `/payouts` saiu do contrato.
 - **Gatilho de venda:** nenhuma tela ramifica em `shopConnected`. Venda aparece por `hasSales` (conta) e pelo total do período; `shopConnected` descreve só a conexão viva. Vale nas duas pontas, e o seed não mente mais sobre isso.
 - **Guarda de rota (front):** `loader` do React Router 7, em `src/auth/guarda.ts`, um só para os dois sentidos — rota do app sem sessão vai para `/entrar?proxima=`, rota de entrada (`/`, `/entrar`, `/criar-conta`, `/recuperar`) com sessão vai para `/inicio`. `/termos` e `/privacidade` não têm guarda, de propósito. Quem decide é o backend, por `GET /auth/session`; nada em `localStorage`.
+- **Item de pedido:** a chave é `orderId` mais `lineNo`, nunca o `id` do SKU, que repete em linhas diferentes do mesmo pedido (um pedido assim existe nos dados: `5750596296`, duas linhas do SKU `17321495`). `lineNo` vai cru, a partir de 0, e nunca aparece em tela. `/reconciliation` já nasce com o campo.
 - **401 no front:** não significa mais "deslogado" de primeira. `request()` e `upload()` renovam por `POST /auth/refresh` uma vez, com promessa compartilhada, e repetem. Nenhuma tela deve tratar o primeiro 401 como sessão perdida.
 - **Google:** app criado no Google Cloud e as três `GOOGLE_*` preenchidas no `api/.env`. `/auth/google/start` redireciona de verdade, com PKCE, `state` e `nonce`. Falta o único teste que prova o fluxo inteiro: entrar pelo navegador com conta Google real.
 - **Erro:** corpo de erro é `{ code, message }` em toda rota, definido no contrato. O `code` é traduzido no front por `lib/textos.ts`; o `message` é técnico e nunca chega à tela.
@@ -33,6 +34,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-10 · [repo] Corrigir o dano que eu atribuí à chave repetida, e levar `lineNo` para a reconciliação
+
+**Fiz:** duas coisas. (1) Registro aqui que eu afirmei um dano que não se confirmou: disse, ao dono e nas instruções das sessões, que a chave de React repetida fazia **a linha de dinheiro desaparecer da tela**. Não desaparece. (2) `GET /reconciliation` ganhou `lineNo` na linha de divergência, pelo mesmo motivo de `OrderSku`.
+**Por quê:** a sessão do front tentou fazer o teste da lista falhar com a chave antiga e **não conseguiu** — React 19.3 no jsdom renderiza as duas linhas e nem emite aviso de chave duplicada, mesmo com re-render forçado por navegação. Ela relatou isso em vez de escrever um teste verde que não provava nada, e é o relato que vale: quem fez o experimento foi ela.
+**Funcionou:** o defeito **real** é outro e foi reproduzido: `?item=` usava `sku.id`, que repete, então o painel de detalhe abria **sempre a linha 0**. Clicar na linha de 2 unidades (R$ 109,80) mostrava a de 1 unidade (R$ 54,90). Isso falha com a versão antiga por construção, e é um erro de leitura de dinheiro em tela — só não é o erro que eu descrevi. O pedido existe nos dados reais: `5750596296`, SKU `17321495` em duas linhas.
+**Não funcionou:** a minha dedução. Chave duplicada em React é defeito de verdade — ele avisa por um motivo, e estado pode se colar na linha errada em reordenação —, mas eu pulei de "chave duplicada" para "linha some" sem verificar, e repeti isso como fato três vezes. A correção não muda: chavear por `lineNo` está certo pelos dois motivos. O que muda é o que eu podia afirmar.
+**Decidi:** `lineNo` entra na linha de `/reconciliation` agora, antes de a rota existir, porque `orderId + skuId + field` tem exatamente a mesma ambiguidade — mesmo SKU repetido com divergência colide. A rota não está implementada, então custa uma linha hoje e custaria um defeito silencioso depois. Achado pela sessão do front.
+**Commit:** a seguir
+**Commit:** a registrar
+
 ### 2026-10-10 · [front] Chavear os itens de pedido por lineNo
 
 **Fiz:** `OrderSku.lineNo` entra no schema. As chaves das duas listas de `/vendas` (tabela e cartões) passam a ser pedido mais `lineNo`, no lugar da posição no array. O detalhe da venda abre pelo `lineNo` (`?item=`), e não pelo id do SKU, que repete. O MSW passa a mandar `lineNo` a partir de 0, em `adaptSku`.
@@ -41,7 +52,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** tentei travar o defeito de chave com um teste que falhasse com a chave antiga, e não consegui. Com a chave `pedido + sku` e um re-render, o React 19.3 no jsdom continua mostrando as duas linhas, sem aviso de chave repetida. O defeito de "linha que some" não reproduziu neste ambiente; a troca fica pela correção de identidade (o detalhe, de fato, pegava a linha errada) e pelo contrato.
 **Decidi:** `lineNo` é chave, não rótulo: não aparece em tela, e o valor é o cru a partir de 0 do contrato. As outras listas de item (CSV, avisos, métricas) não têm chave de React nem `Map` por item, então não precisaram de mudança.
 **Pendente:** `/reconciliacao` monta a chave com `orderId + skuId + field`, e o contrato da reconciliação não traz `lineNo`. Se um pedido repetir o SKU com divergência, a chave pode colidir. Não mudei o contrato; o dono decide.
-**Commit:** —
+**Commit:** 7036b4c
 
 ### 2026-10-10 · [api] lineNo cru, a partir de 0, sem soma na consulta
 
@@ -51,7 +62,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada.
 **Decidi:** campo que serve de chave vai cru do banco. Isso vale para qualquer rota nova.
 **Pendente:** nada nesta tarefa.
-**Commit:** pendente (aguarda sinal para commitar)
+**Commit:** 00ebc7b
 
 ### 2026-10-10 · [repo] Tirar o +1 do lineNo: o campo vai cru, a partir de 0
 
@@ -61,7 +72,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** a alternativa de normalizar o banco para base 1 foi descartada sem tentar: exigiria migração para mudar dado que não precisa mudar, e migração aplicada não se edita.
 **Decidi:** a regra geral, que é o que sobra disso — **aritmética na borda só para o campo ficar bonito é defeito esperando a próxima pessoa.** Campo que serve de chave vai cru. Se um dia algum número do produto passar a depender da base, aí sim se escolhe uma e se escreve.
 **Pendente:** a API tira o `+ 1` da consulta; o front chaveia por `lineNo` sem presumir base.
-**Commit:** a registrar
+**Commit:** 59cf9e3
 
 ### 2026-10-10 · [api] Expor lineNo no item do pedido
 
@@ -71,7 +82,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada.
 **Decidi:** `line_no` é gravado a partir de 0 (seed e import, pelo índice do array), e o banco **não** mudou. A soma de 1 acontece em uma única consulta, `line_no + 1 as line_no` em `repositories/orders.ts`, para o contrato contar a partir de 1. Quando o import de arquivo gravar `line_no`, precisa seguir a mesma base 0; senão a soma fica duplicada ou a conta sai errada. Está comentado no repositório.
 **Pendente:** o import real ainda não existe, então essa regra de base ainda não foi exercitada fora do seed.
-**Commit:** pendente (aguarda sinal para commitar)
+**Commit:** fddf772
 
 ### 2026-10-10 · [repo] Expor `lineNo` no item do pedido, porque `id` não identifica linha
 
@@ -81,7 +92,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** a correção de primeira hora foi a posição no array, que funciona e não mente, mas depende da ordem da resposta e não está escrita em lugar nenhum. Trocada por um campo do contrato, que é o que o banco já tinha.
 **Decidi:** expor o campo em vez de só documentar a armadilha. Documentar deixaria todo consumidor futuro derivando chave por conta própria, e o dado existe no banco desde a migração — é uma coluna no `select`.
 **Pendente:** a API devolve `lineNo` em `/orders` e `/orders/:id`; depois o front chaveia por ele, no schema e na tela, e o MSW passa a mandar.
-**Commit:** a registrar
+**Commit:** 39b8f6a
 
 ### 2026-10-10 · [repo] Registrar os três riscos de segurança que a auditoria deixou de propósito
 
@@ -94,7 +105,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada tentado. Consertar o 1 sem saber a hospedagem seria chutar o formato do proxy.
 **Decidi:** nenhum dos três entra agora. O 1 e o 2 são condição de implantação e entram no mesmo trabalho em que a produção for definida; o 3 é decisão do dono, porque mexe em variável de ambiente dele.
 **Pendente:** os três, nos termos acima.
-**Commit:** a registrar
+**Commit:** 39b8f6a
 
 ### 2026-10-10 · [front] Renovar a sessão no 401 antes de mandar entrar de novo
 
@@ -152,7 +163,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada.
 **Decidi:** conferi os outros headers que o front lê, para não expor o que não é preciso. `X-Nome-Arquivo` vem do cache do service worker, não da API. O front não lê `Content-Disposition` do `GET /me/export`: ele baixa o JSON e monta o nome do arquivo sozinho. Não há mais header de resposta da API que o front precise ler.
 **Pendente:** nada nesta tarefa. A API segue parada: o restante depende de fatores de fora (parser, liberação do Brasil, reconciliação).
-**Commit:** pendente (aguarda sinal para commitar)
+**Commit:** da5abf5
 
 ### 2026-10-10 · [repo] Exigir `Retry-After` exposto no CORS
 
@@ -172,7 +183,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada. Uma primeira versão da lógica do callback deixava uma atribuição que o lint marcou como inútil; trocada por declaração sem valor inicial.
 **Decidi:** o método é declarado por nome no registro, e não herdado do padrão da biblioteca. Quem muda o `@fastify/cors` numa major passa pelo teste de preflight, não pelo navegador do dono.
 **Pendente:** o caso que só o navegador vê não está coberto por teste de servidor. Antes de dizer que o fluxo fechou, é preciso entrar pelo Google num navegador de verdade.
-**Commit:** pendente (aguarda sinal para commitar)
+**Commit:** af00940
 
 ### 2026-10-10 · [repo] Escrever no contrato que o CORS libera PATCH, PUT e DELETE, e para onde o Google volta
 
@@ -192,7 +203,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** a premissa de CSP não se confirmou. Não há CSP na página do front no repositório: nem `<meta>` em `index.html`, nem header em `vite.config.ts` ou `public/`. Subi o Vite de desenvolvimento e a resposta de `/` não traz `Content-Security-Policy`. A CSP do helmet que existe está na API, e vale só para as respostas dela. Não inventei uma CSP.
 **Decidi:** nenhum `img-src` foi adicionado. Se a hospedagem de produção puser CSP por fora do repositório, quem tem essa configuração precisa liberar a origem da API; isso não está no repositório para eu alterar.
 **Pendente:** confirmar a CSP da produção fora do repositório. A verificação no navegador de verdade ficou para depois, porque exige a API e o banco de pé.
-**Commit:** —
+**Commit:** 9420d1d
 
 ### 2026-10-09 · [api] Separar IMAGEM_MUITO_GRANDE de IMAGEM_INVALIDA no avatar
 
@@ -202,7 +213,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada.
 **Decidi:** os códigos de rota seguem em português, como `VALIDACAO`; só `ImportBatch.error.code` é em inglês, por ser enum próprio do arquivo.
 **Pendente:** nada nesta tarefa. Próximas da API, todas travadas por fora: `/reconciliation` (precisa de dado real), sincronização com o TikTok (liberação do Brasil) e o parser (o `.xlsx` real).
-**Commit:** pendente (aguarda sinal para commitar)
+**Commit:** 7f3b1c5
 
 ### 2026-10-09 · [repo] Escrever os limites do avatar e separar as duas recusas
 
@@ -222,7 +233,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada.
 **Decidi:** o tipo da imagem vem dos bytes (JPEG, PNG, WebP), nunca do `Content-Type` que o cliente manda. `GET /me/avatar` responde `Cross-Origin-Resource-Policy: same-site`, porque o helmet põe `same-origin` por padrão e o navegador bloquearia a imagem vinda da porta do front. O comentário no controller diz que o cookie só chega ao `<img>` enquanto a API e o front forem o mesmo site.
 **Pendente:** (1) o contrato não fixa tamanho de foto; os 2 MB são **suposição** em `services/avatar.ts`. (2) Imagem grande demais e arquivo que não é imagem saem os dois como `VALIDACAO`, então a tela não consegue dizer qual dos dois aconteceu; se isso importar para o texto, é um código novo, e isso passa pelo contrato. (3) A CSP da página do front precisa permitir `img-src` para a origem da API.
-**Commit:** pendente (aguarda sinal para commitar)
+**Commit:** 875af88
 
 ### 2026-10-09 · [front] Prefixar o avatar relativo com a API, e só ele
 
@@ -232,7 +243,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada.
 **Decidi:** o `?v=<hash>` vem da API e não recebe cache-busting do front. O MSW continua devolvendo um blob absoluto no upload, então não exercita o caminho relativo; isso fica para a varredura contra a API real.
 **Pendente:** nada neste ponto.
-**Commit:** —
+**Commit:** f523864
 **Commit:** a seguir
 ### 2026-10-09 · [repo] Escrever o avatar no contrato, com as duas procedências separadas
 
@@ -262,7 +273,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** a primeira versão do teste novo era um placeholder sem asserção; foi substituído antes do commit.
 **Decidi:** a regra fica no service, no ponto em que o erro é classificado, e não no lib: o lib só lança `ParserPendente`.
 **Pendente:** `POST /me/avatar` ainda não existe. O contrato diz `avatarUrl` na resposta, mas não diz onde a imagem fica nem por qual URL ela é servida; isso precisa de decisão antes do código.
-**Commit:** pendente (aguarda sinal para commitar)
+**Commit:** dbc3ef8
 
 ### 2026-10-09 · [repo] Separar "ainda não sei ler" de "falhou" no import
 
@@ -282,7 +293,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada. Uma primeira versão do teste de `FAILED` esperava o status na hora do envio e era intermitente, porque o processamento roda em segundo plano; o teste agora espera o lote sair da fila.
 **Decidi:** o mapeamento de colunas e o de status ficam em `src/lib/affiliate-orders.ts`, em uma função só. A suposição é explícita: o dicionário de colunas nasce **vazio** (nenhuma coluna confirmada), e os rótulos de status são os da tabela da spec, não de um arquivo real. Nada foi inventado para fechar a seção 3.
 **Pendente:** (1) o parser de verdade, que espera o `affiliate_orders.xlsx` real: cabeçalho, moeda, `WRONG_FILE`, dedup por id do pedido + id do SKU + `line_no`; hoje todo `.xlsx` válido termina `FAILED` com a mensagem "parser pendente", e isso precisa de tela própria, porque o front lê `FAILED` como "pedir nova tentativa" e nova tentativa não resolve; (2) lote preso em `PROCESSING` se a API cair no meio (ponytail na fila, com o teto descrito lá); (3) `/reconciliation`, que só vale com dado real para reconciliar.
-**Commit:** pendente (aguarda sinal para commitar)
+**Commit:** c04cbc6
 
 ### 2026-10-09 · [front] Trocar o gatilho de venda de shopConnected para hasSales
 
