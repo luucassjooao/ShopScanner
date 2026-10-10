@@ -84,7 +84,14 @@ MSW roda só com `import.meta.env.DEV` e `VITE_ENABLE_MSW=true`; o build de prod
 - Código de erro vindo da URL (`/entrar?erro=`, `/configuracoes?erro=`) ou de um corpo de erro (`serverCode`) passa por `mensagemDoErro`, em `src/lib/textos.ts`: um mapa só, com fallback genérico. **Nunca mostrar o código cru**, nem a `message` técnica da API.
 - Conexão com o TikTok: `POST /connections/tiktok/start` com `{ kind: 'VIDEOS' | 'SHOP' }`. Hoje `SHOP` responde 503 com `code: 'TIKTOK_SHOP_INDISPONIVEL'` — a tela mostra o motivo traduzido e não navega. Quando a liberação sair, nada muda no front.
 - Conta criada pelo Google chega sem aceite: `<AceiteTermos />` (em `routes/app/`) trava a área logada até gravar por `PATCH /me { acceptedTermsVersion }`.
-- 401: chamar `POST /auth/refresh` **uma vez** e repetir a requisição. Falhando de novo, ir para `/entrar`. Access token dura 15 minutos, então 401 em aba velha é esperado.
+- 401: `request()` e `upload()` chamam `POST /auth/refresh` **uma vez** e repetem a
+  requisição; só se a renovação falhar o `nao_autenticado` chega à tela e a guarda vai para
+  `/entrar`. O access token dura 15 minutos e o refresh 30 dias, então 401 em aba velha é
+  esperado e **não** é motivo para pedir a senha de novo.
+  A renovação é **uma promessa compartilhada** (`renovarSessao` em `src/api/client.ts`): uma
+  tela faz de 8 a 10 consultas e todas tomam 401 juntas, e vários `POST /auth/refresh` em
+  paralelo são lidos pelo servidor como refresh token roubado — o que derruba a sessão.
+  `/auth/refresh` e `/auth/login` não renovam: 401 ali é credencial morta, não token vencido.
 - 429: aviso amigável com o tempo de espera, sem repetir automaticamente.
 - Import de arquivo é assíncrono: `POST /imports` devolve `importId`; o acompanhamento é por `GET /imports/:id`.
 - O envio do arquivo usa `upload()` de `src/api/client.ts`, com `XMLHttpRequest`: é o único jeito de ter barra de progresso, porque `fetch` não informa quanto do corpo subiu. Todo o resto continua no `request()`.

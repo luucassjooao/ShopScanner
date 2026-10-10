@@ -295,6 +295,11 @@ export const handlers = [
     db.loggedIn = true;
     return new HttpResponse(null, { status: 204 });
   }),
+  // Renovação da sessão. Como na API: 204 quando o refresh (cookie httpOnly) ainda vale,
+  // 401 quando não vale. O cliente HTTP chama isto sozinho ao tomar 401, uma vez.
+  http.post(url('/auth/refresh'), () =>
+    db.loggedIn ? new HttpResponse(null, { status: 204 }) : erro(401, 'Sessão expirada.'),
+  ),
   http.post(url('/auth/logout'), () => {
     db.loggedIn = false;
     return new HttpResponse(null, { status: 204 });

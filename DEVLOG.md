@@ -31,6 +31,22 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-10 · [front] Renovar a sessão no 401 antes de mandar entrar de novo
+
+**Fiz:** `request()` e `upload()`, em `src/api/client.ts`, passaram a chamar `POST /auth/refresh` **uma vez** ao tomar 401 e a repetir a requisição original. Só se a renovação falhar o `nao_autenticado` chega à tela. A renovação é uma promessa compartilhada (`renovarSessao`): a primeira chamada dispara, as outras esperam a mesma promessa. `/auth/refresh` e `/auth/login` ficam fora — 401 ali é credencial morta, não token vencido. O MSW ganhou o handler de `/auth/refresh` (204 com sessão, 401 sem).
+
+**Por quê:** o front nunca chamava essa rota, apesar de o contrato da raiz e o `web/CLAUDE.MD` mandarem. O access token dura 15 minutos e o refresh 30 dias, então qualquer aba aberta por mais de 15 minutos — ou qualquer pessoa que voltasse ao app depois disso — era jogada em `/entrar` com a sessão perfeitamente válida no servidor. O front jogava no lixo uma sessão que o backend ainda considerava boa.
+
+**Funcionou:** 183 testes em 19 arquivos (eram 178), lint, typecheck e prettier limpos. Cinco testes novos em `api/client.test.ts`: 401 renova e repete devolvendo o dado; cinco requisições vencendo juntas disparam **uma** renovação; 401 na própria renovação não vira laço; 401 no login não renova; renovação recusada deixa o `nao_autenticado` subir, com duas chamadas e nenhuma repetição inútil. Contra a API de pé em `localhost:3333`: `POST /auth/refresh` sem o cabeçalho responde 403 e com ele responde 401 sem cookie — ou seja, o `X-Requested-With` é obrigatório e está sendo mandado.
+
+**Não funcionou:** a tentativa de exercitar o fluxo inteiro contra a API real parou no login: as credenciais do seed não são as que eu tinha. O comportamento da rota foi conferido por `curl` (403 sem cabeçalho, 401 sem cookie), e a lógica de renovação está coberta por teste; o fluxo com cookie de verdade continua sendo coisa de navegador.
+
+**Decidi:** a renovação é compartilhada por desenho, não por acaso — uma tela faz de 8 a 10 consultas e todas tomam 401 no mesmo instante, e vários `POST /auth/refresh` em paralelo são exatamente o que o servidor lê como refresh token roubado (foi o defeito corrigido em `5d4eb34`). O front não provoca isso. E a correção foi no lugar compartilhado: `upload()` tem o mesmo buraco que `request()`, então as duas portas renovam, com a mesma promessa — quem ficou dez minutos na tela de import não perde o arquivo por um token vencido. A barra de progresso volta a zero na repetição, e isso está dito no código.
+
+**Pendente:** nada nesta tarefa. Fica valendo a regra: 401 só significa "deslogado" depois de a renovação falhar — nenhuma tela deve tratar o primeiro 401 como sessão perdida.
+
+**Commit:** pendente
+
 ### 2026-10-10 · [front] Uma pasta por página e a guarda de rota no loader
 
 **Fiz:** `src/routes/` passou a ser só definição de rota. Cada tela virou `src/pages/<pagina>/index.tsx` (com as peças que só ela usa ao lado), as cascas foram para `src/layouts/`, e `filtros.ts`/`useAvisos.ts` desceram para `lib/`, que é onde quase toda tela os consome. `App.tsx` ficou com os providers, `bootstrap.ts` com o MSW e o service worker, e `main.tsx` só com a renderização. A guarda de autenticação virou um fabricante de `loader` em `src/auth/guarda.ts`, usado nos dois sentidos. Os imports migraram de `react-router-dom` para `react-router`, e o `-dom` saiu do `package.json`.

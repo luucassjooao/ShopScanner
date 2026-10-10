@@ -157,14 +157,61 @@ async function readErrorBody(response: Response) {
   return {};
 }
 
+/** Renova a sessão. 401 nela, ou no login, é credencial morta: renovar não ajudaria. */
+export const ROTA_REFRESH = '/auth/refresh';
+const SEM_RENOVACAO: readonly string[] = [ROTA_REFRESH, '/auth/login'];
+
+/**
+ * Uma renovação por vez, compartilhada.
+ *
+ * O access token dura 15 minutos e cada tela faz de 8 a 10 consultas: quando ele vence,
+ * todas tomam 401 praticamente juntas. Se cada uma chamasse `POST /auth/refresh`, o
+ * servidor veria várias rotações do mesmo refresh token em paralelo e leria isso como
+ * token roubado — derrubando a sessão inteira, que é o oposto do que queremos aqui. Então
+ * a primeira dispara, as outras esperam **a mesma promessa**, e todas repetem depois.
+ */
+let renovacaoEmCurso: Promise<boolean> | null = null;
+
+function renovarSessao(): Promise<boolean> {
+  renovacaoEmCurso ??= fetch(buildUrl(ROTA_REFRESH), {
+    method: 'POST',
+    credentials: 'include',
+    // Muda estado, então vai com o cabeçalho de cliente; sem ele a API responde 403.
+    headers: { Accept: 'application/json', 'X-Requested-With': CLIENTE },
+  })
+    .then((r) => r.ok)
+    .catch(() => false)
+    .finally(() => {
+      renovacaoEmCurso = null;
+    });
+  return renovacaoEmCurso;
+}
+
 /**
  * Uma porta de entrada para toda chamada HTTP.
  *
  * - Sessão por cookie httpOnly (`credentials: 'include'`); nenhum token em `localStorage`.
  * - Erro sempre vira `ApiError`, com `code` estável para a interface decidir o que mostrar.
  * - Resposta 2xx passa pelo Zod: fora do contrato é erro, não `any` solto pelo app.
+ * - 401 não é "deslogado" de primeira: renova a sessão **uma vez** e repete a requisição.
+ *   Só se a renovação falhar o `nao_autenticado` chega à tela, e daí a guarda vai para
+ *   `/entrar`. Sem isto, qualquer aba aberta por mais de 15 minutos perderia uma sessão
+ *   que o servidor ainda considera boa por 30 dias.
  */
-export async function request<T = void>(
+export async function request<T = void>(path: string, opcoes: RequestOptions<T> = {}): Promise<T> {
+  try {
+    return await enviar<T>(path, opcoes);
+  } catch (erro) {
+    const renovavel =
+      erro instanceof ApiError && erro.code === 'nao_autenticado' && !SEM_RENOVACAO.includes(path);
+    if (!renovavel) throw erro;
+    if (!(await renovarSessao())) throw erro;
+    // Uma repetição, e só uma: se vier 401 de novo, este `enviar` o propaga sem renovar.
+    return await enviar<T>(path, opcoes);
+  }
+}
+
+async function enviar<T = void>(
   path: string,
   {
     method = 'GET',
@@ -250,7 +297,25 @@ export async function request<T = void>(
  * quanto do corpo já subiu, e um arquivo de dezenas de MB precisa disso em tela.
  * O processamento acontece depois, em fila: aqui só acompanhamos o envio.
  */
-export function upload<T>(
+export async function upload<T>(
+  path: string,
+  body: FormData,
+  opcoes: UploadOptions<T>,
+): Promise<T> {
+  try {
+    return await enviarUpload(path, body, opcoes);
+  } catch (erro) {
+    // Mesma regra do `request`: 401 renova uma vez e repete, com a mesma renovação
+    // compartilhada. Quem ficou dez minutos na tela de import antes de soltar o arquivo
+    // não pode perder o arquivo por causa de um access token vencido.
+    if (!(erro instanceof ApiError) || erro.code !== 'nao_autenticado') throw erro;
+    if (!(await renovarSessao())) throw erro;
+    // A barra volta a zero: o corpo sobe de novo, não há como reaproveitar o que já subiu.
+    return await enviarUpload(path, body, opcoes);
+  }
+}
+
+function enviarUpload<T>(
   path: string,
   body: FormData,
   { schema, onProgress, signal }: UploadOptions<T>,

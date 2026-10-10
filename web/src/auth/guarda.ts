@@ -14,6 +14,10 @@ import { sessionQuery } from '@/api/session';
  * Roda como `loader` do React Router 7, isto é **antes** da renderização, e não dentro de um
  * componente de layout. Um fabricante só, usado nos dois sentidos (`privada: true` exige
  * sessão; `privada: false` expulsa quem já entrou), para não existir uma segunda versão.
+ *
+ * O 401 que chega aqui já é definitivo: `src/api/client.ts` tenta `POST /auth/refresh` uma
+ * vez antes de desistir. Logo `anonimo` significa "nem o refresh vale", e não "o access
+ * token de 15 minutos venceu" — a guarda não precisa saber a diferença, e não deve.
  */
 
 export const ROTA_LOGADO = '/inicio';
