@@ -14,18 +14,22 @@ const base = { httpOnly: true, secure: true, sameSite: 'lax' } as const;
 
 export function definirCookiesDeSessao(
   reply: FastifyReply,
-  tokens: { acesso: string; refresh: string },
+  tokens: { acesso: string; refresh?: string | null },
 ) {
   reply.setCookie(COOKIE_ACESSO, tokens.acesso, {
     ...base,
     path: '/',
     maxAge: ACESSO_SEGUNDOS,
   });
-  reply.setCookie(COOKIE_REFRESH, tokens.refresh, {
-    ...base,
-    path: CAMINHO_REFRESH,
-    maxAge: REFRESH_SEGUNDOS,
-  });
+  // Sem refresh novo: a rotação foi de outra requisição e o cookie dela fica
+  // de pé. Reescrever com o antigo seria devolver um token já queimado.
+  if (tokens.refresh) {
+    reply.setCookie(COOKIE_REFRESH, tokens.refresh, {
+      ...base,
+      path: CAMINHO_REFRESH,
+      maxAge: REFRESH_SEGUNDOS,
+    });
+  }
 }
 
 export function limparCookiesDeSessao(reply: FastifyReply) {

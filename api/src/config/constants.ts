@@ -14,6 +14,15 @@ export const ACESSO_SEGUNDOS = 15 * 60;
 export const REFRESH_SEGUNDOS = 30 * 24 * 60 * 60;
 export const RESET_SENHA_SEGUNDOS = 30 * 60;
 
+/**
+ * Janela em que um refresh já girado ainda conta como retentativa, e não como
+ * reuso. Existe porque o caso normal — duas abas tomando 401 juntas, as duas
+ * chamando /auth/refresh com o mesmo cookie — era indistinguível de token
+ * roubado, e caía na queima da família: a pessoa perdia a sessão inteira por
+ * usar o app em duas abas. Fora da janela, reuso continua sendo reuso.
+ */
+export const GRACA_REUSO_SEGUNDOS = 30;
+
 /** Cookie efêmero do fluxo OAuth: state, nonce e code_verifier, assinado. */
 export const COOKIE_OAUTH = '__Secure-goog';
 export const CAMINHO_OAUTH = '/auth/google';

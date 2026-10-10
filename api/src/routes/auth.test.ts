@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../app.ts';
-import { COOKIE_ACESSO, COOKIE_REFRESH } from '../config/constants.ts';
+import { COOKIE_ACESSO, COOKIE_REFRESH, GRACA_REUSO_SEGUNDOS } from '../config/constants.ts';
+import { sql } from '../lib/db.ts';
 import { pedirRedefinicao } from '../services/auth.ts';
 import { comCookies, cookiesDe, CSRF, limparBanco } from '../test/helpers.ts';
 
@@ -32,6 +33,17 @@ async function entrar(email: string, password = SENHA) {
     payload: { email, password },
   });
   return { res, cookies: cookiesDe(res) };
+}
+
+/**
+ * Empurra o `used_at` para trás da janela de graça. Sem isso, um reuso feito
+ * no mesmo instante é indistinguível de duas abas girando juntas — que é
+ * justamente o caso que a janela cobre.
+ */
+function envelhecerRefresh() {
+  return sql`update refresh_tokens
+                set used_at = used_at - ${`${GRACA_REUSO_SEGUNDOS + 1} seconds`}::interval
+              where used_at is not null`;
 }
 
 describe('conta e sessão', () => {
@@ -116,7 +128,7 @@ describe('conta e sessão', () => {
     expect(sessao.statusCode).toBe(200);
   });
 
-  it('refresh reutilizado derruba a família inteira e encerra a sessão', async () => {
+  it('refresh reutilizado fora da janela derruba a família e encerra a sessão', async () => {
     const { cookies: primeiro } = await registrar('dani@exemplo.com');
 
     const girado = await app.inject({
@@ -125,6 +137,8 @@ describe('conta e sessão', () => {
       headers: { ...CSRF, ...comCookies({ [COOKIE_REFRESH]: primeiro[COOKIE_REFRESH] }) },
     });
     const segundo = cookiesDe(girado);
+
+    await envelhecerRefresh();
 
     const reuso = await app.inject({
       method: 'POST',
@@ -149,7 +163,7 @@ describe('conta e sessão', () => {
     expect(sessao.statusCode).toBe(401);
   });
 
-  it('dois refresh simultâneos: só um gira', async () => {
+  it('dois refresh com o mesmo cookie: só um gira, e nenhum derruba a sessão', async () => {
     const { cookies } = await registrar('duda@exemplo.com');
     const pedido = () =>
       app.inject({
@@ -158,9 +172,30 @@ describe('conta e sessão', () => {
         headers: { ...CSRF, ...comCookies({ [COOKIE_REFRESH]: cookies[COOKIE_REFRESH] }) },
       });
 
-    const [a, b] = await Promise.all([pedido(), pedido()]);
-    const codigos = [a.statusCode, b.statusCode].sort();
-    expect(codigos).toEqual([204, 401]);
+    const respostas = await Promise.all([pedido(), pedido()]);
+    expect(respostas.map((r) => r.statusCode)).toEqual([204, 204]);
+
+    // Só um refresh novo: quem perdeu a corrida não gira nada...
+    const comRefreshNovo = respostas.filter((r) => cookiesDe(r)[COOKIE_REFRESH]);
+    expect(comRefreshNovo).toHaveLength(1);
+
+    // ...e também não apaga cookie. Apagar era o defeito: a resposta do
+    // perdedor removia do navegador a sessão que o vencedor acabou de gravar.
+    for (const r of respostas) {
+      const emitidos = cookiesDe(r);
+      expect(emitidos[COOKIE_ACESSO]).toBeTruthy();
+      expect(Object.values(emitidos).every((v) => v !== '')).toBe(true);
+    }
+
+    // Os dois access tokens autenticam: as duas abas continuam dentro do app.
+    for (const r of respostas) {
+      const sessao = await app.inject({
+        method: 'GET',
+        url: '/auth/session',
+        headers: comCookies({ [COOKIE_ACESSO]: cookiesDe(r)[COOKIE_ACESSO] }),
+      });
+      expect(sessao.statusCode).toBe(200);
+    }
   });
 
   it('sessão revogada não autentica mais', async () => {

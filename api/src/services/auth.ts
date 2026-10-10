@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import type { FastifyBaseLogger } from 'fastify';
 import {
   ACESSO_SEGUNDOS,
+  GRACA_REUSO_SEGUNDOS,
   MOTIVO,
   REFRESH_SEGUNDOS,
   RESET_SENHA_SEGUNDOS,
@@ -17,6 +18,10 @@ import * as sessoes from '../repositories/sessions.ts';
 import { contasDoUsuario } from './connections.ts';
 
 export type Tokens = { acesso: string; refresh: string };
+
+/** Rotação normal devolve os dois; corrida perdida devolve só o acesso. */
+export type TokensDeGiro = Tokens | { acesso: string; refresh: null };
+
 export type Contexto = { userAgent: string | null; ip: string | null };
 
 /** Mesma resposta para e-mail que não existe e senha errada. */
@@ -26,6 +31,13 @@ const SESSAO = new AppError(401, 'SESSAO_INVALIDA', 'Sessão expirada. Entre de 
 /** O token do cookie nunca encosta no banco: só este hash, com pepper. */
 function hashRefresh(token: string): Buffer {
   return createHash('sha256').update(env.REFRESH_TOKEN_PEPPER).update(token).digest();
+}
+
+function criarAcesso(usuario: Usuario, sessionId: string): string {
+  return criarJwt(
+    { sub: usuario.id, sid: sessionId, ver: usuario.credentialsVersion },
+    ACESSO_SEGUNDOS,
+  );
 }
 
 async function emitirTokens(
@@ -42,10 +54,7 @@ async function emitirTokens(
     },
     db,
   );
-  const acesso = criarJwt(
-    { sub: dados.usuario.id, sid: dados.sessionId, ver: dados.usuario.credentialsVersion },
-    ACESSO_SEGUNDOS,
-  );
+  const acesso = criarAcesso(dados.usuario, dados.sessionId);
   return { tokens: { acesso, refresh }, refreshId: linha.id };
 }
 
@@ -88,17 +97,25 @@ export async function entrar(
 
 /**
  * Rotação. Tudo numa transação: marca o antigo como usado, emite o novo na
- * mesma família e liga um ao outro. Token que chega já usado derruba a família
- * inteira e encerra a sessão.
+ * mesma família e liga um ao outro.
+ *
+ * Token que chega já usado **depois** da janela de graça derruba a família
+ * inteira e encerra a sessão. Dentro da janela é retentativa, não roubo: o
+ * front chama `/auth/refresh` uma vez ao tomar 401, e duas abas tomando 401
+ * juntas mandam as duas o mesmo cookie. Quem chega depois sai com access token
+ * novo e sem refresh novo — o da rotação vencedora é que fica de pé.
  */
-export async function girar(token: string | undefined, log: FastifyBaseLogger): Promise<Tokens> {
+export async function girar(
+  token: string | undefined,
+  log: FastifyBaseLogger,
+): Promise<TokensDeGiro> {
   if (!token) throw SESSAO;
   const hash = hashRefresh(token);
 
   const atual = await sessoes.buscarRefreshPorHash(hash);
   if (!atual) throw SESSAO;
 
-  if (atual.usedAt !== null) {
+  if (atual.usedAt && Date.now() - atual.usedAt.getTime() > GRACA_REUSO_SEGUNDOS * 1000) {
     // Em transação própria, e não na da rotação: a rotação termina em erro, e
     // o rollback desfaria justamente a queima que precisa ficar gravada.
     await transaction(async (tx) => {
@@ -122,9 +139,20 @@ export async function girar(token: string | undefined, log: FastifyBaseLogger): 
     const usuario = await usuarios.buscarPorId(sessao.userId, tx);
     if (!usuario) throw SESSAO;
 
-    // Condicional: se outra requisição marcou primeiro, esta perde a corrida e
-    // não gira nada. Sem isso, dois refresh simultâneos criariam duas famílias.
-    if (!(await sessoes.marcarRefreshUsado(atual.id, tx))) throw SESSAO;
+    // Condicional: gira só quem conseguir marcar o token como usado. Sem isso,
+    // dois refresh simultâneos criariam duas famílias.
+    //
+    // Não conseguir marcar não é falha. Acontece de dois jeitos, os dois
+    // legítimos: o token já estava usado (outra aba girou antes, dentro da
+    // janela de graça) ou outra requisição marcou entre o select e este update.
+    // Nos dois a sessão está viva, então esta requisição sai com um access
+    // token novo e **sem** refresh novo, e não toca no refresh de quem girou.
+    // Derrubar aqui era pior do que não girar: a resposta apagava, no
+    // navegador, o cookie que a vencedora acabou de gravar, e a pessoa caía no
+    // login com uma sessão válida na mão.
+    if (!(await sessoes.marcarRefreshUsado(atual.id, tx))) {
+      return { acesso: criarAcesso(usuario, sessao.id), refresh: null };
+    }
 
     const { tokens, refreshId } = await emitirTokens(
       { usuario, sessionId: sessao.id, familyId: atual.familyId },
