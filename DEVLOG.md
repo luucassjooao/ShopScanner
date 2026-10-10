@@ -30,6 +30,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [front] Tratar os dois erros da foto e recusar antes do envio
+
+**Fiz:** `IMAGEM_MUITO_GRANDE` e `IMAGEM_INVALIDA` têm textos separados em `lib/textos.ts`: grande demais pede cortar ou escolher outra foto, com o teto em número; inválida pede exportar em JPEG, PNG ou WebP e diz que um arquivo só renomeado não conta. A tela de foto passou a traduzir `serverCode` em vez de mostrar a mensagem técnica. `lib/avatar.ts` antecipa as duas recusas com o mesmo texto, sem tirar da API a palavra final. O teto `LIMITE_AVATAR_MB = 2` vive em `textos.ts`, de onde sai o texto.
+**Por quê:** os dois códigos pedem ações opostas; um texto só para os dois deixaria a pessoa adivinhar qual problema tem. Antes do envio, a checagem é só conveniência: a API decide pelos bytes.
+**Funcionou:** teste de `recusaLocalAvatar` (aceita os três formatos, 2 MB exatos passam e 1 byte a mais recusa, extensão fora é `IMAGEM_INVALIDA`); teste de textos (os dois são diferentes, o grande cita 2 MB, o inválido cita o renomear); teste da tela que mostra a recusa sem chamar `POST /me/avatar`. 172 testes, typecheck, lint e prettier limpos.
+**Não funcionou:** a premissa de CSP não se confirmou. Não há CSP na página do front no repositório: nem `<meta>` em `index.html`, nem header em `vite.config.ts` ou `public/`. Subi o Vite de desenvolvimento e a resposta de `/` não traz `Content-Security-Policy`. A CSP do helmet que existe está na API, e vale só para as respostas dela. Não inventei uma CSP.
+**Decidi:** nenhum `img-src` foi adicionado. Se a hospedagem de produção puser CSP por fora do repositório, quem tem essa configuração precisa liberar a origem da API; isso não está no repositório para eu alterar.
+**Pendente:** confirmar a CSP da produção fora do repositório. A verificação no navegador de verdade ficou para depois, porque exige a API e o banco de pé.
+**Commit:** —
+
 ### 2026-10-09 · [api] Separar IMAGEM_MUITO_GRANDE de IMAGEM_INVALIDA no avatar
 
 **Fiz:** a foto recusada por tamanho responde `IMAGEM_MUITO_GRANDE` (400) e a que não é JPEG, PNG ou WebP responde `IMAGEM_INVALIDA` (400), no lugar do `VALIDACAO` único. O teto de 2 MB, que era suposição, agora está no contrato (`eb42e6a`).

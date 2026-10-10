@@ -67,3 +67,16 @@ describe('avisoLimite', () => {
     expect(avisoLimite()).toBe('Muitas tentativas seguidas. Espere um pouco e tente de novo.');
   });
 });
+
+describe('erros da foto de perfil', () => {
+  it('grande demais e formato inválido pedem ações diferentes, com o teto em número', () => {
+    const grande = mensagemDoErro('IMAGEM_MUITO_GRANDE');
+    const invalida = mensagemDoErro('IMAGEM_INVALIDA');
+    expect(grande).toContain('2 MB');
+    expect(grande).toMatch(/Corte|escolha/);
+    expect(invalida).toMatch(/JPEG, PNG ou WebP/);
+    expect(invalida).toMatch(/renomeado/);
+    expect(grande).not.toBe(invalida);
+    expect(invalida).not.toMatch(/MB/);
+  });
+});

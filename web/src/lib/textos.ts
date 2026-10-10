@@ -26,7 +26,14 @@ export const VERSAO_TERMOS = '2026-09-22';
  * login social ou de a sessão vencer, e `/configuracoes?erro=CODIGO` depois de
  * uma conexão com o TikTok. O código cru **nunca** aparece em tela.
  */
+/** Teto da foto de perfil, em MB. Vem do contrato (`POST /me/avatar`); mudar aqui é mudar o contrato. */
+export const LIMITE_AVATAR_MB = 2;
+
 const ERROS: Record<string, string> = {
+  // Foto de perfil (POST /me/avatar): pedem ações opostas, por isso são dois textos
+  IMAGEM_MUITO_GRANDE: `Essa foto passa de ${LIMITE_AVATAR_MB} MB. Corte a imagem ou escolha uma foto menor e tente de novo.`,
+  IMAGEM_INVALIDA:
+    'Não conseguimos reconhecer esta imagem como JPEG, PNG ou WebP. Um arquivo só renomeado para .jpg ou .png não conta: exporte a foto de novo nesse formato.',
   // Login pelo Google
   GOOGLE_RECUSADO: 'O acesso pelo Google foi cancelado. Tente de novo quando quiser.',
   GOOGLE_INDISPONIVEL:

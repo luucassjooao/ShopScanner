@@ -220,6 +220,24 @@ describe('/configuracoes', () => {
     expect((init!.body as FormData).get('file')).toBeInstanceOf(File);
   });
 
+  it('foto acima de 2 MB é recusada na tela, sem chamar a API', async () => {
+    const fetchReal = globalThis.fetch;
+    const envio = vi.fn((url: RequestInfo | URL, init?: RequestInit) =>
+      String(url).endsWith('/me/avatar')
+        ? Promise.resolve(new Response(null, { status: 500 }))
+        : fetchReal(url, init),
+    );
+    vi.stubGlobal('fetch', envio);
+    abrir('/configuracoes');
+    const input = await screen.findByLabelText('Escolher foto do perfil');
+    const grande = new File([new Uint8Array(2 * 1024 * 1024 + 1)], 'grande.png', {
+      type: 'image/png',
+    });
+    await userEvent.upload(input, grande);
+    expect(await screen.findByRole('alert')).toHaveTextContent('passa de 2 MB');
+    expect(envio.mock.calls.some((c) => String(c[0]).endsWith('/me/avatar'))).toBe(false);
+  });
+
   it('contas conectadas: uma linha por conexão; desconectar explica e não mexe no acesso', async () => {
     db.shopConnected = false;
     abrir('/configuracoes');

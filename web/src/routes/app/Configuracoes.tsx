@@ -50,6 +50,7 @@ import { toast } from '@/components/ui/use-toast';
 import { formatData, formatDecimal, formatMoeda, haQuanto, parseMoeda } from '@/lib/format';
 import { divRound, fromCents, toCents } from '@/lib/money';
 import { avisoLimite, mensagemDoErro, PRAZO_EXCLUSAO, PRAZO_RESPOSTA } from '@/lib/textos';
+import { recusaLocalAvatar } from '@/lib/avatar';
 import { cn } from '@/lib/utils';
 import { conexaoExpirada, hojeSP, useConta, useFiltros } from './filtros';
 
@@ -144,6 +145,7 @@ function AcessoConta({ sessao }: { sessao: Sessao }) {
   const arquivo = useRef<HTMLInputElement>(null);
   const [senhaAberta, setSenhaAberta] = useState(false);
   const [erroNome, setErroNome] = useState<string | null>(null);
+  const [recusaFoto, setRecusaFoto] = useState<string | null>(null);
 
   function enviar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -182,7 +184,14 @@ function AcessoConta({ sessao }: { sessao: Sessao }) {
           aria-label="Escolher foto do perfil"
           onChange={(e) => {
             const f = e.target.files?.[0];
-            if (f) foto.mutate(f, { onSuccess: () => toast({ title: 'Foto atualizada' }) });
+            if (f) {
+              const recusa = recusaLocalAvatar(f);
+              if (recusa) setRecusaFoto(mensagemDoErro(recusa));
+              else {
+                setRecusaFoto(null);
+                foto.mutate(f, { onSuccess: () => toast({ title: 'Foto atualizada' }) });
+              }
+            }
             e.target.value = '';
           }}
         />
@@ -195,9 +204,12 @@ function AcessoConta({ sessao }: { sessao: Sessao }) {
           <Camera aria-hidden /> {foto.isPending ? 'Enviando…' : 'Trocar foto'}
         </Button>
       </div>
-      {foto.error ? (
+      {recusaFoto || foto.error ? (
         <p role="alert" className={erroTexto}>
-          {foto.error.message}
+          {recusaFoto ??
+            (foto.error instanceof ApiError && foto.error.serverCode
+              ? mensagemDoErro(foto.error.serverCode)
+              : foto.error?.message)}
         </p>
       ) : null}
 

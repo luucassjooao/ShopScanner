@@ -58,6 +58,7 @@ MSW roda só com `import.meta.env.DEV` e `VITE_ENABLE_MSW=true`; o build de prod
 ## Como o front fala com a API
 
 - Cliente HTTP em `src/api/client.ts`, lendo `VITE_API_URL`, com `credentials: "include"` e `X-Requested-With: shopscanner` em toda rota que muda estado.
+- `avatarUrl` tem duas procedências (raiz → "Avatar"): `urlDeImagem` em `src/api/client.ts` prefixa `VITE_API_URL` só no que começa com `/`, e o transform mora nos schemas — nenhum `<img>` resolve URL por conta própria. **Hoje o projeto não tem CSP** (nem `<meta>` no `index.html` nem header no Vite); quando a hospedagem puser uma, ela precisa de `img-src` para a origem da API, senão o avatar some sem erro visível.
 - Toda resposta passa por Zod. Campo que não bate é erro — corrija o schema e avise quais telas foram afetadas, nunca silencie.
 - **Nada em `localStorage`**: sem token, sem sessão, sem dado de usuário. A sessão vive em cookie `httpOnly` que o front não lê.
 - `Continuar com Google` é navegação do navegador para `${VITE_API_URL}/auth/google/start`. Não é `fetch`, não é `window.open`, não é iframe.
