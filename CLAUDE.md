@@ -91,6 +91,7 @@ PATCH /me                      { name?, email?, acceptedTermsVersion?, currentPa
 PUT  /me/password              { currentPassword?, newPassword }
                                  currentPassword só é exigido quando hasPassword é true
 POST /me/avatar                multipart -> { avatarUrl }
+GET  /me/avatar                -> imagem do avatar (Content-Type da imagem); 404 se a conta não tiver avatar
 
 GET  /accounts                 -> [{ id, username, avatarUrl, shopConnected, hasSales,
                                      connectedAt, lastSyncedAt, expiresAt }]
@@ -168,7 +169,8 @@ type SessionUser = {
   name: string;
   email: string;
   emailVerified: boolean;
-  avatarUrl: string | null;
+  avatarUrl: string | null; // upload próprio: caminho relativo à API, com cache-busting
+  // (`/me/avatar?v=<hash>`). Ver "Avatar", abaixo.
   hasPassword: boolean; // falso quando a conta nasceu pelo Google e nunca definiu senha
   identities: { provider: "GOOGLE"; email: string; linkedAt: Iso }[];
   acceptedTermsVersion: string | null;
@@ -326,6 +328,7 @@ Em `/summary`, `goal` é `{ gmv: Money | null; commission: Money | null } | null
 
 Decisões de contrato que valem para as duas pontas:
 
+- **Avatar: o campo `avatarUrl` tem duas procedências e o front não pode presumir uma só.** No `SessionUser` é upload próprio, guardado pela API, e vem **relativo** (`/me/avatar?v=<hash>`); em `GET /accounts` é a foto da creator no TikTok e vem **absoluta**, do domínio do TikTok. O front prefixa com `VITE_API_URL` só o que começa com `/`, e isso vive em um lugar só. O `?v=<hash>` existe porque a URL não muda de nome quando a imagem muda: sem ele, o navegador mostra o avatar antigo depois da troca. Trocar a imagem muda o hash, e `GET /me/avatar` responde 404 enquanto não houver avatar — nunca uma imagem de espaço reservado, que o front não saberia distinguir de foto de verdade.
 - Status do TikTok convertidos **pela API**: `AWAITING PAYMENT` → `AWAITING_PAYMENT`, `To-SETTLE` → `TO_SETTLE`, o resto igual. A API sempre manda a chave; o front traduz para o rótulo em português.
 - `canUnlink` é derivado na API, não no front: desvincular o Google só é permitido quando `hasPassword` é verdadeiro.
 - **Não existe endpoint de feed de notificação.** O sino do topo é derivado no front a partir de `/summary`, `/orders`, `/videos` e `/plans` já carregados. `/me/notifications` só liga e desliga cada tipo.

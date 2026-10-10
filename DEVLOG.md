@@ -29,6 +29,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [repo] Escrever o avatar no contrato, com as duas procedências separadas
+
+**Fiz:** `GET /me/avatar` entrou no contrato (imagem com o `Content-Type` dela, 404 sem avatar), e `avatarUrl` ganhou a regra das duas procedências: no `SessionUser` é upload próprio e vem relativo (`/me/avatar?v=<hash>`); em `GET /accounts` é a foto da creator no TikTok e vem absoluta.
+**Por quê:** a sessão da API parou o `POST /me/avatar` porque a imagem vai ficar no Postgres, e byte no banco precisa de uma rota que sirva a imagem — rota que não estava no contrato.
+**Funcionou:** a parada. Pedir o contrato antes de escrever a rota é exatamente o que o `CLAUDE.md` manda, e foi a segunda vez hoje que uma ponta travou sozinha em vez de inventar campo.
+**Não funcionou:** a frase que me foi proposta para `avatarUrl` descrevia só o caminho relativo, e `avatarUrl` existe em dois lugares com procedências diferentes — o de `/accounts` vem do TikTok e é absoluto. Gravar só a metade relativa deixaria o mesmo nome de campo com duas convenções e nenhuma escrita, armadilha que só apareceria quando o avatar do TikTok sumisse da tela. Reescrevi cobrindo as duas: o front prefixa `VITE_API_URL` apenas no que começa com `/`, em um lugar só.
+**Decidi:** 404 quando não há avatar, nunca imagem de espaço reservado — o front não saberia distinguir de foto de verdade. E o `?v=<hash>` é obrigatório: a URL não muda de nome quando a imagem muda, então sem ele o navegador mostra o avatar antigo depois da troca.
+**Pendente:** a API implementa `POST /me/avatar` e `GET /me/avatar`; o front passa a prefixar o caminho relativo em um lugar só.
+**Commit:** a registrar
+
 ### 2026-10-09 · [front] Mostrar PARSER_UNAVAILABLE sem pedir reenvio
 
 **Fiz:** o código novo do contrato entra no enum de `importErroCodigo` e ganha orientação própria em `lib/import.ts`: o arquivo chegou, o formato está sendo mapeado, não precisa reenviar. `FAILED` segue com "Tente enviar de novo".
@@ -37,7 +47,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada.
 **Decidi:** o status do lote continua `FAILED` (contrato); o rótulo vira "Em mapeamento" e o badge sai da cor de falha quando o código é `PARSER_UNAVAILABLE`. Função pequena em `labels.ts` por cima do `Record`, que não mudou. `FAILED` com outro código segue "Falhou".
 **Pendente:** nada.
-**Commit:** —
+**Commit:** 948f967
 
 ### 2026-10-09 · [api] Emitir PARSER_UNAVAILABLE no lugar de FAILED para o arquivo que ainda não se lê
 
