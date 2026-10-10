@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import * as auth from '../controllers/auth.ts';
 import * as conexoes from '../controllers/connections.ts';
 import * as dados from '../controllers/data.ts';
+import * as importacoes from '../controllers/imports.ts';
 import * as planejamento from '../controllers/planning.ts';
 import * as me from '../controllers/me.ts';
 import { ping } from '../lib/db.ts';
@@ -74,6 +75,10 @@ export async function privateRoutes(app: FastifyInstance) {
   app.put('/goals', planejamento.salvarMeta);
   app.get('/me/notifications', planejamento.lerAvisos);
   app.put('/me/notifications', planejamento.salvarAvisos);
+
+  app.post('/imports', importacoes.enviar);
+  app.get('/imports', importacoes.listar);
+  app.get('/imports/:id', importacoes.buscar);
 
   app.get('/me/export', me.exportar);
   app.delete('/me', me.excluirConta);

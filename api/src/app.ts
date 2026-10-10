@@ -4,9 +4,10 @@ import type { FastifyError } from 'fastify';
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import { ZodError } from 'zod';
-import { HEADER_CSRF, VALOR_CSRF } from './config/constants.ts';
+import { HEADER_CSRF, LIMITE_ARQUIVO_BYTES, VALOR_CSRF } from './config/constants.ts';
 import { env, isProd } from './config/env.ts';
 import { AppError } from './lib/errors.ts';
 import { sql } from './lib/db.ts';
@@ -27,6 +28,7 @@ export async function buildApp() {
   await app.register(helmet);
   await app.register(cors, { origin: env.WEB_ORIGIN, credentials: true });
   await app.register(cookie, { secret: env.JWT_SECRET });
+  await app.register(multipart, { limits: { fileSize: LIMITE_ARQUIVO_BYTES, files: 1 } });
   await app.register(rateLimit, {
     // No teste o limite global sai da frente; o que se quer provar lá são os
     // limites de /auth, não o teto por IP.

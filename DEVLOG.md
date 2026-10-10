@@ -15,7 +15,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 - **Números:** o topo do Início é o GMV elegível; os gráficos são brutos e dizem isso no título e na nota.
 - **Repositório:** git na raiz (branch `main`), hook do devlog ativo via `core.hooksPath`. Três sessões trabalham no mesmo repositório em paralelo: front só em `web/`, API só em `api/`, e o `CLAUDE.md` da raiz só pela sessão líder. `DEVLOG.md` é compartilhado e cada sessão commita a entrada dela junto com a mudança.
 - **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. O banco de desenvolvimento está semeado: a conta demo tem só `VIDEOS` e os pedidos entram como `FILE`.
-- **Backend:** `api/` serve conta, sessão, Google, conexão com o TikTok, `PATCH /me`, e o contrato de dados (`/summary`, `/orders`, `/videos`, `/products`, `/plans`, `/goals`, `/me/notifications`, `/me/export`, `DELETE /me`) sobre o banco. 65 testes. Falta `POST /me/avatar`, o import de arquivo (`/imports`, `/reconciliation`) e a sincronização com o TikTok. `/payouts` saiu do contrato.
+- **Backend:** `api/` serve conta, sessão, Google, conexão com o TikTok, `PATCH /me`, e o contrato de dados (`/summary`, `/orders`, `/videos`, `/products`, `/plans`, `/goals`, `/me/notifications`, `/me/export`, `DELETE /me`) sobre o banco, e agora `/imports` (envio, listagem e lote), com 76 testes. Falta o parser do `.xlsx` (espera a planilha real), `POST /me/avatar`, `/reconciliation` e a sincronização com o TikTok. `/payouts` saiu do contrato.
 - **Gatilho de venda:** nenhuma tela ramifica em `shopConnected`. Venda aparece por `hasSales` (conta) e pelo total do período; `shopConnected` descreve só a conexão viva. Vale nas duas pontas, e o seed não mente mais sobre isso.
 - **Google:** app criado no Google Cloud e as três `GOOGLE_*` preenchidas no `api/.env`. `/auth/google/start` redireciona de verdade, com PKCE, `state` e `nonce`. Falta o único teste que prova o fluxo inteiro: entrar pelo navegador com conta Google real.
 - **Erro:** corpo de erro é `{ code, message }` em toda rota, definido no contrato. O `code` é traduzido no front por `lib/textos.ts`; o `message` é técnico e nunca chega à tela.
@@ -28,6 +28,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 ---
 
 ## Entradas
+
+### 2026-10-09 · [api] Receber o relatório e expor a fila de importações
+
+**Fiz:** `POST /imports?accountId` (multipart, campo `file`), `GET /imports` e `GET /imports/:id`, com a migração `0006_imports` (lote e bytes do arquivo em tabelas separadas). O envio responde `201 { importId }`; a recusa que não precisa ler a planilha (extensão, tamanho) vira lote `FAILED` com `error.code`, nunca 500. A fila roda em segundo plano dentro do processo.
+**Por quê:** `/imports` é a espinha de dados do MVP enquanto a Affiliate Creator API não libera o Brasil. O dono aprovou `@fastify/multipart` (9.x, compatível com o Fastify 5), e a fila ficou em memória de propósito, sem infraestrutura nova.
+**Funcionou:** 76 de 76 testes (11 novos em `imports.test.ts`): conta alheia responde 404 antes de ler o corpo; campo errado, `.csv` e arquivo acima de 50 MB viram `VALIDACAO`, `WRONG_EXTENSION` e `TOO_LARGE`; `.xlsx` entra na fila e termina `FAILED` com code `FAILED`; a listagem é paginada, filtra por status e recusa `pageSize` acima de 100. Typecheck, lint e prettier limpos.
+**Não funcionou:** nada. Uma primeira versão do teste de `FAILED` esperava o status na hora do envio e era intermitente, porque o processamento roda em segundo plano; o teste agora espera o lote sair da fila.
+**Decidi:** o mapeamento de colunas e o de status ficam em `src/lib/affiliate-orders.ts`, em uma função só. A suposição é explícita: o dicionário de colunas nasce **vazio** (nenhuma coluna confirmada), e os rótulos de status são os da tabela da spec, não de um arquivo real. Nada foi inventado para fechar a seção 3.
+**Pendente:** (1) o parser de verdade, que espera o `affiliate_orders.xlsx` real: cabeçalho, moeda, `WRONG_FILE`, dedup por id do pedido + id do SKU + `line_no`; hoje todo `.xlsx` válido termina `FAILED` com a mensagem "parser pendente", e isso precisa de tela própria, porque o front lê `FAILED` como "pedir nova tentativa" e nova tentativa não resolve; (2) lote preso em `PROCESSING` se a API cair no meio (ponytail na fila, com o teto descrito lá); (3) `/reconciliation`, que só vale com dado real para reconciliar.
+**Commit:** pendente (aguarda sinal para commitar)
 
 ### 2026-10-09 · [front] Trocar o gatilho de venda de shopConnected para hasSales
 

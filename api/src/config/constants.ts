@@ -35,3 +35,6 @@ export const MOTIVO = {
   trocaDeEmail: 'TROCA_DE_EMAIL',
   reusoDeRefresh: 'REUSO_DE_REFRESH',
 } as const;
+
+/** Teto do upload de relatório, do contrato: 50 MB. */
+export const LIMITE_ARQUIVO_BYTES = 50 * 1024 * 1024;
