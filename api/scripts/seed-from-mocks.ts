@@ -15,7 +15,7 @@ import { sql } from '../src/lib/db.ts';
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const CONTA = '00000000-0000-0000-0000-0000000000a1';
 
-/** Quando o backend teria lido estes mocks. Fixo, igual ao do front. */
+/** Data do relatório que os mocks representam. Fixa, igual ao do front. */
 const LIDO_EM = new Date('2026-10-01T09:00:00.000Z');
 
 const STATUS: Record<string, string> = {
@@ -125,7 +125,7 @@ async function carregarPedidos() {
       delivered_at: entregueEm,
       status,
       currency: bruto.skus[0]?.price.currency ?? 'BRL',
-      source: 'API',
+      source: 'FILE',
       source_at: LIDO_EM,
     });
 

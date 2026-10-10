@@ -14,7 +14,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 - **Rodando:** front em `web/` com a área logada completa, páginas legais e públicas, acesso por e-mail ou Google, TikTok só como conexão, e a entrada de pedidos por arquivo `.xlsx` (lint, typecheck, build e 136 testes passando, contra o MSW).
 - **Números:** o topo do Início é o GMV elegível; os gráficos são brutos e dizem isso no título e na nota.
 - **Repositório:** git na raiz (branch `main`), hook do devlog ativo via `core.hooksPath`. Três sessões trabalham no mesmo repositório em paralelo: front só em `web/`, API só em `api/`, e o `CLAUDE.md` da raiz só pela sessão líder. `DEVLOG.md` é compartilhado e cada sessão commita a entrada dela junto com a mudança.
-- **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. O banco de desenvolvimento ainda não foi semeado.
+- **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. O banco de desenvolvimento está semeado: a conta demo tem só `VIDEOS` e os pedidos entram como `FILE`.
 - **Backend:** `api/` serve conta, sessão, Google, conexão com o TikTok, `PATCH /me`, e o contrato de dados (`/summary`, `/orders`, `/videos`, `/products`, `/plans`, `/goals`, `/me/notifications`, `/me/export`, `DELETE /me`) sobre o banco. 57 testes. Falta `POST /me/avatar`, o import de arquivo (`/imports`, `/reconciliation`) e a sincronização com o TikTok. `/payouts` saiu do contrato.
 - **Erro:** corpo de erro é `{ code, message }` em toda rota, definido no contrato. O `code` é traduzido no front por `lib/textos.ts`; o `message` é técnico e nunca chega à tela.
 - **Integração TikTok:** Affiliate Creator API não liberada para o Brasil; ticket aberto. Display API disponível, app ainda não submetido.
@@ -25,6 +25,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 ---
 
 ## Entradas
+
+### 2026-10-09 · [api] Tirar a linha SHOP do seed e tratar a venda da demo como arquivo
+
+**Fiz:** `db/seed.sql` deixou de inserir a conexão `SHOP` da conta demo, e o seed de mocks passou a gravar os pedidos com `source: 'FILE'`. A conta demo fica só com `VIDEOS`.
+**Por quê:** a linha `SHOP` era inserida direto no banco, driblando `POST /connections/tiktok/start` (que responde 503 enquanto o Brasil não for liberado). A demo nascia com `shopConnected: true`, estado que nenhuma creator real terá, e isso escondeu o defeito de `bi.ts` por duas sessões. Fixture que não pode existir em produção é máscara.
+**Funcionou:** suíte 65 de 65, lint limpo. Os testes de dados deixaram de revogar a linha `SHOP` (ela não existe mais): `shopConnected` sai `false` e `hasSales` sai `true` na conta demo; os totais de referência continuam batendo; `INELIGIBLE` segue só com `source = 'FILE'` (a constraint do `0004_domain.sql` não recusou nada). Banco de dev: `delete from provider_connections where kind = 'SHOP'` (1 linha), depois `db:seed` e `db:seed:mocks` — 80 pedidos agora com `source = FILE`.
+**Não funcionou:** nada. Antes da mudança o `npm test` não subiu porque o Postgres de dev estava parado; `docker compose up -d db` resolveu.
+**Decidi:** `source_at` continua a data fixa do relatório (2026-10-01), a mesma do front, não `now()`. Os mocks só têm status do TikTok, então o seed nunca produz `INELIGIBLE`. Isso é correto: o rótulo só existe no relatório em arquivo. Quem passa a exercitar esse caminho é o import do `affiliate_orders.xlsx` real, quando a seção 3 do parser fechar (pendência do parser, não do seed).
+**Pendente:** seção 3 de `docs/parser-affiliate-orders.md` (mapeamento de `INELIGIBLE` com o arquivo real). A linha `SHOP` no banco de dev foi limpeza de desenvolvimento, **não** migração: ela nunca esteve em produção, e migração aplicada não se edita.
+**Commit:** pendente (aguarda autorização para commitar)
 
 ### 2026-10-09 · [api] Expor hasSales em /accounts
 

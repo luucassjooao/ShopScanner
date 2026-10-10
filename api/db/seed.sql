@@ -14,16 +14,15 @@ values (
 )
 on conflict (id) do nothing;
 
--- Conta conectada. Sem token: o dado da demonstração vem de arquivo, não de
--- OAuth — é o mesmo caso do import de relatório, que não tem token nenhum.
+-- Conta conectada só pelos vídeos (Display API). Sem token: o dado da
+-- demonstração vem de arquivo, não de OAuth. A parte de pedidos (TikTok Shop)
+-- não entra aqui: ela não existe para creator real enquanto o Brasil não for
+-- liberado, então a demonstração não pode depender dela. As vendas entram por
+-- scripts/seed-from-mocks.ts, com source 'FILE'.
 insert into provider_connections
   (id, user_id, provider, kind, provider_user_id, username, avatar_url, access_token, scopes)
 values
   ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-000000000001',
    'TIKTOK', 'VIDEOS', 'demo-open-id', '@creator.demo', null, null,
-   '{user.info.basic,video.list}'),
-  -- A parte de pedidos entra ligada só na demonstração, para as telas com
-  -- venda aparecerem. Apague esta linha para ver o estado "sem Shop".
-  ('00000000-0000-0000-0000-0000000000a2', '00000000-0000-0000-0000-000000000001',
-   'TIKTOK', 'SHOP', 'demo-open-id', '@creator.demo', null, null, '{}')
+   '{user.info.basic,video.list}')
 on conflict (user_id, provider, kind, provider_user_id) do nothing;

@@ -12,7 +12,6 @@ import { comCookies, cookiesDe, CSRF, limparBanco } from '../test/helpers.ts';
  */
 
 const CONTA = '00000000-0000-0000-0000-0000000000a1';
-const SHOP = '00000000-0000-0000-0000-0000000000a2';
 const PERIODO = `accountId=${CONTA}&from=2000-01-01T00:00:00.000Z&to=2100-01-01T00:00:00.000Z`;
 
 const app = await buildApp();
@@ -47,16 +46,11 @@ afterAll(() => app.close());
 const pegar = (url: string) => app.inject({ method: 'GET', url, headers: autenticado });
 
 describe('contas', () => {
-  it('hasSales é true com pedido de arquivo, mesmo sem o Shop conectado', async () => {
-    await sql`update provider_connections set revoked_at = now() where id = ${SHOP}`;
-    try {
-      const contas = (await pegar('/accounts')).json();
-      const demo = contas.find((c: { id: string }) => c.id === CONTA);
-      expect(demo.shopConnected).toBe(false);
-      expect(demo.hasSales).toBe(true);
-    } finally {
-      await sql`update provider_connections set revoked_at = null where id = ${SHOP}`;
-    }
+  it('hasSales é true com pedido de arquivo, sem nenhuma conexão de Shop', async () => {
+    const contas = (await pegar('/accounts')).json();
+    const demo = contas.find((c: { id: string }) => c.id === CONTA);
+    expect(demo.shopConnected).toBe(false);
+    expect(demo.hasSales).toBe(true);
   });
 
   it('hasSales é false em conta sem pedido nenhum', async () => {
@@ -132,7 +126,7 @@ describe('pedidos', () => {
     expect(corpo.total).toBe(80);
     expect(corpo.items).toHaveLength(10);
     expect(corpo.items[0]).toMatchObject({
-      source: 'API',
+      source: 'FILE',
       sourceAt: '2026-10-01T09:00:00.000Z',
       currency: 'BRL',
     });
@@ -172,7 +166,7 @@ describe('pedidos', () => {
 });
 
 describe('vídeos e produtos', () => {
-  it('lista vídeos com venda quando o Shop está conectado', async () => {
+  it('lista vídeos com venda', async () => {
     const corpo = (await pegar(`/videos?${PERIODO}&sort=views`)).json();
     expect(corpo.total).toBe(14);
     expect(corpo.items[0].views).toBeGreaterThanOrEqual(corpo.items[1].views);
@@ -180,31 +174,23 @@ describe('vídeos e produtos', () => {
     expect(comVenda.gmv).toMatch(/^\d+\.\d{2}$/);
   });
 
-  it('venda ligada ao vídeo aparece sem o Shop conectado; vídeo sem venda sai nulo', async () => {
-    const comLoja = (await pegar(`/videos?${PERIODO}`)).json();
-    await sql`update provider_connections set revoked_at = now() where id = ${SHOP}`;
-    try {
-      const corpo = (await pegar(`/videos?${PERIODO}`)).json();
-      // A venda vem do arquivo: a loja conectada não é condição para ela aparecer.
-      const comVenda = corpo.items.find((v: { gmv: string | null }) => v.gmv !== null);
-      expect(comVenda).toBeDefined();
-      const igual = comLoja.items.find((v: { id: string }) => v.id === comVenda.id);
-      expect(comVenda.gmv).toBe(igual.gmv);
-      // Vídeo sem venda ligada sai nulo, nunca zero.
-      for (const video of corpo.items) {
-        if (video.gmv === null) {
-          expect(video.commission).toBeNull();
-          expect(video.gpm).toBeNull();
-        } else {
-          expect(Number(video.gmv)).toBeGreaterThan(0);
-        }
+  it('venda ligada ao vídeo aparece sem nenhuma conexão de Shop; vídeo sem venda sai nulo', async () => {
+    const corpo = (await pegar(`/videos?${PERIODO}`)).json();
+    // A venda vem do arquivo: a ausência de Shop conectado não a esconde.
+    const comVenda = corpo.items.find((v: { gmv: string | null }) => v.gmv !== null);
+    expect(comVenda).toBeDefined();
+    // Vídeo sem venda ligada sai nulo, nunca zero.
+    for (const video of corpo.items) {
+      if (video.gmv === null) {
+        expect(video.commission).toBeNull();
+        expect(video.gpm).toBeNull();
+      } else {
+        expect(Number(video.gmv)).toBeGreaterThan(0);
       }
-      const detalhe = (await pegar(`/videos/${comVenda.id}`)).json();
-      expect(detalhe.gmv).toBe(comVenda.gmv);
-      expect(detalhe.snapshots.length).toBeGreaterThan(0);
-    } finally {
-      await sql`update provider_connections set revoked_at = null where id = ${SHOP}`;
     }
+    const detalhe = (await pegar(`/videos/${comVenda.id}`)).json();
+    expect(detalhe.gmv).toBe(comVenda.gmv);
+    expect(detalhe.snapshots.length).toBeGreaterThan(0);
   });
 
   it('agrega produtos e bate com os maiores do resumo', async () => {
