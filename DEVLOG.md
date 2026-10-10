@@ -10,17 +10,20 @@ Regras curtas: entrada nova sempre no topo, uma por tarefa concluída, no mesmo 
 
 _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê ao voltar ao projeto._
 
-- **Fase:** 1 — ligar as duas pontas. As duas existem e nunca se falaram: o front roda inteiro contra o MSW, a API serve o contrato sobre o banco, e a virada ainda não aconteceu.
-- **Rodando:** front em `web/` com a área logada completa, páginas legais e públicas, acesso por e-mail ou Google, TikTok só como conexão, e a entrada de pedidos por arquivo `.xlsx` (lint, typecheck, build e 136 testes passando, contra o MSW).
+- **Fase:** 2 — alinhar as duas pontas já ligadas. O front fala com a API de verdade desde `9baebee`; os totais de referência batem por HTTP. O que resta é varredura de tela e as rotas que faltam.
+- **Rodando:** front em `web/` com a área logada completa, páginas legais e públicas, acesso por e-mail ou Google, TikTok só como conexão, e a entrada de pedidos por arquivo `.xlsx` (lint, typecheck e 160 testes passando).
 - **Números:** o topo do Início é o GMV elegível; os gráficos são brutos e dizem isso no título e na nota.
 - **Repositório:** git na raiz (branch `main`), hook do devlog ativo via `core.hooksPath`. Três sessões trabalham no mesmo repositório em paralelo: front só em `web/`, API só em `api/`, e o `CLAUDE.md` da raiz só pela sessão líder. `DEVLOG.md` é compartilhado e cada sessão commita a entrada dela junto com a mudança.
 - **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. O banco de desenvolvimento está semeado: a conta demo tem só `VIDEOS` e os pedidos entram como `FILE`.
-- **Backend:** `api/` serve conta, sessão, Google, conexão com o TikTok, `PATCH /me`, e o contrato de dados (`/summary`, `/orders`, `/videos`, `/products`, `/plans`, `/goals`, `/me/notifications`, `/me/export`, `DELETE /me`) sobre o banco. 57 testes. Falta `POST /me/avatar`, o import de arquivo (`/imports`, `/reconciliation`) e a sincronização com o TikTok. `/payouts` saiu do contrato.
+- **Backend:** `api/` serve conta, sessão, Google, conexão com o TikTok, `PATCH /me`, e o contrato de dados (`/summary`, `/orders`, `/videos`, `/products`, `/plans`, `/goals`, `/me/notifications`, `/me/export`, `DELETE /me`) sobre o banco. 65 testes. Falta `POST /me/avatar`, o import de arquivo (`/imports`, `/reconciliation`) e a sincronização com o TikTok. `/payouts` saiu do contrato.
+- **Gatilho de venda:** nenhuma tela ramifica em `shopConnected`. Venda aparece por `hasSales` (conta) e pelo total do período; `shopConnected` descreve só a conexão viva. Vale nas duas pontas, e o seed não mente mais sobre isso.
+- **Google:** app criado no Google Cloud e as três `GOOGLE_*` preenchidas no `api/.env`. `/auth/google/start` redireciona de verdade, com PKCE, `state` e `nonce`. Falta o único teste que prova o fluxo inteiro: entrar pelo navegador com conta Google real.
 - **Erro:** corpo de erro é `{ code, message }` em toda rota, definido no contrato. O `code` é traduzido no front por `lib/textos.ts`; o `message` é técnico e nunca chega à tela.
 - **Integração TikTok:** Affiliate Creator API não liberada para o Brasil; ticket aberto. Display API disponível, app ainda não submetido.
 - **Telas prontas:** /, /entrar, /criar-conta, /recuperar, /termos, /privacidade, /inicio-rapido, /inicio, /vendas, /videos, /videos/:id, /produtos, /planejamento, /configuracoes, /avisos, /reconciliacao.
-- **Próximo passo:** semear o banco de desenvolvimento e conferir os totais de referência nos endpoints; só então desligar o MSW (`VITE_ENABLE_MSW=false`) e varrer as 16 telas contra a API de verdade. Depois: `POST /me/avatar` e o import de arquivo.
-- **Bloqueios:** (1) segredos do `api/.env` — `JWT_SECRET` e `REFRESH_TOKEN_PEPPER` abaixo de 32 caracteres e as quatro variáveis `GOOGLE_*`/`TIKTOK_*` presentes e vazias em vez de ausentes, o que impede migrate e seed; (2) aprovação de `@fastify/multipart`, que `/imports` exige; (3) os dados legais de `web/src/lib/textos.ts` (CNPJ, razão social, endereço, e-mail de contato, comarca, encarregado) — `/termos` e `/privacidade` vão para a revisão do app no TikTok; (4) o `affiliate_orders.xlsx` real, que fecha a seção 3 de `docs/parser-affiliate-orders.md`; (5) aprovação da categoria "Creator collaborations" para o Brasil; (6) confirmação de que o `contentId` do pedido é o mesmo id do vídeo.
+- **Próximo passo:** o import de arquivo na API (`/imports` com `@fastify/multipart`, aprovado) e, no front, a varredura das telas contra o seed novo — é a primeira vez que o front vê o estado real de um usuário: conta sem `SHOP` e pedidos `FILE`. Depois `POST /me/avatar` e `/reconciliation`.
+- **Bloqueios:** (1) os dados legais de `web/src/lib/textos.ts` (CNPJ, razão social, endereço, e-mail de contato, comarca, encarregado) — `/termos` e `/privacidade` vão para a revisão do app no TikTok; (2) o `affiliate_orders.xlsx` real, que fecha a seção 3 de `docs/parser-affiliate-orders.md`; (3) aprovação da categoria "Creator collaborations" para o Brasil; (4) confirmação de que o `contentId` do pedido é o mesmo id do vídeo; (5) cadastrar `http://localhost:3333/auth/google/callback` como redirect URI no console do Google e, se o app estiver em "Testing", a conta de teste na lista de usuários — sem isso o login social recusa.
+  Saíram: os segredos do `api/.env` (corrigidos pelo dono, e `32d8eb1` passou a tratar opcional vazia como ausente) e a aprovação de `@fastify/multipart` (aprovada em 09/10/2026).
 
 ---
 
@@ -34,7 +37,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** o MSW tinha a inversão: `comProcedencia` e `videos()` olhavam `shopConnected`, então a venda sumia com o Shop desconectado. Corrigido para `vendasNaConta`; a procedência segue usando `shopConnected` (API se conectado, FILE se não), porque ela descreve de onde veio o número, não se ele aparece.
 **Decidi:** testes que falam de conexão (Configurações, Início rápido, aviso de liberação, import) mantêm `shopConnected = false`; os que falam de venda passam a usar `db.vendasNaConta`.
 **Pendente:** varredura das telas contra a API real com o seed novo (conta demo sem `SHOP`, pedidos `FILE`), que é a primeira vez que o front vê o estado real de um usuário.
-**Commit:** a registrar
+**Commit:** 36ab324
 
 ### 2026-10-09 · [api] Tirar a linha SHOP do seed e tratar a venda da demo como arquivo
 
@@ -44,7 +47,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada. Antes da mudança o `npm test` não subiu porque o Postgres de dev estava parado; `docker compose up -d db` resolveu.
 **Decidi:** `source_at` continua a data fixa do relatório (2026-10-01), a mesma do front, não `now()`. Os mocks só têm status do TikTok, então o seed nunca produz `INELIGIBLE`. Isso é correto: o rótulo só existe no relatório em arquivo. Quem passa a exercitar esse caminho é o import do `affiliate_orders.xlsx` real, quando a seção 3 do parser fechar (pendência do parser, não do seed).
 **Pendente:** seção 3 de `docs/parser-affiliate-orders.md` (mapeamento de `INELIGIBLE` com o arquivo real). A linha `SHOP` no banco de dev foi limpeza de desenvolvimento, **não** migração: ela nunca esteve em produção, e migração aplicada não se edita.
-**Commit:** pendente (aguarda autorização para commitar)
+**Commit:** 2160451
 
 ### 2026-10-09 · [api] Conferir o fluxo do Google com as credenciais preenchidas
 
@@ -54,7 +57,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** não consegui confirmar que o cookie volta no callback. `curl` não reproduz o envio de cookie `Secure` sobre `http://localhost`, e sem o código do Google o callback responde 400 igual com ou sem cookie. Isso só se confirma num navegador com conta real.
 **Decidi:** nada muda. `Path=/auth/google` cobre `/auth/google/callback`; `Secure` em `localhost` é aceito pelos navegadores como contexto seguro.
 **Pendente:** teste no navegador com conta Google real, feito pelo dono. No console do Google: cadastrar como redirect URI autorizado exatamente `http://localhost:3333/auth/google/callback` (tipo "Aplicativo da Web"). Origem JavaScript autorizada **não** é necessária, porque o fluxo é servidor a servidor com redirecionamento. Se o app estiver em modo "Testing", a conta de teste precisa estar na lista de usuários de teste, senão o Google recusa com `access_denied` e a API responde `GOOGLE_RECUSADO`.
-**Commit:** pendente (aguarda autorização para commitar)
+**Commit:** 1d9513e
 
 ### 2026-10-09 · [api] Expor hasSales em /accounts
 
