@@ -179,6 +179,8 @@ export const reconciliacao = z.array(reconciliacaoLinha);
 
 export const orderSku = z.object({
   id: z.string(),
+  /** Posição da linha no pedido, a partir de 0. É chave, nunca rótulo em tela. */
+  lineNo: z.number().int(),
   productId: z.string(),
   name: z.string(),
   shopName: z.string(),

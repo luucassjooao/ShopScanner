@@ -154,7 +154,7 @@ export function Vendas() {
   const temFiltro = !!(status || canal || produto || busca);
   const limpar = () => f.set({ status: null, canal: null, produto: null, q: null });
   const abrir = (l: Linha) =>
-    f.set({ venda: l.pedido.id, item: l.sku.id, pagina: String(f.pagina) });
+    f.set({ venda: l.pedido.id, item: String(l.sku.lineNo), pagina: String(f.pagina) });
 
   async function exportar() {
     setExportando(true);
@@ -332,12 +332,11 @@ function TabelaVendas({ linhas, onAbrir }: { linhas: Linha[]; onAbrir: (l: Linha
           </tr>
         </thead>
         <tbody>
-          {linhas.map((l, i) => (
+          {linhas.map((l) => (
             <tr
-              // Pedido + SKU não é chave única: a origem pode repetir o mesmo `sku_id`
-              // dentro do mesmo pedido (acontece nos mocks). Chave repetida faz o React
-              // sumir com uma linha de dinheiro, então a posição entra junto.
-              key={`${l.pedido.id}-${l.sku.id}-${i}`}
+              // Pedido + lineNo, não o id do SKU: o mesmo SKU pode aparecer em duas linhas
+              // do mesmo pedido, e chave repetida faz o React perder uma delas.
+              key={`${l.pedido.id}-${l.sku.lineNo}`}
               className="border-b border-borda last:border-0 hover:bg-fundo"
             >
               <td className={cn(td, 'whitespace-nowrap text-texto-secundario')}>
@@ -393,8 +392,8 @@ function TabelaVendas({ linhas, onAbrir }: { linhas: Linha[]; onAbrir: (l: Linha
 function ListaVendas({ linhas, onAbrir }: { linhas: Linha[]; onAbrir: (l: Linha) => void }) {
   return (
     <ul className="flex flex-col gap-2.5 md:hidden">
-      {linhas.map((l, i) => (
-        <li key={`${l.pedido.id}-${l.sku.id}-${i}`}>
+      {linhas.map((l) => (
+        <li key={`${l.pedido.id}-${l.sku.lineNo}`}>
           <button
             type="button"
             onClick={() => onAbrir(l)}
@@ -448,7 +447,7 @@ function DetalheVenda({ id, itemId }: { id: string; itemId: string | null }) {
     );
   }
 
-  const sku = o.skus.find((s) => s.id === itemId) ?? o.skus[0]!;
+  const sku = o.skus.find((s) => String(s.lineNo) === itemId) ?? o.skus[0]!;
   const outros = o.skus.filter((s) => s !== sku);
   const unidades = (n: number) => `${formatInteiro(n)} ${n === 1 ? 'unidade' : 'unidades'}`;
 
@@ -485,7 +484,7 @@ function DetalheVenda({ id, itemId }: { id: string; itemId: string | null }) {
               <button
                 type="button"
                 className="font-semibold text-acao hover:underline"
-                onClick={() => f.set({ item: s.id, pagina: String(f.pagina) })}
+                onClick={() => f.set({ item: String(s.lineNo), pagina: String(f.pagina) })}
               >
                 {s.name}
               </button>

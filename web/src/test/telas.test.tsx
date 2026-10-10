@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db, resetDb } from '@/mocks/handlers';
 import { server } from '@/mocks/server';
@@ -106,6 +106,28 @@ describe('/inicio', () => {
 });
 
 describe('/vendas', () => {
+  it('o detalhe abre a linha certa quando o SKU se repete no pedido', async () => {
+    abrir(`/vendas?${PERIODO}&venda=575059629618826862&item=1`);
+    // Linha 1 do pedido: 2 unidades (R$ 109,80). Pelo id do SKU, abriria sempre a linha 0.
+    const painel = await screen.findByRole('dialog');
+    expect(await within(painel).findByText(/· 2 unidades ·/)).toBeInTheDocument();
+    expect(within(painel).queryByText(/· 1 unidade ·/)).not.toBeInTheDocument();
+  });
+
+  it('um pedido com o mesmo SKU em duas linhas mostra as duas, com os dois valores', async () => {
+    // Pedido 575059629618826862 (13/09/2026): o SKU 1732149525334652475 aparece duas vezes.
+    const router = abrir(`/vendas?${PERIODO}&produto=1731676060102374794`);
+    await screen.findByRole('table');
+    // Uma nova renderização com os mesmos dados: é aí que chave repetida faz o React perder linha.
+    await act(() =>
+      router.navigate(`/vendas?${PERIODO}&produto=1731676060102374794&status=TO_SETTLE`),
+    );
+    await screen.findByRole('table');
+    const doPedido = linhasDaTabela().filter((l) => l.textContent?.includes('13/09/2026'));
+    expect(doPedido.some((l) => l.textContent?.includes('54,90'))).toBe(true);
+    expect(doPedido.some((l) => l.textContent?.includes('109,80'))).toBe(true);
+  });
+
   it('filtra pela URL, pagina pelo servidor e abre o detalhe com a composição da taxa', async () => {
     const router = abrir(`/vendas?${PERIODO}&status=TO_SETTLE`);
     expect(await screen.findByText('Página 1 de 3')).toBeInTheDocument(); // 57 pedidos, 20 por página

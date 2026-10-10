@@ -103,13 +103,14 @@ function channel(raw: string): Channel {
 
 const unixToIso = (s: number) => new Date(s * 1000).toISOString();
 
-export function adaptSku(raw: RawSku, orderStatus: OrderStatus): OrderSku {
+export function adaptSku(raw: RawSku, orderStatus: OrderStatus, lineNo: number): OrderSku {
   const settled = orderStatus === 'SETTLED';
   const shopAds = raw.shop_ads_commission_rate;
   const bonus = raw.commission_bonus_rate;
   const reward = raw.creator_commission_reward_rate;
   return {
     id: raw.id,
+    lineNo,
     productId: raw.product_id,
     name: raw.product_name,
     shopName: raw.shop_name,
@@ -144,7 +145,7 @@ export function adaptOrder(raw: RawOrder): Order {
     // Quem simula a leitura por arquivo são os handlers, conforme o estado da conta.
     source: 'API',
     sourceAt: LIDO_EM,
-    skus: raw.skus.map((sku) => adaptSku(sku, s)),
+    skus: raw.skus.map((sku, lineNo) => adaptSku(sku, s, lineNo)),
   };
 }
 

@@ -33,6 +33,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-10 · [front] Chavear os itens de pedido por lineNo
+
+**Fiz:** `OrderSku.lineNo` entra no schema. As chaves das duas listas de `/vendas` (tabela e cartões) passam a ser pedido mais `lineNo`, no lugar da posição no array. O detalhe da venda abre pelo `lineNo` (`?item=`), e não pelo id do SKU, que repete. O MSW passa a mandar `lineNo` a partir de 0, em `adaptSku`.
+**Por quê:** o id do SKU no TikTok repete em linhas diferentes do mesmo pedido. O pedido `575059629618826862` tem o SKU `1732149525334652475` duas vezes, com R$ 54,90 e R$ 109,80. Chave e busca por id deixam de identificar a linha.
+**Funcionou:** teste do MSW que confirma o pedido duplicado com `lineNo` 0 e 1; teste do detalhe que abre a linha 1 (2 unidades) e não a 0; teste da lista com as duas linhas e os dois valores. 186 testes, typecheck, lint e prettier limpos.
+**Não funcionou:** tentei travar o defeito de chave com um teste que falhasse com a chave antiga, e não consegui. Com a chave `pedido + sku` e um re-render, o React 19.3 no jsdom continua mostrando as duas linhas, sem aviso de chave repetida. O defeito de "linha que some" não reproduziu neste ambiente; a troca fica pela correção de identidade (o detalhe, de fato, pegava a linha errada) e pelo contrato.
+**Decidi:** `lineNo` é chave, não rótulo: não aparece em tela, e o valor é o cru a partir de 0 do contrato. As outras listas de item (CSV, avisos, métricas) não têm chave de React nem `Map` por item, então não precisaram de mudança.
+**Pendente:** `/reconciliacao` monta a chave com `orderId + skuId + field`, e o contrato da reconciliação não traz `lineNo`. Se um pedido repetir o SKU com divergência, a chave pode colidir. Não mudei o contrato; o dono decide.
+**Commit:** —
+
 ### 2026-10-10 · [api] lineNo cru, a partir de 0, sem soma na consulta
 
 **Fiz:** `lineNo` sai como `line_no` do banco, sem `+ 1`. O comentário sobre a base que avisava o import foi removido, porque deixou de haver tradução. O teste do pedido com duas linhas do mesmo SKU agora espera 0 e 1.

@@ -78,6 +78,13 @@ describe('handlers do MSW respeitam o contrato', () => {
     expect(v.items.every((x) => x.gmv === null && x.gpm === null)).toBe(true);
   });
 
+  it('o pedido com o mesmo SKU em duas linhas chega com lineNo distinto, a partir de 0', async () => {
+    const p = await api.get('/orders', { schema: ordersPage, query: { ...periodo, pageSize: 100 } });
+    const pedido = p.items.find((o) => o.id === '575059629618826862');
+    expect(pedido!.skus.map((s) => s.id)).toEqual(['1732149525334652475', '1732149525334652475']);
+    expect(pedido!.skus.map((s) => s.lineNo)).toEqual([0, 1]);
+  });
+
   it('sem TikTok Shop conectado, mas com venda na conta: a venda aparece e vem do arquivo', async () => {
     db.shopConnected = false;
     const pedidos = await api.get('/orders', { schema: ordersPage, query: periodo });
