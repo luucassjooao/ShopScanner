@@ -8,7 +8,7 @@ for (const sinal of ['SIGINT', 'SIGTERM'] as const) {
 }
 
 try {
-  await app.listen({ port: env.PORT, host: '0.0.0.0' });
+  await app.listen({ port: env.PORT, host: env.HOST });
 } catch (erro) {
   app.log.error(erro);
   process.exit(1);

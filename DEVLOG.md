@@ -34,6 +34,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-10 · [api] Tornar explícita a confiança no proxy e recusar segredos públicos em produção
+
+**Fiz:** três ajustes de boot. (1) `trustProxy` sai de `isProd` (`true` em produção) para `TRUST_PROXY`, que aceita `false` ou os IPs/faixas dos proxies, é obrigatória em produção e recusa `true`. (2) Em produção, o boot recusa `JWT_SECRET`, `REFRESH_TOKEN_PEPPER` e `ENCRYPTION_KEY` iguais aos padrões do `docker-compose.yml`. (3) A API escuta em `HOST`, padrão `127.0.0.1`; o compose passa `0.0.0.0`.
+**Por quê:** (1) a auditoria subiu a API com `NODE_ENV=production` e trocou o `X-Forwarded-For` a cada tentativa de login: 15 tentativas, nenhum 429; sem o header, o 11º já era 429. Com `true`, o IP é o que o cliente escreve, e o rate limit inteiro depende do IP. (2) os padrões do compose passam na validação de tamanho, e quem lê o repositório forjaria o JWT e abriria os tokens do TikTok de um deploy feito com o compose. (3) com `0.0.0.0` fixo, `npm run dev` deixava a API aberta para a rede Wi-Fi.
+**Funcionou:** `proxy.test.ts` com três casos (sem proxy declarado, com proxy declarado e header vindo de fora do proxy), todos com o 11º login em 429 apesar do IP forjado. O caso do meio **falha** se a app subir com `trustProxy: true` (conferido trocando a linha e voltando). `env.test.ts` cobre a produção sem `TRUST_PROXY`, com `true`, com número, com lixo e com cada segredo do compose.
+**Não funcionou:** aceitar número de saltos (`TRUST_PROXY=1`, o formato mais comum em guia de deploy). O Fastify 5.12.5 trata número como "não confiar em nada", de propósito: conta de saltos não confere quem conectou. Passaria no tipo com um cast e viraria `false` em silêncio em produção. Ficou só lista de IPs/faixas, mais `loopback`, `linklocal` e `uniquelocal` do `@fastify/proxy-addr`.
+**Decidi:** produção não sobe sem dizer em quem confia. Para o provedor em que a API for, `uniquelocal` costuma ser o valor (rede privada do balanceador); confira o IP de onde a conexão chega antes de escolher.
+**Pendente:** escolher o `TRUST_PROXY` do deploy real.
+**Commit:** a seguir
+
 ### 2026-10-10 · [api] Pôr um teto por IP no login, além do de e-mail mais IP
 
 **Fiz:** `/auth/login` ganhou um segundo limite, 30 tentativas em 5 minutos por IP, por cima do de 10 por e-mail mais IP que já existia.

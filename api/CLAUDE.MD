@@ -63,6 +63,8 @@ Modelo: **access token curto em JWT + refresh token opaco rotativo com detecçã
 - **Redefinição de senha:** sem tabela. O link é um JWT de 30 minutos com `sub`, `ver` e `pur: 'reset'`; como redefinir incrementa `credentials_version`, o link vale uma vez só. Enquanto não existe envio de e-mail, o token sai no log fora de produção.
 - **Senha:** argon2id. Mensagem de erro igual para e-mail inexistente e senha errada. Troca de senha ou reset incrementa `credentials_version` e invalida todas as sessões; o middleware recusa JWT com `ver` diferente.
 - **Rate limit:** global por IP e específico em `/auth/*`, com contagem por e-mail mais IP no login **e um teto só por IP no login** (contra password spraying: um IP tentando uma senha em muitos e-mails). Segundo limitador na mesma rota é com `app.createRateLimit()`, nunca `app.rateLimit()`: o plugin roda um limitador só por requisição e o segundo some em silêncio.
+- **IP do cliente:** é a chave do rate limit e o que a sessão grava, então vem de `TRUST_PROXY`, explícito: `false` (API recebe direto) ou os IPs/faixas dos proxies. Obrigatória em produção; `true` e número de saltos são recusados no boot (o Fastify 5.12 trata número como "não confiar em nada"). Era `trustProxy: true` em produção, e trocar o `X-Forwarded-For` a cada tentativa furava o rate limit.
+- **Boot de produção:** recusa os segredos de desenvolvimento escritos no `docker-compose.yml`. A API escuta em `HOST`, padrão `127.0.0.1`; o compose põe `0.0.0.0`.
 - **CSRF:** `SameSite=Lax` cobre o caso comum; além disso, toda rota que muda estado exige o header `X-Requested-With: shopscanner` e rejeita requisição sem ele.
 - **Nada de token em resposta JSON.** O front não guarda token; a sessão vive nos cookies.
 
