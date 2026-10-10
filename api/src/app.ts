@@ -26,7 +26,13 @@ export async function buildApp() {
   });
 
   await app.register(helmet);
-  await app.register(cors, { origin: env.WEB_ORIGIN, credentials: true });
+  // Métodos declarados por nome: o padrão do @fastify/cors v11 é só GET,HEAD,POST, e
+  // o navegador descarta a resposta de um método fora de Access-Control-Allow-Methods.
+  await app.register(cors, {
+    origin: env.WEB_ORIGIN,
+    credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  });
   await app.register(cookie, { secret: env.JWT_SECRET });
   await app.register(multipart, { limits: { fileSize: LIMITE_ARQUIVO_BYTES, files: 1 } });
   await app.register(rateLimit, {

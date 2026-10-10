@@ -30,6 +30,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-10 · [api] Declarar PATCH, PUT e DELETE no CORS e voltar do Google para dentro do app
+
+**Fiz:** o `@fastify/cors` passa a receber `methods` explícito (`GET,HEAD,POST,PUT,PATCH,DELETE`). O callback do Google sem sessão anterior volta para `/inicio`, e quem só vinculou o Google volta para `/configuracoes`. A landing deixou de ser destino.
+**Por quê:** o padrão do cors v11 é só `GET,HEAD,POST`. O navegador descartava a resposta de toda mutação que não fosse POST, e a pessoa via falha de rede. O dono reproduziu isso: nove rotas mortas, incluindo o `PATCH /me` do aceite de termos, o que trancava a conta do Google. O callback mandava para a landing, sem caminho para dentro.
+**Funcionou:** 90 de 90 testes. `cors.test.ts` lê o preflight de `PATCH`, `PUT`, `DELETE`, `POST` e `GET`, e confere `Access-Control-Allow-Methods`, a origem e as credenciais. `google.test.ts` agora espera `/inicio` no login e `/configuracoes` no vínculo. Typecheck, lint e prettier limpos.
+**Não funcionou:** nada. Uma primeira versão da lógica do callback deixava uma atribuição que o lint marcou como inútil; trocada por declaração sem valor inicial.
+**Decidi:** o método é declarado por nome no registro, e não herdado do padrão da biblioteca. Quem muda o `@fastify/cors` numa major passa pelo teste de preflight, não pelo navegador do dono.
+**Pendente:** o caso que só o navegador vê não está coberto por teste de servidor. Antes de dizer que o fluxo fechou, é preciso entrar pelo Google num navegador de verdade.
+**Commit:** pendente (aguarda sinal para commitar)
+
 ### 2026-10-10 · [repo] Escrever no contrato que o CORS libera PATCH, PUT e DELETE, e para onde o Google volta
 
 **Fiz:** duas linhas de contrato, vindas de dois defeitos que o dono achou testando o app no navegador. (1) O CORS tem de declarar `PATCH`, `PUT` e `DELETE`; o padrão do `@fastify/cors` v11 é só `GET,HEAD,POST`. (2) O callback do Google volta para `/inicio` quando criou sessão e para `/configuracoes` quando só vinculou — a landing não é destino.

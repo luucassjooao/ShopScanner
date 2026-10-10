@@ -185,6 +185,7 @@ export async function retornoGoogle(request: FastifyRequest, reply: FastifyReply
     return paraErroGoogle(request, reply, 'EMAIL_NAO_VERIFICADO');
 
   const logado = await lerSessao(request);
+  let criouSessao: boolean;
   try {
     const { tokens } = await auth.entrarComGoogle(
       { providerUserId: conta.providerUserId, email: conta.email, nome: conta.nome },
@@ -193,12 +194,15 @@ export async function retornoGoogle(request: FastifyRequest, reply: FastifyReply
     );
     // Sem tokens: já estava logado, era só vincular. A sessão atual continua.
     if (tokens) definirCookiesDeSessao(reply, tokens);
+    criouSessao = tokens !== null;
   } catch (erro) {
     if (erro instanceof AppError && erro.statusCode === 409)
       return paraErroGoogle(request, reply, erro.code);
     throw erro;
   }
-  return reply.redirect(env.WEB_ORIGIN, 302);
+  // Entrou: vai para dentro do app. Só vinculou: volta para onde o Google se vincula.
+  // A landing não é destino: quem cai nela não tem como chegar ao app.
+  return reply.redirect(`${env.WEB_ORIGIN}${criouSessao ? '/inicio' : '/configuracoes'}`, 302);
 }
 
 export async function listarIdentidades(request: FastifyRequest, reply: FastifyReply) {

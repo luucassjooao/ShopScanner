@@ -181,7 +181,7 @@ describe('login com Google', () => {
 
     const res = await voltar(inicio, `code=codigo-bom&state=${inicio.state}`);
     expect(res.statusCode).toBe(302);
-    expect(res.headers.location).toBe(AMBIENTE_DE_TESTE.WEB_ORIGIN);
+    expect(res.headers.location).toBe(`${AMBIENTE_DE_TESTE.WEB_ORIGIN}/inicio`);
 
     // O verifier que a API mandou é o do desafio que ela publicou.
     expect(base64url(createHash('sha256').update(verifierRecebido!).digest())).toBe(
@@ -329,6 +329,7 @@ describe('login com Google', () => {
       headers: { cookie: `${inicio.cookie}; ${COOKIE_ACESSO}=${acesso}` },
     });
     expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe(`${AMBIENTE_DE_TESTE.WEB_ORIGIN}/configuracoes`);
     // Já estava logado: a sessão continua a mesma, sem cookie novo.
     expect(cookiesDe(res)[COOKIE_ACESSO]).toBeUndefined();
 
