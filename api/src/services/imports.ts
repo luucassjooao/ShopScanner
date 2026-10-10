@@ -1,5 +1,5 @@
 import type { FastifyBaseLogger } from 'fastify';
-import { lerRelatorio } from '../lib/affiliate-orders.ts';
+import { ParserPendente, lerRelatorio } from '../lib/affiliate-orders.ts';
 import { AppError } from '../lib/errors.ts';
 import * as repo from '../repositories/imports.ts';
 import type { LinhaLote } from '../repositories/imports.ts';
@@ -97,8 +97,11 @@ async function processar(lote: LinhaLote, log: FastifyBaseLogger) {
     lerRelatorio(conteudo);
   } catch (erro) {
     // Detalhe técnico vai para o log e para o campo de suporte; a tela só lê o `code`.
+    // Arquivo que a API ainda não sabe ler não é falha de processamento: não se
+    // resolve reenviando, por isso não cai em FAILED.
     const mensagem = erro instanceof Error ? erro.message : 'erro desconhecido';
-    log.warn({ importId: lote.id, err: erro }, 'importação falhou');
-    await repo.marcarFalhou(lote.id, 'FAILED', mensagem);
+    const codigo = erro instanceof ParserPendente ? 'PARSER_UNAVAILABLE' : 'FAILED';
+    log.warn({ importId: lote.id, err: erro }, 'importação não processada');
+    await repo.marcarFalhou(lote.id, codigo, mensagem);
   }
 }

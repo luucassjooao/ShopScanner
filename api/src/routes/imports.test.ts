@@ -3,6 +3,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildApp } from '../app.ts';
 import { COOKIE_ACESSO, LIMITE_ARQUIVO_BYTES } from '../config/constants.ts';
 import { statusDoArquivo } from '../lib/affiliate-orders.ts';
+import { criarLote } from '../repositories/imports.ts';
+import { processarFila } from '../services/imports.ts';
 import { AMBIENTE_DE_TESTE } from '../test/env.ts';
 import { comCookies, cookiesDe, CSRF, limparBanco } from '../test/helpers.ts';
 
@@ -101,14 +103,23 @@ describe('POST /imports', () => {
     expect(lote.error.code).toBe('TOO_LARGE');
   });
 
-  it('.xlsx válido entra na fila; sem o parser, o lote termina FAILED com code FAILED', async () => {
+  it('.xlsx válido entra na fila e, sem o parser, termina PARSER_UNAVAILABLE, não FAILED', async () => {
     const res = await enviar('affiliate_orders.xlsx', Buffer.from('PK-nao-e-planilha'));
     expect(res.statusCode).toBe(201);
     expect(res.json()).toEqual({ importId: expect.any(String) });
     const lote = await esperarFim(res.json().importId);
     expect(lote.status).toBe('FAILED');
-    expect(lote.error.code).toBe('FAILED');
+    expect(lote.error.code).toBe('PARSER_UNAVAILABLE');
     expect(lote.error.message).toContain('parser pendente');
+  });
+
+  it('falha de processamento de verdade continua FAILED: lote sem arquivo guardado', async () => {
+    // Lote na fila sem o arquivo: o processamento quebra de verdade, não por falta de parser.
+    const lote = await criarLote({ accountId: CONTA, kind: 'FILE', fileName: 'sumiu.xlsx' });
+    await processarFila(app.log);
+    const atual = await esperarFim(lote.id);
+    expect(atual.status).toBe('FAILED');
+    expect(atual.error.code).toBe('FAILED');
   });
 });
 

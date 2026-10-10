@@ -29,6 +29,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [api] Emitir PARSER_UNAVAILABLE no lugar de FAILED para o arquivo que ainda não se lê
+
+**Fiz:** quando o motivo é `ParserPendente` (a planilha real não chegou), o lote termina com `error.code: PARSER_UNAVAILABLE`. `FAILED` fica só para falha de processamento de verdade.
+**Por quê:** `FAILED` diz "tente de novo", e tentar de novo não resolve enquanto a seção 3 da spec não fechar. Era a mesma tela mentindo em 100% dos envios. Contrato em `fead2c5`.
+**Funcionou:** 77 de 77 testes. O `.xlsx` válido agora termina `PARSER_UNAVAILABLE`, e um teste novo trava a diferença: lote na fila sem o arquivo guardado continua `FAILED`. Typecheck, lint e prettier limpos.
+**Não funcionou:** a primeira versão do teste novo era um placeholder sem asserção; foi substituído antes do commit.
+**Decidi:** a regra fica no service, no ponto em que o erro é classificado, e não no lib: o lib só lança `ParserPendente`.
+**Pendente:** `POST /me/avatar` ainda não existe. O contrato diz `avatarUrl` na resposta, mas não diz onde a imagem fica nem por qual URL ela é servida; isso precisa de decisão antes do código.
+**Commit:** pendente (aguarda sinal para commitar)
+
 ### 2026-10-09 · [repo] Separar "ainda não sei ler" de "falhou" no import
 
 **Fiz:** `ImportBatch.error.code` ganhou `PARSER_UNAVAILABLE`, para o arquivo que a API aceitou e ainda não sabe ler enquanto a seção 3 de `docs/parser-affiliate-orders.md` depender do `affiliate_orders.xlsx` real.
