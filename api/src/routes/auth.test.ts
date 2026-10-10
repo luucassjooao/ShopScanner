@@ -298,4 +298,30 @@ describe('conta e sessão', () => {
     expect(respostas.at(-1)!.headers['retry-after']).toMatch(/^\d+$/);
     expect(respostas.filter((r) => r.statusCode === 401)).toHaveLength(10);
   });
+
+  it('corta o mesmo IP tentando muitos e-mails diferentes (password spraying)', async () => {
+    // IP próprio: o contador é de memória e vale para o arquivo todo.
+    const tentar = (email: string, ip: string) =>
+      app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        headers: CSRF,
+        remoteAddress: ip,
+        payload: { email, password: 'Senha123' },
+      });
+
+    const codigos = [];
+    for (let i = 0; i < 31; i++) {
+      codigos.push((await tentar(`alvo${i}@exemplo.com`, '203.0.113.7')).statusCode);
+    }
+    // Cada e-mail só foi tentado uma vez: quem corta é o teto por IP.
+    expect(codigos.slice(0, 30).every((c) => c === 401)).toBe(true);
+    const cortada = await tentar('mais-um@exemplo.com', '203.0.113.7');
+    expect(cortada.statusCode).toBe(429);
+    expect(cortada.json().code).toBe('MUITAS_REQUISICOES');
+    expect(cortada.headers['retry-after']).toMatch(/^\d+$/);
+
+    // O teto é do IP, não da rota: outro IP continua entrando normalmente.
+    expect((await tentar('alvo0@exemplo.com', '203.0.113.8')).statusCode).toBe(401);
+  });
 });

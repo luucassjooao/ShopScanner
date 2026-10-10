@@ -34,6 +34,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-10 · [api] Pôr um teto por IP no login, além do de e-mail mais IP
+
+**Fiz:** `/auth/login` ganhou um segundo limite, 30 tentativas em 5 minutos por IP, por cima do de 10 por e-mail mais IP que já existia.
+**Por quê:** a auditoria mandou 40 logins de um IP só, cada um com um e-mail diferente, e nenhum tomou 429. Cada e-mail tinha o seu contador; só o teto global de 300/min segurava. É o formato de password spraying: uma senha comum contra muitas contas.
+**Funcionou:** teste novo com 31 e-mails de um mesmo IP: 30 respondem 401, o 31º responde 429 `MUITAS_REQUISICOES` com `Retry-After` em segundos, e outro IP segue normal. O teste antigo do limite por e-mail continua passando.
+**Não funcionou:** a primeira versão usou `app.rateLimit()` como `preHandler`. O plugin marca a requisição na primeira passagem (`rateLimitRan`) e ignora qualquer limitador seguinte: o teto por e-mail **parou de contar**, sem erro. Quem pegou foi o teste antigo, que esperava 429 na 11ª tentativa e recebeu 401. `app.createRateLimit()` só conta e deixa o 429 com a gente; com ela os dois contam.
+**Decidi:** segundo limitador numa rota é sempre `createRateLimit`. Anotado no `api/CLAUDE.md`.
+**Pendente:** o teto por IP sofre do mesmo problema de NAT de operadora do global. Se aparecer reclamação, contar falhas em vez de tentativas.
+**Commit:** a seguir
+
 ### 2026-10-10 · [repo] Fechar o pré-sequestro de conta pelo vínculo do Google
 
 **Fiz:** o login com Google só vincula sozinho, pelo e-mail, a cadastro cujo e-mail já é verificado. Com o mesmo e-mail **não** verificado, nada é vinculado e o callback volta em `/entrar?erro=CONTA_EXISTENTE`. Código novo no contrato da raiz e traduzido em `web/src/lib/textos.ts`.

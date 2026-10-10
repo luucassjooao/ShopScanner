@@ -6,6 +6,7 @@ import * as importacoes from '../controllers/imports.ts';
 import * as planejamento from '../controllers/planning.ts';
 import * as me from '../controllers/me.ts';
 import { ping } from '../lib/db.ts';
+import { AppError } from '../lib/errors.ts';
 import { exigirSessao } from '../middlewares/auth.ts';
 
 /** Tentativa de adivinhar senha é cara por IP... */
@@ -22,6 +23,16 @@ const LIMITE_LOGIN = {
   },
 };
 
+/**
+ * ...e, por cima, um teto só por IP no login. O de e-mail mais IP sozinho deixava
+ * um IP tentar uma senha comum em centenas de e-mails diferentes (password
+ * spraying): cada e-mail tinha o seu contador, e só o global de 300/min segurava.
+ * ponytail: mesmo problema de NAT do global — muita gente atrás de um IP de
+ * operadora divide este teto. 30 logins em 5 minutos por IP ainda é folgado para
+ * gente de verdade; se apertar, o upgrade é contar falhas, não tentativas.
+ */
+const LIMITE_LOGIN_POR_IP = { max: 30, timeWindow: '5 minutes' };
+
 /** Rotas abertas: não exigem sessão. */
 export async function publicRoutes(app: FastifyInstance) {
   app.get('/health', async (_request, reply) => {
@@ -30,7 +41,25 @@ export async function publicRoutes(app: FastifyInstance) {
   });
 
   app.post('/auth/register', { config: { rateLimit: LIMITE_AUTH } }, auth.registrar);
-  app.post('/auth/login', { config: { rateLimit: LIMITE_LOGIN } }, auth.entrar);
+  // `createRateLimit`, e não `app.rateLimit()`: o plugin marca a requisição na
+  // primeira passagem e ignora qualquer segundo limitador dela — com `rateLimit()`
+  // aqui, o teto por e-mail (o do `config`) parava de contar, sem erro nenhum.
+  // `createRateLimit` só conta, num contador próprio, e quem decide o 429 somos nós.
+  const contarLoginDoIp = app.createRateLimit(LIMITE_LOGIN_POR_IP);
+  app.post(
+    '/auth/login',
+    {
+      config: { rateLimit: LIMITE_LOGIN },
+      preHandler: async (request, reply) => {
+        const contagem = await contarLoginDoIp(request);
+        if (!contagem.isAllowed && contagem.isExceeded) {
+          reply.header('retry-after', contagem.ttlInSeconds);
+          throw new AppError(429, 'MUITAS_REQUISICOES', 'Tente de novo em instantes');
+        }
+      },
+    },
+    auth.entrar,
+  );
   app.post('/auth/refresh', { config: { rateLimit: LIMITE_AUTH } }, auth.girar);
   app.post('/auth/logout', auth.sair);
   app.post('/auth/forgot-password', { config: { rateLimit: LIMITE_AUTH } }, auth.esqueciSenha);

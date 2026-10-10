@@ -62,7 +62,7 @@ Modelo: **access token curto em JWT + refresh token opaco rotativo com detecçã
 - **Logout:** apaga os dois cookies e revoga a sessão. `logout all` revoga todas.
 - **Redefinição de senha:** sem tabela. O link é um JWT de 30 minutos com `sub`, `ver` e `pur: 'reset'`; como redefinir incrementa `credentials_version`, o link vale uma vez só. Enquanto não existe envio de e-mail, o token sai no log fora de produção.
 - **Senha:** argon2id. Mensagem de erro igual para e-mail inexistente e senha errada. Troca de senha ou reset incrementa `credentials_version` e invalida todas as sessões; o middleware recusa JWT com `ver` diferente.
-- **Rate limit:** global por IP e específico em `/auth/*`, com contagem por e-mail mais IP no login.
+- **Rate limit:** global por IP e específico em `/auth/*`, com contagem por e-mail mais IP no login **e um teto só por IP no login** (contra password spraying: um IP tentando uma senha em muitos e-mails). Segundo limitador na mesma rota é com `app.createRateLimit()`, nunca `app.rateLimit()`: o plugin roda um limitador só por requisição e o segundo some em silêncio.
 - **CSRF:** `SameSite=Lax` cobre o caso comum; além disso, toda rota que muda estado exige o header `X-Requested-With: shopscanner` e rejeita requisição sem ele.
 - **Nada de token em resposta JSON.** O front não guarda token; a sessão vive nos cookies.
 
