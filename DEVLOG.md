@@ -26,6 +26,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [front] Trocar o gatilho de venda de shopConnected para hasSales
+
+**Fiz:** Início, Vendas, Produtos, Planejamento, Vídeos, Avisos e a página do vídeo decidem o estado de venda por `hasSales` (conta) e pelo número do período. `shopConnected` ficou só no cartão de Configurações, no aviso de "em liberação" e no checklist do Início rápido. O estado de conta sem venda agora diz "Ainda não há vendas nesta conta" e oferece enviar o relatório; o nulo de métrica de vídeo diz "Ainda não disponível", sem citar o Shop.
+**Por quê:** `shopConnected` nunca fica verdadeiro sem a Affiliate Creator API, então as telas de venda diriam "conecte o TikTok Shop" para todo mundo, inclusive depois de um import bem-sucedido. Ver `befe909`.
+**Funcionou:** 160 testes passando, typecheck e lint limpos. Regressões travadas: conta sem venda (início, vendas, produtos, seletor de produto do Planejamento, vídeo); venda por arquivo com Shop desconectado mostra GMV e procedência FILE; vídeo com GMV nulo sem cadeado.
+**Não funcionou:** o MSW tinha a inversão: `comProcedencia` e `videos()` olhavam `shopConnected`, então a venda sumia com o Shop desconectado. Corrigido para `vendasNaConta`; a procedência segue usando `shopConnected` (API se conectado, FILE se não), porque ela descreve de onde veio o número, não se ele aparece.
+**Decidi:** testes que falam de conexão (Configurações, Início rápido, aviso de liberação, import) mantêm `shopConnected = false`; os que falam de venda passam a usar `db.vendasNaConta`.
+**Pendente:** varredura das telas contra a API real com o seed novo (conta demo sem `SHOP`, pedidos `FILE`), que é a primeira vez que o front vê o estado real de um usuário.
+**Commit:** a registrar
+
 ### 2026-10-09 · [api] Tirar a linha SHOP do seed e tratar a venda da demo como arquivo
 
 **Fiz:** `db/seed.sql` deixou de inserir a conexão `SHOP` da conta demo, e o seed de mocks passou a gravar os pedidos com `source: 'FILE'`. A conta demo fica só com `VIDEOS`.

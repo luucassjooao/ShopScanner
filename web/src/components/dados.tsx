@@ -32,11 +32,7 @@ export function StatusBadge({ status, className }: { status: OrderStatus; classN
 
 /** Métrica de venda nula: "ainda não disponível", nunca zero (CLAUDE.md). */
 export function Indisponivel() {
-  return (
-    <span className="text-legenda text-texto-secundario">
-      Disponível quando você conectar o TikTok Shop
-    </span>
-  );
+  return <span className="text-legenda text-texto-secundario">Ainda não disponível</span>;
 }
 
 /** Cabeçalho de página no padrão do design: título, linha de contexto e ações à direita. */
@@ -64,21 +60,22 @@ export function CabecalhoPagina({
   );
 }
 
-/** Estado "TikTok Shop não conectado": telas que dependem de pedidos mostram isto. */
-export function ShopDesconectado({ oQue }: { oQue: string }) {
+/**
+ * Conta sem nenhum pedido (`hasSales` falso). Não é "Shop não conectado": a única saída
+ * oferecida é enviar o relatório, que é o caminho que existe hoje.
+ */
+export function SemVendaNaConta({ oQue }: { oQue: string }) {
   return (
     <Card className="flex flex-col items-center gap-3.5 px-6 py-10 text-center">
       <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-pessego">
         <Store className="size-7 text-apoio" aria-hidden />
       </span>
       <h2 className="text-[22px] font-extrabold tracking-tight text-texto">
-        Conecte o TikTok Shop para ver {oQue}
+        Ainda não há vendas nesta conta
       </h2>
-      <Badge variant="neutro">Em liberação no Brasil</Badge>
       <p className="max-w-[480px] text-[15px] leading-relaxed text-texto-secundario">
-        Os dados de vendas e comissões chegam pela conta do TikTok Shop. Enquanto ela não estiver
-        conectada, você já consegue acompanhar os seus vídeos — e pode trazer os pedidos pelo
-        relatório que o TikTok exporta em arquivo.
+        Envie o relatório affiliate_orders.xlsx do Centro de Afiliados para trazer {oQue}. Os seus
+        vídeos já aparecem nas outras telas.
       </p>
       <Button asChild>
         <Link to="/configuracoes?secao=import">
@@ -163,7 +160,7 @@ export function Kpi({
   );
 }
 
-/** Indicador que depende do TikTok Shop: cadeado e a frase, nunca zero. */
+/** Indicador de venda ainda sem número: cadeado e a frase, nunca zero. */
 export function KpiBloqueado({ rotulo }: { rotulo: string }) {
   return (
     <div className="flex flex-col gap-2 rounded-card border border-dashed border-borda bg-superficie/60 p-4 lg:px-[22px] lg:py-5">
@@ -172,7 +169,7 @@ export function KpiBloqueado({ rotulo }: { rotulo: string }) {
         {rotulo}
       </span>
       <span className="text-[13px] leading-snug text-texto-secundario">
-        Disponível quando você conectar o TikTok Shop
+        Ainda não disponível neste período
       </span>
     </div>
   );

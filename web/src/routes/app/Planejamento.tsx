@@ -43,11 +43,12 @@ function rotuloSemana(inicio: string) {
 function useProdutosRecentes() {
   const conta = useConta();
   const hoje = hojeSP();
-  const q = useProducts(periodo(conta?.shopConnected ? conta.id : '', somarDias(hoje, -89), hoje));
+  // A consulta sempre acontece; `hasSales` só decide se há o que escolher e o aviso a mostrar.
+  const q = useProducts(periodo(conta?.id ?? '', somarDias(hoje, -89), hoje));
   return {
     lista: q.data?.items ?? [],
-    conectado: !!conta?.shopConnected,
-    carregando: !!conta?.shopConnected && q.isPending,
+    temVenda: !!conta?.hasSales,
+    carregando: !!conta && q.isPending,
   };
 }
 
@@ -460,7 +461,7 @@ function FormularioPlano({
   produtoInicial?: string;
   onFechar: () => void;
 }) {
-  const { lista: produtos, conectado, carregando } = useProdutosRecentes();
+  const { lista: produtos, temVenda, carregando } = useProdutosRecentes();
   const criar = useCreatePlan();
   const atualizar = useUpdatePlan();
   const excluir = useDeletePlan();
@@ -550,7 +551,7 @@ function FormularioPlano({
             key={carregando ? 'carregando' : 'pronto'}
             {...register('productId')}
             className={cn(campo, 'h-12')}
-            disabled={!conectado || carregando}
+            disabled={!temVenda || carregando}
           >
             <option value="">Sem produto</option>
             {plano?.productId && !produtos.some((p) => p.productId === plano.productId) ? (
@@ -562,9 +563,9 @@ function FormularioPlano({
               </option>
             ))}
           </select>
-          {!conectado ? (
+          {!temVenda ? (
             <span className="text-xs font-normal text-texto-secundario">
-              Disponível quando você conectar o TikTok Shop
+              Disponível quando a conta tiver vendas: envie o relatório em Configurações
             </span>
           ) : null}
         </label>

@@ -21,6 +21,7 @@ const sessao = {
       username: '@creator.demo.br',
       avatarUrl: null,
       shopConnected: false,
+      hasSales: true,
       connectedAt: '2026-08-02T12:00:00.000Z',
       lastSyncedAt: null,
       expiresAt: null,

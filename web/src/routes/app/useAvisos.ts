@@ -29,7 +29,7 @@ function gravarLidos(ids: string[]) {
 
 export function useAvisos() {
   const conta = useConta();
-  const id = conta?.shopConnected ? conta.id : '';
+  const id = conta?.hasSales ? conta.id : '';
   const hoje = hojeSP();
   const mes = intervaloDoPreset('mes', hoje);
   const semana = { de: somarDias(hoje, -6), ate: hoje };

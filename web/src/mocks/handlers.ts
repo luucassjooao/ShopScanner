@@ -160,6 +160,8 @@ function estadoInicial() {
     loggedIn: true,
     tiktokConnected: true,
     shopConnected: true,
+    /** A conta tem pedido? Falso simula a creator que ainda não enviou nada. */
+    vendasNaConta: true,
     user: {
       id: 'u_1',
       name: 'Carolina Dias',
@@ -194,6 +196,7 @@ const conta = (): Conta => ({
   id: ACCOUNT_ID,
   ...profile,
   shopConnected: db.shopConnected,
+  hasSales: db.vendasNaConta,
   connectedAt: '2026-08-02T12:00:00.000Z',
   lastSyncedAt: db.lastSyncedAt,
   expiresAt: db.expiresAt,
@@ -230,7 +233,8 @@ function noPeriodo(iso: string, q: URLSearchParams) {
 
 /**
  * Procedência de cada pedido. Com o TikTok Shop conectado, os números vêm da API;
- * sem ele, vieram do último arquivo importado.
+ * sem ele, vieram do último arquivo importado. Quem decide se a venda aparece é
+ * `vendasNaConta`, não esta conexão: sem Shop e com venda, a procedência é FILE.
  */
 function comProcedencia(lista: Order[]): Order[] {
   if (db.shopConnected) return lista;
@@ -240,7 +244,7 @@ function comProcedencia(lista: Order[]): Order[] {
 }
 
 const pedidosDoPeriodo = (q: URLSearchParams) =>
-  comProcedencia(orders.filter((o) => noPeriodo(o.createdAt, q)));
+  db.vendasNaConta ? comProcedencia(orders.filter((o) => noPeriodo(o.createdAt, q))) : [];
 
 const paginar = <T>(items: T[], page: number, pageSize: number) => ({
   items: items.slice((page - 1) * pageSize, page * pageSize),
@@ -249,7 +253,7 @@ const paginar = <T>(items: T[], page: number, pageSize: number) => ({
 });
 
 const videos = (): Video[] =>
-  rawVideos.map((v) => adaptVideo(v, db.shopConnected ? orders : null));
+  rawVideos.map((v) => adaptVideo(v, db.vendasNaConta ? orders : null));
 
 /** Busca sem diferença de maiúscula nem acento. */
 const normalizar = (t: string) =>

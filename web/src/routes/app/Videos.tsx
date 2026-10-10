@@ -4,7 +4,6 @@ import {
   ExternalLink,
   Eye,
   Heart,
-  Lock,
   MessageCircle,
   Play,
   Share2,
@@ -22,7 +21,6 @@ import {
   PaginaApp,
 } from '@/components/dados';
 import { Busca, Carregando, Rodape, campoFiltro } from '@/components/filtros';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatData, formatHora, formatInteiro, formatMoeda } from '@/lib/format';
@@ -53,7 +51,8 @@ export function Videos() {
 
   // Links antigos (`/videos?video=ID`) viram a página do vídeo.
   const antigo = params.get('video');
-  const ordens = ORDENS.filter((o) => conta?.shopConnected || !o.precisaShop);
+  // Ordenar por venda aparece quando a conta tem venda; um vídeo sem venda ligada segue sem GMV, por item.
+  const ordens = ORDENS.filter((o) => conta?.hasSales || !o.precisaShop);
   const sort = ordens.find((o) => o.valor === f.get('ordem'))?.valor ?? 'postedAt';
   const hashtag = f.get('hashtag');
   const busca = f.get('q');
@@ -389,7 +388,7 @@ function ConteudoVideo({ video: v }: { video: VideoDetail }) {
           </Bloco>
 
           {v.gmv === null ? (
-            <VendasBloqueadas />
+            <SemVendaDoVideo />
           ) : (
             <Bloco titulo="Vendas e GPM">
               <p className="text-[13px] leading-relaxed text-texto-secundario">
@@ -419,23 +418,21 @@ function ConteudoVideo({ video: v }: { video: VideoDetail }) {
   );
 }
 
-/** Vendas do vídeo sem TikTok Shop: views e engajamento seguem aparecendo acima. */
-function VendasBloqueadas() {
+/**
+ * Vídeo sem venda ligada a ele (GMV nulo). Não é cadeado: a venda pode existir na conta e
+ * simplesmente não apontar para este vídeo. Views e engajamento seguem aparecendo acima.
+ */
+function SemVendaDoVideo() {
   return (
     <section className="flex flex-col gap-3 rounded-card border border-dashed border-borda bg-superficie/60 p-5">
       <h2 className="text-[17px] font-bold text-texto">Vendas e GPM</h2>
-      <span className="inline-flex items-center gap-2 text-[15px] font-semibold text-texto">
-        <Lock className="size-4 text-apoio" aria-hidden />
-        Disponível quando você conectar o TikTok Shop
-      </span>
       <p className="max-w-2xl text-sm leading-relaxed text-texto-secundario">
-        As views e o engajamento deste vídeo já aparecem acima. O GMV, a comissão e o GPM dependem
-        dos dados de pedido, que vêm da conexão com o TikTok Shop.
+        Nenhuma venda ligada a este vídeo ainda. Quando um pedido trouxer este vídeo, o GMV, a
+        comissão e o GPM aparecem aqui.
       </p>
       <div className="flex flex-wrap items-center gap-3">
-        <Badge variant="neutro">Em liberação no Brasil</Badge>
         <Button variant="secondary" size="sm" asChild>
-          <Link to="/configuracoes">Ver contas conectadas</Link>
+          <Link to="/vendas">Ver as vendas da conta</Link>
         </Button>
       </div>
     </section>

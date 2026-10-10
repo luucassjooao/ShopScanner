@@ -68,6 +68,8 @@ export const conta = z.object({
   username: z.string(),
   avatarUrl: z.string().nullable(),
   shopConnected: z.boolean(),
+  /** Existe pedido nesta conta, de qualquer fonte (API ou arquivo). Não depende de Shop conectado. */
+  hasSales: z.boolean(),
   connectedAt: iso,
   /** Última leitura feita pelo backend; null antes da primeira sincronização. */
   lastSyncedAt: iso.nullable(),

@@ -72,14 +72,22 @@ describe('/inicio', () => {
     expect(screen.getByText(/da meta de R\$\s20\.000,00/)).toBeInTheDocument();
   });
 
-  it('sem TikTok Shop: vídeos aparecem e vendas ficam com cadeado', async () => {
+  it('conta sem venda: vídeos aparecem e o caminho é enviar o relatório', async () => {
+    db.vendasNaConta = false;
+    abrir(`/inicio?${PERIODO}`);
+    expect(await screen.findByText('Ainda não há vendas nesta conta')).toBeInTheDocument();
+    expect(await screen.findByText('Somando os 14 vídeos do período')).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /Enviar relatório/ }).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Ainda não disponível neste período')).toHaveLength(4);
+    expect(screen.queryByText(/TikTok Shop/)).not.toBeInTheDocument();
+  });
+
+  it('sem TikTok Shop conectado, mas com venda na conta: o início mostra as vendas', async () => {
     db.shopConnected = false;
     abrir(`/inicio?${PERIODO}`);
-    expect(
-      await screen.findByText('Conecte o TikTok Shop para ver comissões e GMV'),
-    ).toBeInTheDocument();
-    expect(await screen.findByText('Somando os 14 vídeos do período')).toBeInTheDocument();
-    expect(screen.getAllByText('Disponível quando você conectar o TikTok Shop')).toHaveLength(4);
+    expect(await screen.findAllByText(/R\$/)).not.toHaveLength(0);
+    expect(screen.queryByText('Ainda não há vendas nesta conta')).not.toBeInTheDocument();
+    expect(screen.queryByText('Ainda não disponível neste período')).not.toBeInTheDocument();
   });
 
   it('primeiro acesso, sem conta do TikTok', async () => {
@@ -146,16 +154,29 @@ describe('/vendas', () => {
     expect(await screen.findByRole('table')).toBeInTheDocument();
   });
 
-  it('sem TikTok Shop, mostra o estado desconectado', async () => {
+  it('conta sem venda mostra o estado de envio, não o de conexão', async () => {
+    db.vendasNaConta = false;
+    abrir(`/vendas?${PERIODO}`);
+    expect(await screen.findByText('Ainda não há vendas nesta conta')).toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  });
+
+  it('sem TikTok Shop conectado, mas com venda na conta: a tabela aparece', async () => {
     db.shopConnected = false;
     abrir(`/vendas?${PERIODO}`);
-    expect(
-      await screen.findByText('Conecte o TikTok Shop para ver as suas vendas'),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('table')).toBeInTheDocument();
+    expect(screen.queryByText('Ainda não há vendas nesta conta')).not.toBeInTheDocument();
   });
 });
 
 describe('/produtos', () => {
+  it('sem venda na conta, produtos mostra o estado de envio', async () => {
+    db.vendasNaConta = false;
+    abrir(`/produtos?${PERIODO}`);
+    expect(await screen.findByText('Ainda não há vendas nesta conta')).toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  });
+
   it('lista, filtra por loja e marca para regravar', async () => {
     abrir(`/produtos?${PERIODO}`);
     await screen.findByRole('table');
@@ -182,12 +203,10 @@ describe('/produtos', () => {
 });
 
 describe('/videos', () => {
-  it('sem TikTok Shop, vendas por vídeo ficam indisponíveis, nunca zero', async () => {
-    db.shopConnected = false;
+  it('conta sem venda: vendas por vídeo ficam indisponíveis, nunca zero', async () => {
+    db.vendasNaConta = false;
     abrir(`/videos?${PERIODO}`);
-    expect(
-      await screen.findAllByText('Disponível quando você conectar o TikTok Shop'),
-    ).toHaveLength(14);
+    expect(await screen.findAllByText('Ainda não disponível')).toHaveLength(14);
     expect(screen.queryByText(/R\$\s0,00/)).not.toBeInTheDocument();
     expect(screen.queryByText('Sem venda')).not.toBeInTheDocument();
   });
@@ -212,11 +231,19 @@ describe('/videos', () => {
     expect(screen.getByText('GPM (GMV por mil views)')).toBeInTheDocument();
   });
 
-  it('página do vídeo sem TikTok Shop mostra o bloco de vendas bloqueado', async () => {
-    db.shopConnected = false;
+  it('vídeo sem venda ligada mostra o bloco de vendas, sem cadeado nem "em liberação"', async () => {
+    db.vendasNaConta = false;
     abrir('/videos/7547697027617764647');
     expect(await screen.findByText('Views ao longo do tempo')).toBeInTheDocument();
-    expect(screen.getByText('Disponível quando você conectar o TikTok Shop')).toBeInTheDocument();
+    expect(screen.getByText(/Nenhuma venda ligada a este vídeo ainda/)).toBeInTheDocument();
+    expect(screen.queryByText(/Em liberação/)).not.toBeInTheDocument();
+  });
+
+  it('vídeo com venda ligada mostra GMV e GPM, mesmo sem Shop conectado', async () => {
+    db.shopConnected = false;
+    abrir('/videos/7547697027617764647');
+    expect(await screen.findByText('GPM (GMV por mil views)')).toBeInTheDocument();
+    expect(screen.queryByText(/Nenhuma venda ligada a este vídeo ainda/)).not.toBeInTheDocument();
   });
 });
 

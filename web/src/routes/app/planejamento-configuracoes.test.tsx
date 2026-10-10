@@ -47,6 +47,23 @@ describe('/planejamento', () => {
     );
   });
 
+  it('sem venda na conta, o seletor de produto fica travado e diz como liberar', async () => {
+    db.vendasNaConta = false;
+    abrir('/planejamento?novo=1');
+    const modal = await screen.findByRole('dialog');
+    expect(within(modal).getByText(/envie o relatório em Configurações/)).toBeInTheDocument();
+    expect(within(modal).getByRole('combobox', { name: /Produto/ })).toBeDisabled();
+  });
+
+  it('com venda na conta e Shop desconectado, o seletor de produto segue liberado', async () => {
+    db.shopConnected = false;
+    abrir('/planejamento?novo=1');
+    const modal = await screen.findByRole('dialog');
+    await waitFor(() =>
+      expect(within(modal).getByRole('combobox', { name: /Produto/ })).toBeEnabled(),
+    );
+  });
+
   it('cria um roteiro: o nome sai do gancho e entra na coluna Roteiro', async () => {
     abrir('/planejamento');
     await screen.findAllByText(REVIEW);

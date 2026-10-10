@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Check, FileUp, Link2, Lock, RefreshCw, Sparkles, TriangleAlert } from 'lucide-react';
+import { Check, FileUp, Link2, RefreshCw, Sparkles, TriangleAlert } from 'lucide-react';
 import { useAllVideos, useOrders, useStartTiktokConnection, useSummary } from '@/api/queries';
 import type { Conta, OrderStatus, Summary } from '@/api/schemas';
 import {
@@ -18,7 +18,6 @@ import {
   PaginaApp,
   StatusBadge,
 } from '@/components/dados';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -58,7 +57,7 @@ export function Inicio() {
   const conta = useConta();
   if (!conta) return <PrimeiroAcesso />;
   if (conexaoExpirada(conta)) return <ConexaoExpirada conta={conta} />;
-  if (!conta.shopConnected) return <InicioSemShop conta={conta} />;
+  if (!conta.hasSales) return <InicioSemVenda conta={conta} />;
   return <InicioComShop conta={conta} />;
 }
 
@@ -397,9 +396,9 @@ function InicioComShop({ conta }: { conta: Conta }) {
   );
 }
 
-// --- sem TikTok Shop: só dados de vídeo ---
+// --- conta sem nenhuma venda: só dados de vídeo, e o caminho é enviar o relatório ---
 
-function InicioSemShop({ conta }: { conta: Conta }) {
+function InicioSemVenda({ conta }: { conta: Conta }) {
   const f = useFiltros();
   const videos = useAllVideos(periodo(conta.id, f.de, f.ate));
   const lista = videos.data ?? [];
@@ -426,21 +425,20 @@ function InicioSemShop({ conta }: { conta: Conta }) {
       <section className="flex flex-col gap-4 rounded-card border border-borda bg-pessego/40 p-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex gap-4">
           <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-card bg-superficie">
-            <Lock className="size-6 text-apoio" aria-hidden />
+            <FileUp className="size-6 text-apoio" aria-hidden />
           </span>
           <div className="flex flex-col gap-1">
-            <h2 className="flex flex-wrap items-center gap-2 text-lg font-bold text-texto">
-              Conecte o TikTok Shop para ver comissões e GMV
-              <Badge variant="neutro">Em liberação no Brasil</Badge>
-            </h2>
+            <h2 className="text-lg font-bold text-texto">Ainda não há vendas nesta conta</h2>
             <p className="max-w-2xl text-sm leading-relaxed text-texto-secundario">
-              Por enquanto o painel mostra só o desempenho dos seus vídeos. A conexão está em
-              liberação aos poucos no Brasil.
+              Envie o relatório affiliate_orders.xlsx do Centro de Afiliados para ver comissões e
+              GMV. Por enquanto o painel mostra o desempenho dos seus vídeos.
             </p>
           </div>
         </div>
-        <Button variant="secondary" asChild>
-          <Link to="/configuracoes">Ver contas conectadas</Link>
+        <Button asChild>
+          <Link to="/configuracoes?secao=import">
+            <FileUp aria-hidden /> Enviar relatório
+          </Link>
         </Button>
       </section>
 

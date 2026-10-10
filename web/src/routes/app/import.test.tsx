@@ -141,7 +141,7 @@ describe('import do affiliate_orders.xlsx', () => {
 
 describe('procedência', () => {
   it('a venda diz de onde o número veio', async () => {
-    db.shopConnected = false;
+    db.vendasNaConta = false;
     abrir('/vendas?de=2026-08-01&ate=2026-09-30');
     // Sem TikTok Shop, a tela de vendas é o estado desconectado com o atalho do arquivo.
     expect(await screen.findByRole('link', { name: /Enviar relatório .xlsx/ })).toBeInTheDocument();

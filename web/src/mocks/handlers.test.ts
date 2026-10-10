@@ -70,10 +70,21 @@ describe('handlers do MSW respeitam o contrato', () => {
     expect(vazio.total).toBe(0);
   });
 
-  it('sem TikTok Shop, vídeos vêm com venda nula', async () => {
-    db.shopConnected = false;
+  it('conta sem venda: pedidos vazios e vídeos com venda nula', async () => {
+    db.vendasNaConta = false;
+    const pedidos = await api.get('/orders', { schema: ordersPage, query: periodo });
+    expect(pedidos.total).toBe(0);
     const v = await api.get('/videos', { schema: videosPage, query: periodo });
     expect(v.items.every((x) => x.gmv === null && x.gpm === null)).toBe(true);
+  });
+
+  it('sem TikTok Shop conectado, mas com venda na conta: a venda aparece e vem do arquivo', async () => {
+    db.shopConnected = false;
+    const pedidos = await api.get('/orders', { schema: ordersPage, query: periodo });
+    expect(pedidos.total).toBeGreaterThan(0);
+    expect(pedidos.items.every((o) => o.source === 'FILE')).toBe(true);
+    const v = await api.get('/videos', { schema: videosPage, query: periodo });
+    expect(v.items.some((x) => x.gmv !== null)).toBe(true);
   });
 
   it('planos e metas', async () => {

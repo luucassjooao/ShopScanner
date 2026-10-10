@@ -15,7 +15,7 @@ import {
   EstadoVazio,
   Miniatura,
   PaginaApp,
-  ShopDesconectado,
+  SemVendaNaConta,
 } from '@/components/dados';
 import { Busca, Carregando, ChipsFiltro, Rodape, campoFiltro } from '@/components/filtros';
 import { Button } from '@/components/ui/button';
@@ -55,17 +55,34 @@ export function Produtos() {
   const busca = f.get('q');
   const produtoId = f.get('produto');
 
-  const p = periodo(conta?.shopConnected ? conta.id : '', f.de, f.ate);
+  // A consulta sempre acontece: o que decide a tela é a resposta, não o estado da conexão.
+  const p = periodo(conta?.id ?? '', f.de, f.ate);
   const filtro = { sort, shopName: loja ?? undefined, q: busca ?? undefined };
   const query = useProducts(p, { ...filtro, page: f.pagina });
   const semFiltro = useProducts(p);
   const [exportando, setExportando] = useState(false);
 
-  if (!conta?.shopConnected) {
+  if (!conta) {
     return (
       <PaginaApp>
         <CabecalhoPagina titulo="Produtos" />
-        <ShopDesconectado oQue="os seus produtos" />
+        <EstadoVazio
+          titulo="Nenhuma conta do TikTok conectada"
+          texto="Conecte a sua conta em Configurações para ver os seus produtos."
+          acoes={
+            <Button variant="secondary" asChild>
+              <Link to="/configuracoes">Abrir Configurações</Link>
+            </Button>
+          }
+        />
+      </PaginaApp>
+    );
+  }
+  if (!conta.hasSales) {
+    return (
+      <PaginaApp>
+        <CabecalhoPagina titulo="Produtos" />
+        <SemVendaNaConta oQue="os seus produtos" />
       </PaginaApp>
     );
   }

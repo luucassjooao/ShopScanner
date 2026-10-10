@@ -73,7 +73,7 @@ MSW roda só com `import.meta.env.DEV` e `VITE_ENABLE_MSW=true`; o build de prod
 
 Enquanto a Affiliate Creator API não libera no Brasil, o `affiliate_orders.xlsx` é a espinha de dados (raiz → "Fontes do dado"). O front **não lê o .xlsx**: manda para a API e acompanha a fila.
 
-- `src/components/import.tsx` é a tela de import inteira: arrastar ou escolher, vários arquivos em sequência, barra de progresso, acompanhamento e histórico. Fica dentro de Configurações → Contas conectadas; Vendas e o estado "Shop não conectado" apontam para lá com `/configuracoes?secao=import`.
+- `src/components/import.tsx` é a tela de import inteira: arrastar ou escolher, vários arquivos em sequência, barra de progresso, acompanhamento e histórico. Fica dentro de Configurações → Contas conectadas; Vendas e o estado "conta sem venda" apontam para lá com `/configuracoes?secao=import`.
 - A orientação de cada código de erro mora só em `src/lib/import.ts`. Erro novo no contrato entra lá, com saída escrita. **Nunca mensagem genérica**, e a `message` técnica da API não vai para a tela.
 - Procedência: `<Procedencia />` de `src/components/dados.tsx` é o único selo de `source` e `sourceAt`. Toda tela que mostra venda usa esse, não um texto próprio.
 - Frescor: `lastSyncedAt` vira "Atualizado há X" no topo do app e, passados 5 dias, o lembrete do Início.
@@ -89,7 +89,9 @@ Logadas: `/inicio`, `/vendas`, `/videos`, `/produtos`, `/planejamento`, `/config
 
 Navegação: sidebar no desktop, barra inferior no celular. Topo com seletor de conta, seletor de período (7 dias, 30 dias, este mês, personalizado), sino de avisos e avatar. Detalhe de item abre em painel lateral no desktop e folha deslizante no celular.
 
-Estados que **toda** tela de dados precisa ter: carregando (skeleton), vazio, erro, e "TikTok Shop não conectado" — em que só os blocos de vídeo aparecem, com um aviso explicando o que falta e o atalho para enviar o relatório em arquivo.
+Estados que **toda** tela de dados precisa ter: carregando (skeleton), vazio, erro, e "conta sem venda" — conta com `hasSales` falso, em que a única saída oferecida é enviar o relatório em arquivo. Vazio de período (conta com venda, filtro sem resultado) é outra tela: "nenhuma venda neste período", com ampliar ou limpar filtros.
+
+Nenhuma tela ramifica em `shopConnected`. Venda se mostra por `hasSales` (conta) e pelo `total` do período que a tela já consulta. `shopConnected` descreve só a conexão viva: cartão de Configurações, aviso de "em liberação" e o checklist do Início rápido. Falha de consulta é erro, nunca "envie o relatório".
 
 Guarda de rota: sem sessão vai para `/entrar`; com sessão, abrir `/entrar` manda para `/inicio`.
 
@@ -127,7 +129,7 @@ Ordem categórica fixa, validada para daltonismo e contraste, usada nesta ordem 
 - Nada de token em `localStorage`, nada de segredo no código do cliente.
 - Dado que não existe no contrato da raiz: proponha o campo e pergunte, não invente nem derive por conta própria.
 - Conta de negócio nova não nasce no front. Se faltar um corte, ele vai para "Definições dos números" na raiz e para a API.
-- Cada tela de dados nasce com os quatro estados (carregando, vazio, erro, Shop não conectado). Tela sem estado não está pronta.
+- Cada tela de dados nasce com os quatro estados (carregando, vazio, erro, conta sem venda). Tela sem estado não está pronta.
 - Perguntar antes de adicionar dependência nova.
 - Rodar `npm run lint` e `npm test` dentro de `web/` antes de considerar a tarefa pronta.
 - Entrada no `DEVLOG.md` da raiz, com `[front]` no título, no mesmo commit.

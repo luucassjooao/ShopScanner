@@ -25,7 +25,7 @@ import {
   Miniatura,
   PaginaApp,
   Procedencia,
-  ShopDesconectado,
+  SemVendaNaConta,
   StatusBadge,
 } from '@/components/dados';
 import { Badge } from '@/components/ui/badge';
@@ -72,7 +72,8 @@ export function Vendas() {
   const vendaId = f.get('venda');
   const desktop = useDesktop();
 
-  const p = periodo(conta?.shopConnected ? conta.id : '', f.de, f.ate);
+  // A consulta sempre acontece: o que decide a tela é a resposta, não o estado da conexão.
+  const p = periodo(conta?.id ?? '', f.de, f.ate);
   const filtro: OrdersFiltro = {
     status,
     channel: canal,
@@ -84,11 +85,27 @@ export function Vendas() {
   const produtos = useProducts(p);
   const [exportando, setExportando] = useState(false);
 
-  if (!conta?.shopConnected) {
+  if (!conta) {
     return (
       <PaginaApp>
         <CabecalhoPagina titulo="Vendas" />
-        <ShopDesconectado oQue="as suas vendas" />
+        <EstadoVazio
+          titulo="Nenhuma conta do TikTok conectada"
+          texto="Conecte a sua conta em Configurações para ver as suas vendas."
+          acoes={
+            <Button variant="secondary" asChild>
+              <Link to="/configuracoes">Abrir Configurações</Link>
+            </Button>
+          }
+        />
+      </PaginaApp>
+    );
+  }
+  if (!conta.hasSales) {
+    return (
+      <PaginaApp>
+        <CabecalhoPagina titulo="Vendas" />
+        <SemVendaNaConta oQue="as suas vendas" />
       </PaginaApp>
     );
   }
