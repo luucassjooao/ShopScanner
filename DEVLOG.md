@@ -30,6 +30,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-10 · [repo] Escrever no contrato que o CORS libera PATCH, PUT e DELETE, e para onde o Google volta
+
+**Fiz:** duas linhas de contrato, vindas de dois defeitos que o dono achou testando o app no navegador. (1) O CORS tem de declarar `PATCH`, `PUT` e `DELETE`; o padrão do `@fastify/cors` v11 é só `GET,HEAD,POST`. (2) O callback do Google volta para `/inicio` quando criou sessão e para `/configuracoes` quando só vinculou — a landing não é destino.
+**Por quê:** com `Access-Control-Allow-Methods: GET,HEAD,POST`, o navegador descarta a resposta de toda rota que muda estado e o front vê falha de rede. São nove mutações mortas: aceitar termos, trocar nome, e-mail e senha, meta, notificações, pauta (editar e excluir), desconectar conexão, desvincular Google, excluir conta e revogar sessão. Para quem entrou pelo Google é total: a conta nasce com `acceptedTermsVersion: null`, o diálogo de aceite tranca a área logada, e o único botão dele é um `PATCH` — a pessoa não tem como usar o app.
+**Funcionou:** reproduzi com `curl -X OPTIONS /me -H 'Access-Control-Request-Method: PATCH'` contra a API de pé: responde 204 com `access-control-allow-methods: GET,HEAD,POST`, sem `PATCH`. Testei os quatro métodos; só `POST` passa, e é por isso que entrar funcionava e aceitar os termos não.
+**Não funcionou:** nada enxergou isso antes, e é o ponto que importa. `fastify.inject` não aplica CORS, o MSW não é navegador, e os dois lados somam 256 testes verdes. O defeito mora exatamente na junta que nenhuma das duas suítes cobre — a mesma junta do `Cross-Origin-Resource-Policy` do helmet, achado ontem por leitura e não por teste. A diferença é que agora existe teste possível: `inject` com `OPTIONS` passa pelos hooks do plugin e lê os headers.
+**Decidi:** método que muda estado entra declarado, nunca por padrão de biblioteca — padrão de dependência muda em major e leva o app com ele. E o contrato passa a dizer o destino do callback, em vez de "volta para o app", que era vago o suficiente para `WEB_ORIGIN` parecer certo.
+**Pendente:** a API corrige os dois e cobre o preflight com teste.
+**Commit:** a registrar
+
 ### 2026-10-09 · [front] Tratar os dois erros da foto e recusar antes do envio
 
 **Fiz:** `IMAGEM_MUITO_GRANDE` e `IMAGEM_INVALIDA` têm textos separados em `lib/textos.ts`: grande demais pede cortar ou escolher outra foto, com o teto em número; inválida pede exportar em JPEG, PNG ou WebP e diz que um arquivo só renomeado não conta. A tela de foto passou a traduzir `serverCode` em vez de mostrar a mensagem técnica. `lib/avatar.ts` antecipa as duas recusas com o mesmo texto, sem tirar da API a palavra final. O teto `LIMITE_AVATAR_MB = 2` vive em `textos.ts`, de onde sai o texto.

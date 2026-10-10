@@ -74,6 +74,9 @@ DELETE /auth/sessions/:id
 
 GET  /auth/google/start        -> redireciona para o Google (login social)
 GET  /auth/google/callback     -> cria a sessão e volta para o app
+                                  sem sessão antes: redireciona para /inicio, não para /
+                                  já logado (só vinculou): volta para /configuracoes
+                                  a landing não é destino: ela não leva ninguém para dentro
                                   erro volta como /entrar?erro=CODIGO, sem detalhe técnico
 GET  /auth/identities          -> [{ provider: "GOOGLE", email, linkedAt, canUnlink }]
 DELETE /auth/identities/:provider  -> só quando canUnlink; 409 se for o único acesso
@@ -427,7 +430,8 @@ Esta seção existe porque as duas pontas são construídas em sessões separada
 
 **A API precisa saber do front:**
 
-- O front é SPA em outra origem. CORS restrito a `WEB_ORIGIN` com `credentials: true`, e o callback do Google redireciona para `WEB_ORIGIN`.
+- O front é SPA em outra origem. CORS restrito a `WEB_ORIGIN` com `credentials: true`, e o callback do Google redireciona para dentro do app (`/inicio`), nunca para a landing.
+- **O CORS tem que liberar `PATCH`, `PUT` e `DELETE` explicitamente.** Origem diferente mais o header `X-Requested-With` obrigam o navegador a fazer preflight em toda rota que muda estado, e `Access-Control-Allow-Methods` que não lista o método faz o navegador descartar a resposta — o front vê falha de rede, não erro da API. O padrão do `@fastify/cors` v11 é só `GET,HEAD,POST`, então o que não for declarado morre no navegador. Nenhuma das duas suítes enxerga isso: `fastify.inject` não aplica CORS e o MSW não é navegador. O teste que pega é um `OPTIONS` de preflight conferindo os métodos em `Access-Control-Allow-Methods`.
 - O front filtra por **dia de São Paulo** na URL e converte para ISO UTC na chamada. A API recebe e devolve sempre UTC.
 - Todo pedido precisa de `source` e `sourceAt`: tem selo de procedência em tela para cada número de venda.
 - `GET /accounts` precisa de `lastSyncedAt`: o front mostra "atualizado há X" no topo e um lembrete no Início quando o último import passou de 5 dias.
