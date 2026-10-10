@@ -21,3 +21,17 @@ export function comCookies(cookies: Record<string, string | undefined>): InjectO
     .map(([k, v]) => `${k}=${v}`);
   return { cookie: partes.join('; ') };
 }
+
+/** Corpo multipart montado à mão: o inject não tem atalho para arquivo. */
+export function multipartDe(campo: string, nome: string, conteudo: Buffer) {
+  const limite = 'limite-de-teste';
+  const cabeca = Buffer.from(
+    `--${limite}\r\nContent-Disposition: form-data; name="${campo}"; filename="${nome}"\r\n` +
+      `Content-Type: application/octet-stream\r\n\r\n`,
+  );
+  const cauda = Buffer.from(`\r\n--${limite}--\r\n`);
+  return {
+    payload: Buffer.concat([cabeca, conteudo, cauda]),
+    contentType: `multipart/form-data; boundary=${limite}`,
+  };
+}

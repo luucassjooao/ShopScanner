@@ -54,6 +54,8 @@ export async function privateRoutes(app: FastifyInstance) {
   app.delete('/auth/identities/:provider', auth.desvincularIdentidade);
   app.patch('/me', me.atualizarPerfil);
   app.put('/me/password', { config: { rateLimit: LIMITE_AUTH } }, me.definirSenha);
+  app.post('/me/avatar', me.enviarAvatar);
+  app.get('/me/avatar', me.lerAvatar);
 
   app.get('/accounts', conexoes.listarContas);
   app.post('/connections/tiktok/start', conexoes.iniciarTiktok);

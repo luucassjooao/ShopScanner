@@ -29,6 +29,26 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [api] Receber e servir a foto de perfil
+
+**Fiz:** `POST /me/avatar` (multipart, campo `file`) e `GET /me/avatar`, com a migração `0007_avatar`. A foto vai para `user_avatars` (bytes no banco, então apagar a conta leva a foto junto). A resposta é `{ avatarUrl: "/me/avatar?v=<hash>" }`, e `users.avatar_url` recebe a mesma URL.
+**Por quê:** o contrato da raiz (`1138a93`) pede o upload próprio com URL relativa e cache-busting. Sem `?v=`, o navegador mantém a foto antiga depois da troca.
+**Funcionou:** 83 de 83 testes (6 novos em `avatar.test.ts`): sem foto responde 404; PNG volta com o mesmo conteúdo e `content-type`; trocar a imagem muda o hash e `/auth/session` passa a apontar para a nova URL; texto disfarçado de `.png`, imagem acima de 2 MB e campo errado viram `VALIDACAO`. Typecheck, lint e prettier limpos. `npm run db:migrate` aplicado no banco de dev.
+**Não funcionou:** nada.
+**Decidi:** o tipo da imagem vem dos bytes (JPEG, PNG, WebP), nunca do `Content-Type` que o cliente manda. `GET /me/avatar` responde `Cross-Origin-Resource-Policy: same-site`, porque o helmet põe `same-origin` por padrão e o navegador bloquearia a imagem vinda da porta do front. O comentário no controller diz que o cookie só chega ao `<img>` enquanto a API e o front forem o mesmo site.
+**Pendente:** (1) o contrato não fixa tamanho de foto; os 2 MB são **suposição** em `services/avatar.ts`. (2) Imagem grande demais e arquivo que não é imagem saem os dois como `VALIDACAO`, então a tela não consegue dizer qual dos dois aconteceu; se isso importar para o texto, é um código novo, e isso passa pelo contrato. (3) A CSP da página do front precisa permitir `img-src` para a origem da API.
+**Commit:** pendente (aguarda sinal para commitar)
+
+### 2026-10-09 · [front] Prefixar o avatar relativo com a API, e só ele
+
+**Fiz:** `urlDeImagem` em `api/client.ts` prefixa com `VITE_API_URL` só caminho que começa com `/` (e não `//`). Os schemas do usuário da sessão e da conta aplicam esse transform no `avatarUrl`; as telas só leem o campo pronto.
+**Por quê:** `avatarUrl` tem duas procedências. O upload próprio vem relativo (`/me/avatar?v=<hash>`) e a foto do TikTok vem absoluta. Prefixar tudo quebraria a foto da creator.
+**Funcionou:** testes de `urlDeImagem` (relativo ganha domínio, absoluto do TikTok passa intacto, `//` e null), e de schemas com as duas procedências no usuário e na conta. 167 testes, typecheck, lint e prettier limpos.
+**Não funcionou:** nada.
+**Decidi:** o `?v=<hash>` vem da API e não recebe cache-busting do front. O MSW continua devolvendo um blob absoluto no upload, então não exercita o caminho relativo; isso fica para a varredura contra a API real.
+**Pendente:** nada neste ponto.
+**Commit:** —
+
 ### 2026-10-09 · [repo] Escrever o avatar no contrato, com as duas procedências separadas
 
 **Fiz:** `GET /me/avatar` entrou no contrato (imagem com o `Content-Type` dela, 404 sem avatar), e `avatarUrl` ganhou a regra das duas procedências: no `SessionUser` é upload próprio e vem relativo (`/me/avatar?v=<hash>`); em `GET /accounts` é a foto da creator no TikTok e vem absoluta.

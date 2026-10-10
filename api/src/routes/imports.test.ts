@@ -6,7 +6,7 @@ import { statusDoArquivo } from '../lib/affiliate-orders.ts';
 import { criarLote } from '../repositories/imports.ts';
 import { processarFila } from '../services/imports.ts';
 import { AMBIENTE_DE_TESTE } from '../test/env.ts';
-import { comCookies, cookiesDe, CSRF, limparBanco } from '../test/helpers.ts';
+import { comCookies, cookiesDe, CSRF, limparBanco, multipartDe } from '../test/helpers.ts';
 
 const CONTA = '00000000-0000-0000-0000-0000000000a1';
 const SEM_CONTA = '00000000-0000-0000-0000-00000000ffff';
@@ -35,17 +35,11 @@ beforeAll(async () => {
 });
 afterAll(() => app.close());
 
-/** Corpo multipart montado à mão: o inject não tem atalho para arquivo. */
 function formulario(campo: string, nome: string, conteudo: Buffer) {
-  const limite = 'limite-de-teste';
-  const cabeca = Buffer.from(
-    `--${limite}\r\nContent-Disposition: form-data; name="${campo}"; filename="${nome}"\r\n` +
-      `Content-Type: application/octet-stream\r\n\r\n`,
-  );
-  const cauda = Buffer.from(`\r\n--${limite}--\r\n`);
+  const corpo = multipartDe(campo, nome, conteudo);
   return {
-    payload: Buffer.concat([cabeca, conteudo, cauda]),
-    headers: { ...CSRF, ...autenticado, 'content-type': `multipart/form-data; boundary=${limite}` },
+    payload: corpo.payload,
+    headers: { ...CSRF, ...autenticado, 'content-type': corpo.contentType },
   };
 }
 
