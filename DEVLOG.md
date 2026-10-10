@@ -15,13 +15,14 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 - **Números:** o topo do Início é o GMV elegível; os gráficos são brutos e dizem isso no título e na nota.
 - **Repositório:** git na raiz (branch `main`), hook do devlog ativo via `core.hooksPath`. Três sessões trabalham no mesmo repositório em paralelo: front só em `web/`, API só em `api/`, e o `CLAUDE.md` da raiz só pela sessão líder. `DEVLOG.md` é compartilhado e cada sessão commita a entrada dela junto com a mudança.
 - **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. O banco de desenvolvimento está semeado: a conta demo tem só `VIDEOS` e os pedidos entram como `FILE`.
-- **Backend:** `api/` serve conta, sessão, Google, conexão com o TikTok, `PATCH /me`, e o contrato de dados (`/summary`, `/orders`, `/videos`, `/products`, `/plans`, `/goals`, `/me/notifications`, `/me/export`, `DELETE /me`) sobre o banco, e agora `/imports` (envio, listagem e lote) e o avatar (`POST` e `GET /me/avatar`), com 84 testes. Falta o parser do `.xlsx` (espera a planilha real), `/reconciliation` e a sincronização com o TikTok. `/payouts` saiu do contrato.
+- **Backend:** `api/` serve conta, sessão, Google, conexão com o TikTok, `PATCH /me`, e o contrato de dados (`/summary`, `/orders`, `/videos`, `/products`, `/plans`, `/goals`, `/me/notifications`, `/me/export`, `DELETE /me`) sobre o banco, e agora `/imports` (envio, listagem e lote) e o avatar (`POST` e `GET /me/avatar`), com 91 testes. Falta o parser do `.xlsx` (espera a planilha real), `/reconciliation` e a sincronização com o TikTok. `/payouts` saiu do contrato.
 - **Gatilho de venda:** nenhuma tela ramifica em `shopConnected`. Venda aparece por `hasSales` (conta) e pelo total do período; `shopConnected` descreve só a conexão viva. Vale nas duas pontas, e o seed não mente mais sobre isso.
 - **Google:** app criado no Google Cloud e as três `GOOGLE_*` preenchidas no `api/.env`. `/auth/google/start` redireciona de verdade, com PKCE, `state` e `nonce`. Falta o único teste que prova o fluxo inteiro: entrar pelo navegador com conta Google real.
 - **Erro:** corpo de erro é `{ code, message }` em toda rota, definido no contrato. O `code` é traduzido no front por `lib/textos.ts`; o `message` é técnico e nunca chega à tela.
 - **Integração TikTok:** Affiliate Creator API não liberada para o Brasil; ticket aberto. Display API disponível, app ainda não submetido.
 - **Telas prontas:** /, /entrar, /criar-conta, /recuperar, /termos, /privacidade, /inicio-rapido, /inicio, /vendas, /videos, /videos/:id, /produtos, /planejamento, /configuracoes, /avisos, /reconciliacao.
 - **Próximo passo:** a varredura das 16 telas contra a API real — é a primeira vez que o front vê o estado real de um usuário (conta sem `SHOP`, pedidos `FILE`) e as rotas que faltavam de manhã (`/imports`, avatar) já existem. Fora isso, as duas pontas estão esperando coisas de fora: a API ficou sem tarefa não travada.
+- **Ponto cego conhecido:** as duas suítes testam cada ponta contra si mesma — `fastify.inject` não aplica CORS e o MSW não é navegador —, então nenhuma enxerga a junta entre as duas origens. Três defeitos saíram de lá em dois dias: `Access-Control-Allow-Methods` sem `PATCH/PUT/DELETE` (matava nove mutações), `Cross-Origin-Resource-Policy` do helmet (bloqueava o avatar) e `Retry-After` não exposto (sumia o tempo de espera do 429). Dois dos três foram achados por leitura, não por teste. Rota ou header novo: pergunte o que só o navegador vê.
 - **Erros de recusa:** três códigos nasceram hoje do mesmo princípio — `PARSER_UNAVAILABLE`, `IMAGEM_MUITO_GRANDE` e `IMAGEM_INVALIDA`. Código que agrupa situações com saídas diferentes obriga a tela a mentir ou a mandar a pessoa adivinhar. Antes de reusar um código existente, pergunte se as duas situações pedem a mesma ação.
 - **Bloqueios:** (1) os dados legais de `web/src/lib/textos.ts` (CNPJ, razão social, endereço, e-mail de contato, comarca, encarregado) — `/termos` e `/privacidade` vão para a revisão do app no TikTok; (2) o `affiliate_orders.xlsx` real, que fecha a seção 3 de `docs/parser-affiliate-orders.md`; (3) aprovação da categoria "Creator collaborations" para o Brasil; (4) confirmação de que o `contentId` do pedido é o mesmo id do vídeo; (5) cadastrar `http://localhost:3333/auth/google/callback` como redirect URI no console do Google e, se o app estiver em "Testing", a conta de teste na lista de usuários — sem isso o login social recusa.
   Saíram: os segredos do `api/.env` (corrigidos pelo dono, e `32d8eb1` passou a tratar opcional vazia como ausente) e a aprovação de `@fastify/multipart` (aprovada em 09/10/2026).
@@ -48,7 +49,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada. Conferi que o front realmente lê o header antes de aprovar, em vez de aceitar o relato.
 **Decidi:** a regra geral, que é o que vale daqui para a frente: **header de resposta que o front precisa ler entra em `Access-Control-Expose-Headers`, ou não existe para ele.** Isso vale para qualquer header futuro, não só `Retry-After`.
 **Pendente:** a API expõe o header e cobre no mesmo arquivo de teste do preflight.
-**Commit:** a registrar
+**Commit:** 0ca5b0b
 
 ### 2026-10-10 · [api] Declarar PATCH, PUT e DELETE no CORS e voltar do Google para dentro do app
 
@@ -68,7 +69,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada enxergou isso antes, e é o ponto que importa. `fastify.inject` não aplica CORS, o MSW não é navegador, e os dois lados somam 256 testes verdes. O defeito mora exatamente na junta que nenhuma das duas suítes cobre — a mesma junta do `Cross-Origin-Resource-Policy` do helmet, achado ontem por leitura e não por teste. A diferença é que agora existe teste possível: `inject` com `OPTIONS` passa pelos hooks do plugin e lê os headers.
 **Decidi:** método que muda estado entra declarado, nunca por padrão de biblioteca — padrão de dependência muda em major e leva o app com ele. E o contrato passa a dizer o destino do callback, em vez de "volta para o app", que era vago o suficiente para `WEB_ORIGIN` parecer certo.
 **Pendente:** a API corrige os dois e cobre o preflight com teste.
-**Commit:** a registrar
+**Commit:** 83271b7
 
 ### 2026-10-09 · [front] Tratar os dois erros da foto e recusar antes do envio
 
@@ -98,7 +99,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada tentado e descartado.
 **Decidi:** 2 MB, porque é avatar e não relatório. Detecção por bytes, não por extensão: extensão é palpite do cliente. Os códigos são em português, como todo `code` de rota (`VALIDACAO`, `SENHA_ATUAL_INCORRETA`); os de `ImportBatch.error.code` são em inglês porque são um enum próprio do arquivo, e as duas convenções não se misturam.
 **Pendente:** a API troca `VALIDACAO` pelos dois códigos; o front traduz os dois em `lib/textos.ts` e libera `img-src` da origem da API na CSP.
-**Commit:** a registrar
+**Commit:** eb42e6a
 
 ### 2026-10-09 · [api] Receber e servir a foto de perfil
 
@@ -128,7 +129,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** a frase que me foi proposta para `avatarUrl` descrevia só o caminho relativo, e `avatarUrl` existe em dois lugares com procedências diferentes — o de `/accounts` vem do TikTok e é absoluto. Gravar só a metade relativa deixaria o mesmo nome de campo com duas convenções e nenhuma escrita, armadilha que só apareceria quando o avatar do TikTok sumisse da tela. Reescrevi cobrindo as duas: o front prefixa `VITE_API_URL` apenas no que começa com `/`, em um lugar só.
 **Decidi:** 404 quando não há avatar, nunca imagem de espaço reservado — o front não saberia distinguir de foto de verdade. E o `?v=<hash>` é obrigatório: a URL não muda de nome quando a imagem muda, então sem ele o navegador mostra o avatar antigo depois da troca.
 **Pendente:** a API implementa `POST /me/avatar` e `GET /me/avatar`; o front passa a prefixar o caminho relativo em um lugar só.
-**Commit:** a registrar
+**Commit:** 1138a93
 
 ### 2026-10-09 · [front] Mostrar PARSER_UNAVAILABLE sem pedir reenvio
 
@@ -158,7 +159,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada tentado e descartado. Considerei deixar como está, apostando que o parser chegaria antes de alguém ver a tela, e descartei: o `.xlsx` real é bloqueio sem data, e quem envia o arquivo nesse meio tempo é o próprio dono.
 **Decidi:** o código sai de circulação sozinho quando o parser existir, sem nenhuma das pontas remover nada — a API para de emitir e o texto fica órfão. É o oposto de `shopConnected`, que precisou de três commits para desfazer.
 **Pendente:** a API emite `PARSER_UNAVAILABLE` no lugar de `FAILED` nesse caso; o front traduz em `lib/import.ts` sem oferecer nova tentativa.
-**Commit:** a registrar
+**Commit:** fead2c5
 
 ### 2026-10-09 · [api] Receber o relatório e expor a fila de importações
 
@@ -238,7 +239,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Não funcionou:** nada travou. Não corrigi "primeira sincronização" e "o painel se preenche sozinho quando a primeira leitura terminar" no `PrimeiroAcesso` do Início: são frases futuras, para quem ainda não conectou; ficam para a próxima revisão de copy.
 **Decidi:** erro sem código na tela fica no texto da categoria, sem número nem código. O rastro para suporte, se for preciso, vai em `console.error`, nunca na tela — não implementei agora. A mensagem de Google indisponível, que diz "use e-mail e senha", também aparece logado em Configurações; é copy e fica para depois.
 **Pendente:** página 2 de Vendas e layout no celular, depois destas correções. Estado "Shop não conectado" exercitado sem destruir o seed, a combinar com a API.
-**Commit:** a registrar
+**Commit:** 4059472
 
 ### 2026-10-09 · [api] Subir o teto por IP para 300 e devolver erro do Google à tela certa
 
