@@ -30,6 +30,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-10 · [repo] Exigir `Retry-After` exposto no CORS
+
+**Fiz:** o contrato passou a exigir `Retry-After` em `Access-Control-Expose-Headers`.
+**Por quê:** cross-origin, o JavaScript só lê headers de resposta safelisted, e `Retry-After` não é um deles. `web/src/api/client.ts:220` faz `response.headers.get('Retry-After')` e recebe `null` no navegador, então o aviso de 429 perde o tempo de espera — que este mesmo contrato manda mostrar, e que a API manda corretamente em segundos. O header chega na resposta e é o navegador que o esconde do front.
+**Funcionou:** achado pela sessão da API **antes** de implementar, quando pedi que ela pensasse se havia mais algo que só o navegador vê. Era o terceiro defeito da mesma família, depois do `Access-Control-Allow-Methods` e do `Cross-Origin-Resource-Policy` do helmet.
+**Não funcionou:** nada. Conferi que o front realmente lê o header antes de aprovar, em vez de aceitar o relato.
+**Decidi:** a regra geral, que é o que vale daqui para a frente: **header de resposta que o front precisa ler entra em `Access-Control-Expose-Headers`, ou não existe para ele.** Isso vale para qualquer header futuro, não só `Retry-After`.
+**Pendente:** a API expõe o header e cobre no mesmo arquivo de teste do preflight.
+**Commit:** a registrar
+
 ### 2026-10-10 · [api] Declarar PATCH, PUT e DELETE no CORS e voltar do Google para dentro do app
 
 **Fiz:** o `@fastify/cors` passa a receber `methods` explícito (`GET,HEAD,POST,PUT,PATCH,DELETE`). O callback do Google sem sessão anterior volta para `/inicio`, e quem só vinculou o Google volta para `/configuracoes`. A landing deixou de ser destino.
