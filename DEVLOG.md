@@ -11,12 +11,14 @@ Regras curtas: entrada nova sempre no topo, uma por tarefa concluída, no mesmo 
 _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê ao voltar ao projeto._
 
 - **Fase:** 2 — alinhar as duas pontas já ligadas. O front fala com a API de verdade desde `9baebee`; os totais de referência batem por HTTP. O que resta é varredura de tela e as rotas que faltam.
-- **Rodando:** front em `web/` com a área logada completa, páginas legais e públicas, acesso por e-mail ou Google, TikTok só como conexão, e a entrada de pedidos por arquivo `.xlsx` (lint, typecheck e 167 testes passando).
+- **Rodando:** front em `web/` com a área logada completa, páginas legais e públicas, acesso por e-mail ou Google, TikTok só como conexão, e a entrada de pedidos por arquivo `.xlsx` (lint, typecheck e 183 testes passando). Estrutura: uma pasta por página em `src/pages/`, cascas em `src/layouts/`, `src/routes/router.tsx` só com rota e guarda, `src/auth/guarda.ts` com a guarda.
 - **Números:** o topo do Início é o GMV elegível; os gráficos são brutos e dizem isso no título e na nota.
 - **Repositório:** git na raiz (branch `main`), hook do devlog ativo via `core.hooksPath`. Três sessões trabalham no mesmo repositório em paralelo: front só em `web/`, API só em `api/`, e o `CLAUDE.md` da raiz só pela sessão líder. `DEVLOG.md` é compartilhado e cada sessão commita a entrada dela junto com a mudança.
 - **Dados:** JSONs simulados em `mocks/`, servidos pelo MSW. O banco de desenvolvimento está semeado: a conta demo tem só `VIDEOS` e os pedidos entram como `FILE`.
 - **Backend:** `api/` serve conta, sessão, Google, conexão com o TikTok, `PATCH /me`, e o contrato de dados (`/summary`, `/orders`, `/videos`, `/products`, `/plans`, `/goals`, `/me/notifications`, `/me/export`, `DELETE /me`) sobre o banco, e agora `/imports` (envio, listagem e lote) e o avatar (`POST` e `GET /me/avatar`), com 91 testes. Falta o parser do `.xlsx` (espera a planilha real), `/reconciliation` e a sincronização com o TikTok. `/payouts` saiu do contrato.
 - **Gatilho de venda:** nenhuma tela ramifica em `shopConnected`. Venda aparece por `hasSales` (conta) e pelo total do período; `shopConnected` descreve só a conexão viva. Vale nas duas pontas, e o seed não mente mais sobre isso.
+- **Guarda de rota (front):** `loader` do React Router 7, em `src/auth/guarda.ts`, um só para os dois sentidos — rota do app sem sessão vai para `/entrar?proxima=`, rota de entrada (`/`, `/entrar`, `/criar-conta`, `/recuperar`) com sessão vai para `/inicio`. `/termos` e `/privacidade` não têm guarda, de propósito. Quem decide é o backend, por `GET /auth/session`; nada em `localStorage`.
+- **401 no front:** não significa mais "deslogado" de primeira. `request()` e `upload()` renovam por `POST /auth/refresh` uma vez, com promessa compartilhada, e repetem. Nenhuma tela deve tratar o primeiro 401 como sessão perdida.
 - **Google:** app criado no Google Cloud e as três `GOOGLE_*` preenchidas no `api/.env`. `/auth/google/start` redireciona de verdade, com PKCE, `state` e `nonce`. Falta o único teste que prova o fluxo inteiro: entrar pelo navegador com conta Google real.
 - **Erro:** corpo de erro é `{ code, message }` em toda rota, definido no contrato. O `code` é traduzido no front por `lib/textos.ts`; o `message` é técnico e nunca chega à tela.
 - **Integração TikTok:** Affiliate Creator API não liberada para o Brasil; ticket aberto. Display API disponível, app ainda não submetido.
@@ -45,7 +47,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 **Pendente:** nada nesta tarefa. Fica valendo a regra: 401 só significa "deslogado" depois de a renovação falhar — nenhuma tela deve tratar o primeiro 401 como sessão perdida.
 
-**Commit:** pendente
+**Commit:** db21d3c
 
 ### 2026-10-10 · [front] Uma pasta por página e a guarda de rota no loader
 
@@ -61,7 +63,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 **Pendente:** `src/pages/configuracoes/index.tsx` tem 1.056 linhas e `vendas/index.tsx` 682: pedem as mesmas peças por fora que os vídeos ganharam, mas isso é outra tarefa. A primeira pintura agora espera o loader da sessão; com a API local a mais de 300 ms isso aparece como skeleton, e vale medir antes de aceitar.
 
-**Commit:** pendente
+**Commit:** b25d418
 
 ### 2026-10-10 · [api] Parar de derrubar a sessão quando duas abas giram o refresh juntas
 
