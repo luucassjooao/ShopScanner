@@ -36,6 +36,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 **Pendente:** seção 3 de `docs/parser-affiliate-orders.md` (mapeamento de `INELIGIBLE` com o arquivo real). A linha `SHOP` no banco de dev foi limpeza de desenvolvimento, **não** migração: ela nunca esteve em produção, e migração aplicada não se edita.
 **Commit:** pendente (aguarda autorização para commitar)
 
+### 2026-10-09 · [api] Conferir o fluxo do Google com as credenciais preenchidas
+
+**Fiz:** nada no código. Verificação com as três variáveis `GOOGLE_*` preenchidas no `api/.env`, sem chamada ao Google.
+**Por quê:** o dono criou o app no Google Cloud; era o bloqueio que deixava `GOOGLE_INDISPONIVEL` como único caminho.
+**Funcionou:** a API sobe com as variáveis preenchidas (a lista de opcionais vazias do `config/env.ts` segue valendo). `GET /auth/google/start` responde 302 para `https://accounts.google.com/o/oauth2/v2/auth` com `client_id`, `redirect_uri` idêntico ao do `.env`, `scope=openid email profile`, `state`, `nonce`, `code_challenge` e `code_challenge_method=S256`, e grava `__Secure-goog` com `Path=/auth/google; HttpOnly; Secure; SameSite=Lax; Max-Age=600`.
+**Não funcionou:** não consegui confirmar que o cookie volta no callback. `curl` não reproduz o envio de cookie `Secure` sobre `http://localhost`, e sem o código do Google o callback responde 400 igual com ou sem cookie. Isso só se confirma num navegador com conta real.
+**Decidi:** nada muda. `Path=/auth/google` cobre `/auth/google/callback`; `Secure` em `localhost` é aceito pelos navegadores como contexto seguro.
+**Pendente:** teste no navegador com conta Google real, feito pelo dono. No console do Google: cadastrar como redirect URI autorizado exatamente `http://localhost:3333/auth/google/callback` (tipo "Aplicativo da Web"). Origem JavaScript autorizada **não** é necessária, porque o fluxo é servidor a servidor com redirecionamento. Se o app estiver em modo "Testing", a conta de teste precisa estar na lista de usuários de teste, senão o Google recusa com `access_denied` e a API responde `GOOGLE_RECUSADO`.
+**Commit:** pendente (aguarda autorização para commitar)
+
 ### 2026-10-09 · [api] Expor hasSales em /accounts
 
 **Fiz:** `GET /accounts` ganhou `hasSales`, que é `true` quando existe pedido nesta conta, de qualquer fonte. É um `exists` na mesma consulta que já deriva `shopConnected`.
