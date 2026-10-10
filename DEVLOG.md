@@ -45,7 +45,7 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 **Pendente:** três coisas que a auditoria achou e **não** são minhas. (1) O front não chama `/auth/refresh` em lugar nenhum (`grep -rn "auth/refresh" web/src` não acha nada), então hoje toda aba com mais de 15 minutos simplesmente cai no login — a correção acima só vale quando o front passar a girar. (2) `trustProxy: isProd` em `src/app.ts:25` confia na cadeia inteira de `X-Forwarded-For`: em produção, atrás de um proxy, dá para forjar o IP e escapar do limite por IP e da trava de login por IP mais e-mail; o certo é o número de saltos (`trustProxy: 1`) ou o CIDR do proxy, e isso depende de uma hospedagem que ainda não foi escolhida. (3) `SameSite=Lax` só funciona enquanto front e API ficarem no mesmo domínio registrável (hoje `localhost:5173` e `localhost:3333`, amanhã `app.` e `api.` do mesmo domínio): em domínios diferentes o navegador não manda o cookie em nenhuma chamada da SPA e a sessão para de existir, e aí o atributo tem de virar `SameSite=None`, com o `X-Requested-With` e o CORS assumindo sozinhos o papel anti-CSRF.
 
-**Commit:** 62333c5
+**Commit:** 5d4eb34
 
 ### 2026-10-10 · [api] Expor Retry-After no CORS
 
