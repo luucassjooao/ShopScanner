@@ -131,6 +131,7 @@ describe('pedidos', () => {
       currency: 'BRL',
     });
     expect(corpo.items[0].skus[0].rates).toMatchObject({ standard: expect.any(Number) });
+    expect(corpo.items[0].skus[0].lineNo).toBeGreaterThanOrEqual(1);
   });
 
   it('anda a lista inteira pelo cursor, sem repetir pedido', async () => {
@@ -161,6 +162,8 @@ describe('pedidos', () => {
     expect(skus).toHaveLength(2);
     expect(skus[0].id).toBe(skus[1].id);
     expect([skus[0].quantity, skus[1].quantity].sort()).toEqual([1, 2]);
+    // Mesmo id de SKU, duas linhas: lineNo é o que separa as duas, começando em 1.
+    expect([skus[0].lineNo, skus[1].lineNo].sort()).toEqual([1, 2]);
     expect(res.json().statusHistory.length).toBeGreaterThan(0);
   });
 });

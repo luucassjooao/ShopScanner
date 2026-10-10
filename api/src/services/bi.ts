@@ -59,6 +59,8 @@ export async function resumo(p: Periodo) {
 function mapearSku(s: LinhaSku) {
   return {
     id: s.id,
+    // Não é único dentro do pedido: o relatório repete o id em linhas separadas.
+    lineNo: s.line_no,
     productId: s.product_id,
     name: s.name,
     shopName: s.shop_name,

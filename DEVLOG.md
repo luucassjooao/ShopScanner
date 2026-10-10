@@ -33,6 +33,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-10 · [api] Expor lineNo no item do pedido
+
+**Fiz:** `OrderSku` ganhou `lineNo` em `GET /orders` e `GET /orders/:id`, a posição da linha no pedido a partir de 1. Sem ele o front montava a chave com `pedido.id + sku.id`, que se repete, e o React descartava uma linha de dinheiro sem erro.
+**Por quê:** `order_skus.id` repete em linhas diferentes do mesmo pedido, e o `line_no` já existia no banco, mas a consulta de itens só selecionava `id`.
+**Funcionou:** 91 de 91 testes. O caso que gerou o defeito está travado em `data.test.ts`: o pedido com duas linhas do mesmo SKU devolve `lineNo` 1 e 2. Os totais de referência continuam batendo (90 linhas, 115 itens, R$ 11.378,50). Typecheck, lint e prettier limpos.
+**Não funcionou:** nada.
+**Decidi:** `line_no` é gravado a partir de 0 (seed e import, pelo índice do array), e o banco **não** mudou. A soma de 1 acontece em uma única consulta, `line_no + 1 as line_no` em `repositories/orders.ts`, para o contrato contar a partir de 1. Quando o import de arquivo gravar `line_no`, precisa seguir a mesma base 0; senão a soma fica duplicada ou a conta sai errada. Está comentado no repositório.
+**Pendente:** o import real ainda não existe, então essa regra de base ainda não foi exercitada fora do seed.
+**Commit:** pendente (aguarda sinal para commitar)
+
 ### 2026-10-10 · [repo] Expor `lineNo` no item do pedido, porque `id` não identifica linha
 
 **Fiz:** `OrderSku` ganhou `lineNo` (posição da linha no pedido, a partir de 1) e o contrato passou a dizer, com estas palavras, que `id` **não** é único dentro do pedido. A chave de um item é pedido mais `lineNo`.
