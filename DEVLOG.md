@@ -29,6 +29,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [repo] Escrever os limites do avatar e separar as duas recusas
+
+**Fiz:** o contrato passou a dizer os limites de `POST /me/avatar` — JPEG, PNG ou WebP detectados pelos bytes, no máximo 2 MB — e ganhou dois códigos no lugar de um: `IMAGEM_MUITO_GRANDE` e `IMAGEM_INVALIDA`, ambos 400.
+**Por quê:** a API implementou o avatar com um teto de 2 MB que era suposição dela, não do contrato, e com as duas recusas saindo como `VALIDACAO`. Número que a tela precisa dizer ("no máximo 2 MB") não pode morar só no código da API, senão o front escreve outro número e um dos dois mente. E as duas recusas pedem ações opostas: cortar ou trocar a imagem, contra exportar em outro formato. Com um código só, a tela diria "arquivo inválido" e deixaria a pessoa adivinhar qual dos dois problemas ela tem.
+**Funcionou:** a mesma correção do `PARSER_UNAVAILABLE`, três horas depois e pelo mesmo motivo — código de erro que agrupa situações com saídas diferentes empurra a mentira para a tela. Vale registrar que foi a própria sessão da API que marcou o 2 MB como suposição em vez de deixar passar.
+**Não funcionou:** nada tentado e descartado.
+**Decidi:** 2 MB, porque é avatar e não relatório. Detecção por bytes, não por extensão: extensão é palpite do cliente. Os códigos são em português, como todo `code` de rota (`VALIDACAO`, `SENHA_ATUAL_INCORRETA`); os de `ImportBatch.error.code` são em inglês porque são um enum próprio do arquivo, e as duas convenções não se misturam.
+**Pendente:** a API troca `VALIDACAO` pelos dois códigos; o front traduz os dois em `lib/textos.ts` e libera `img-src` da origem da API na CSP.
+**Commit:** a registrar
+
 ### 2026-10-09 · [api] Receber e servir a foto de perfil
 
 **Fiz:** `POST /me/avatar` (multipart, campo `file`) e `GET /me/avatar`, com a migração `0007_avatar`. A foto vai para `user_avatars` (bytes no banco, então apagar a conta leva a foto junto). A resposta é `{ avatarUrl: "/me/avatar?v=<hash>" }`, e `users.avatar_url` recebe a mesma URL.

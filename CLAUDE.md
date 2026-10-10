@@ -92,6 +92,10 @@ PUT  /me/password              { currentPassword?, newPassword }
                                  currentPassword só é exigido quando hasPassword é true
 POST /me/avatar                multipart -> { avatarUrl }
 GET  /me/avatar                -> imagem do avatar (Content-Type da imagem); 404 se a conta não tiver avatar
+                                 limites do upload: JPEG, PNG ou WebP, detectados pelos bytes
+                                 e não pela extensão, e no máximo 2 MB
+                                 IMAGEM_MUITO_GRANDE (400) e IMAGEM_INVALIDA (400) são
+                                 códigos distintos: as duas recusas pedem ações diferentes
 
 GET  /accounts                 -> [{ id, username, avatarUrl, shopConnected, hasSales,
                                      connectedAt, lastSyncedAt, expiresAt }]
@@ -338,7 +342,7 @@ Decisões de contrato que valem para as duas pontas:
 - **Detalhe de produto e de vídeo não tem período**: `GET /products/:id` e `GET /videos/:id` devolvem o total **desde o início**, enquanto a lista que levou até ele é do período filtrado. Os dois números aparecem na mesma tela e não batem, então o detalhe **diz em tela que é desde o início**. Não é o mesmo caso do GMV elegível: lá o número do topo estava errado para a creator, aqui os dois estão certos e medem coisas diferentes. Passa a aceitar período só se alguém pedir — e então muda nos dois endpoints de uma vez.
 - **Erro do Google quando já existe sessão** volta para `/configuracoes?erro=CODIGO`, não para `/entrar`: quem está logado e vai vincular o Google seria redirecionado de `/entrar` para `/inicio` pela guarda de rota, e a mensagem se perderia. Sem sessão continua em `/entrar?erro=CODIGO`.
 - **`/auth/forgot-password` responde sempre 204**, com e-mail existente ou não, com senha ou só com Google. Nenhum código de erro, nenhuma distinção: a resposta que varia conta ao atacante quais e-mails têm conta aqui e quais entram pelo Google. Não existe, e não pode existir, um `GOOGLE_ONLY` nessa rota. Quem só tem Google descobre isso ao tentar entrar, não ao pedir recuperação.
-- **Erro que o usuário precisa entender tem `code` estável.** O front nunca mostra o `message` da API — ele é técnico, vai para log e suporte. Falha sem `code` cai no texto genérico, que é pior experiência: se a tela precisa explicar algo específico, a API manda `code`, e o front traduz em `lib/textos.ts`. Hoje: `SENHA_ATUAL_INCORRETA` (400) em `PUT /me/password` — o status não distingue nada para o front, que mapeia todo 4xx que não é 401/408/429 para a mesma categoria; é o `code` que decide o texto.
+- **Erro que o usuário precisa entender tem `code` estável.** O front nunca mostra o `message` da API — ele é técnico, vai para log e suporte. Falha sem `code` cai no texto genérico, que é pior experiência: se a tela precisa explicar algo específico, a API manda `code`, e o front traduz em `lib/textos.ts`. Hoje: `SENHA_ATUAL_INCORRETA` (400) em `PUT /me/password` — o status não distingue nada para o front, que mapeia todo 4xx que não é 401/408/429 para a mesma categoria; é o `code` que decide o texto. Em `POST /me/avatar`, pelo mesmo motivo: `IMAGEM_MUITO_GRANDE` e `IMAGEM_INVALIDA` são duas recusas que pedem ações opostas — cortar ou trocar a imagem, contra exportar em outro formato. Um `VALIDACAO` só para as duas obrigaria a tela a dizer "arquivo inválido" e deixar a pessoa adivinhar qual dos dois problemas ela tem.
 - **`GET /payouts` saiu do contrato** (09/10/2026). Nunca teve `expected`, `settled` e `pending` definidos em "Definições dos números", nunca foi servido pela API e nenhuma tela usou. `/summary` já entrega `commissionToReceive` e `commissionSettled`. Volta só com a definição escrita primeiro e uma tela que a use.
 
 ## Fontes do dado: API, arquivo e estimativa
