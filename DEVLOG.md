@@ -33,6 +33,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-10 · [api] lineNo cru, a partir de 0, sem soma na consulta
+
+**Fiz:** `lineNo` sai como `line_no` do banco, sem `+ 1`. O comentário sobre a base que avisava o import foi removido, porque deixou de haver tradução. O teste do pedido com duas linhas do mesmo SKU agora espera 0 e 1.
+**Por quê:** o contrato (`59cf9e3`) passou a dizer que `lineNo` é chave e não rótulo, então ele vai cru. A soma de 1 era aritmética na borda que não compra nada e cria uma base que todo escritor futuro precisaria lembrar.
+**Funcionou:** 91 de 91 testes. Typecheck, lint e prettier limpos. Os totais de referência não mudam, porque nenhum deles depende de `lineNo`.
+**Não funcionou:** nada.
+**Decidi:** campo que serve de chave vai cru do banco. Isso vale para qualquer rota nova.
+**Pendente:** nada nesta tarefa.
+**Commit:** pendente (aguarda sinal para commitar)
+
 ### 2026-10-10 · [repo] Tirar o +1 do lineNo: o campo vai cru, a partir de 0
 
 **Fiz:** desfiz uma decisão minha de um commit atrás. `OrderSku.lineNo` passa a ir **cru, a partir de 0**, igual ao banco, em vez de "a partir de 1" com a API somando na leitura. O contrato também passou a dizer que `lineNo` é chave e não rótulo: nunca aparece em tela.

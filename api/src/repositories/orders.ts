@@ -218,13 +218,11 @@ export function itensDosPedidos(accountId: string, ids: string[]) {
   if (ids.length === 0) return Promise.resolve([] as LinhaSku[]);
   return many(
     linhaSku,
-    // line_no é gravado a partir de 0 (seed e import, por índice do array). O contrato
-    // conta a partir de 1, então a soma acontece aqui, na única consulta que expõe o campo.
     sql`select order_id, id, product_id, name, shop_name, unit_price, quantity,
                returned_quantity, refunded_quantity, gmv, commission_base_actual,
                commission_rate, rate_standard, rate_shop_ads, rate_bonus, rate_reward,
                commission_estimated, commission_settled, shop_ads_commission_estimated,
-               channel::text as channel, content_id, line_no + 1 as line_no
+               channel::text as channel, content_id, line_no
           from order_skus
          where account_id = ${accountId} and order_id in ${sql(ids)}
          order by order_id, line_no`,
