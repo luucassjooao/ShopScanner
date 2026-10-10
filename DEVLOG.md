@@ -29,6 +29,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [repo] Separar "ainda não sei ler" de "falhou" no import
+
+**Fiz:** `ImportBatch.error.code` ganhou `PARSER_UNAVAILABLE`, para o arquivo que a API aceitou e ainda não sabe ler enquanto a seção 3 de `docs/parser-affiliate-orders.md` depender do `affiliate_orders.xlsx` real.
+**Por quê:** com o `/imports` no ar (`c04cbc6`), todo `.xlsx` válido termina `FAILED`, e a orientação de `FAILED` em `web/src/lib/import.ts:49` diz "Tente enviar de novo". Ou seja: o único caminho que funciona hoje termina num conselho falso, porque tentar de novo não cria o parser. `FAILED` significa falha de processamento, em que reenviar é honesto; juntar as duas situações no mesmo código obriga a tela a mentir em uma delas.
+**Funcionou:** a sessão da API detectou e relatou isso por conta própria, em vez de entregar a rota e deixar o front descobrir na tela. O stub em `api/src/lib/affiliate-orders.ts` já isola tudo que depende da planilha real, com cada suposição marcada como SUPOSTO e o dicionário de colunas nascendo vazio — nenhuma coluna inventada para fechar a lacuna.
+**Não funcionou:** nada tentado e descartado. Considerei deixar como está, apostando que o parser chegaria antes de alguém ver a tela, e descartei: o `.xlsx` real é bloqueio sem data, e quem envia o arquivo nesse meio tempo é o próprio dono.
+**Decidi:** o código sai de circulação sozinho quando o parser existir, sem nenhuma das pontas remover nada — a API para de emitir e o texto fica órfão. É o oposto de `shopConnected`, que precisou de três commits para desfazer.
+**Pendente:** a API emite `PARSER_UNAVAILABLE` no lugar de `FAILED` nesse caso; o front traduz em `lib/import.ts` sem oferecer nova tentativa.
+**Commit:** a registrar
+
 ### 2026-10-09 · [api] Receber o relatório e expor a fila de importações
 
 **Fiz:** `POST /imports?accountId` (multipart, campo `file`), `GET /imports` e `GET /imports/:id`, com a migração `0006_imports` (lote e bytes do arquivo em tabelas separadas). O envio responde `201 { importId }`; a recusa que não precisa ler a planilha (extensão, tamanho) vira lote `FAILED` com `error.code`, nunca 500. A fila roda em segundo plano dentro do processo.

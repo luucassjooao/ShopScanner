@@ -247,6 +247,7 @@ type ImportBatch = {
       | "UNKNOWN_COLUMNS"
       | "WRONG_CURRENCY"
       | "WRONG_FILE"
+      | "PARSER_UNAVAILABLE"
       | "FAILED";
     message: string;
     columnsFound?: string[];
@@ -413,6 +414,7 @@ Esta seção existe porque as duas pontas são construídas em sessões separada
 - Import de arquivo é assíncrono: `POST /imports` devolve `importId` e o processamento acontece em fila. O front acompanha por `GET /imports/:id`, não espera na resposta do upload.
 - **`accountId` do import vai na query, não como campo do multipart.** O relatório do TikTok não diz de qual conta veio, então a API precisa da conta — mas precisa dela **antes** de ler o arquivo, para recusar conta de outra pessoa sem engolir 50 MB. Em campo de multipart isso só funcionaria se o campo viesse antes do arquivo, e essa é uma regra que um dia alguém quebra sem perceber. Conta que não é da sessão responde 404.
 - Limites do upload, conferidos antes de enfileirar: só `.xlsx`, só a primeira aba, no máximo 50 MB, só `BRL`. Cada recusa vira um `error.code` do `ImportBatch` (`WRONG_EXTENSION`, `TOO_LARGE`, `WRONG_CURRENCY`, ...), nunca um 500 seco.
+- **`PARSER_UNAVAILABLE` é o arquivo que a API aceitou e ainda não sabe ler**, porque a seção 3 de `docs/parser-affiliate-orders.md` depende do `affiliate_orders.xlsx` real. É diferente de `FAILED`: `FAILED` é falha de processamento, em que reenviar é conselho honesto, e este não é culpa do arquivo nem se resolve tentando de novo. A tela diz que o formato está sendo mapeado e não oferece nova tentativa. O código sai do ar sozinho quando o parser existir — nenhuma das pontas remove nada.
 - `GET /imports` é paginado como `/orders` (`{ items, total, page }`), ordenado do mais recente para o mais antigo, com `pageSize` padrão de 20 e teto de 100. Filtra por `kind` (`FILE`, `SYNC`, `RECHECK`) e por `status` — a tela de histórico mostra só os de arquivo sem precisar baixar as sincronizações automáticas, que são muitas.
 - Nenhum endpoint devolve token. Nada para guardar.
 
