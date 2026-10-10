@@ -46,6 +46,12 @@ const ORIENTACOES: Record<ImportErroCodigo, OrientacaoErro> = {
     comoResolver:
       'O arquivo certo é o affiliate_orders.xlsx, exportado do Centro de Afiliados dentro do app do TikTok.',
   },
+  // Não é falha do arquivo nem se resolve reenviando: o parser ainda não existe. Sem convite a tentar de novo.
+  PARSER_UNAVAILABLE: {
+    titulo: 'O arquivo chegou, mas ainda não sabemos ler este formato',
+    comoResolver:
+      'Estamos mapeando o relatório de pedidos do TikTok. Você não precisa enviar de novo: avisamos aqui quando a leitura estiver pronta.',
+  },
   FAILED: {
     titulo: 'O arquivo chegou, mas o processamento falhou',
     comoResolver: `Tente enviar de novo. Se acontecer outra vez, fale com a gente em ${EMAIL_CONTATO} contando a data do relatório.`,
@@ -75,6 +81,10 @@ export function resumoDoResultado(result: NonNullable<ImportBatch['result']>) {
     partes.push(`${result.skipped} ignorada${result.skipped === 1 ? '' : 's'}`);
   return partes.join(', ');
 }
+
+/** Falha de verdade do lote. `PARSER_UNAVAILABLE` tem status `FAILED`, mas não é falha. */
+export const falhou = (b: Pick<ImportBatch, 'status' | 'error'>) =>
+  b.status === 'FAILED' && b.error?.code !== 'PARSER_UNAVAILABLE';
 
 /** Um import ainda em andamento: a tela continua perguntando ao backend. */
 export const emAndamento = (b: Pick<ImportBatch, 'status'>) =>

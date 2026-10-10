@@ -126,6 +126,7 @@ export const importErroCodigo = z.enum([
   'UNKNOWN_COLUMNS',
   'WRONG_CURRENCY',
   'WRONG_FILE',
+  'PARSER_UNAVAILABLE',
   'FAILED',
 ]);
 export type ImportErroCodigo = z.infer<typeof importErroCodigo>;

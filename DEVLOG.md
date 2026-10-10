@@ -29,6 +29,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [front] Mostrar PARSER_UNAVAILABLE sem pedir reenvio
+
+**Fiz:** o código novo do contrato entra no enum de `importErroCodigo` e ganha orientação própria em `lib/import.ts`: o arquivo chegou, o formato está sendo mapeado, não precisa reenviar. `FAILED` segue com "Tente enviar de novo".
+**Por quê:** sem o código no enum, o Zod reprovava a resposta inteira de `GET /imports/:id` e o painel quebrava. Com o texto de `FAILED`, todo `.xlsx` válido mandaria a pessoa reenviar um arquivo que não está errado.
+**Funcionou:** teste que trava a diferença entre os dois códigos (sem "tente" no ausente, com "Tente enviar de novo" na falha); teste do painel com o arquivo `relatorio-novo-formato.xlsx` no MSW; histórico mostra "Em mapeamento" ao lado de "Falhou" no lote de falha real; 162 testes, typecheck, lint e prettier limpos.
+**Não funcionou:** nada.
+**Decidi:** o status do lote continua `FAILED` (contrato); o rótulo vira "Em mapeamento" e o badge sai da cor de falha quando o código é `PARSER_UNAVAILABLE`. Função pequena em `labels.ts` por cima do `Record`, que não mudou. `FAILED` com outro código segue "Falhou".
+**Pendente:** nada.
+**Commit:** —
+
 ### 2026-10-09 · [api] Emitir PARSER_UNAVAILABLE no lugar de FAILED para o arquivo que ainda não se lê
 
 **Fiz:** quando o motivo é `ParserPendente` (a planilha real não chegou), o lote termina com `error.code: PARSER_UNAVAILABLE`. `FAILED` fica só para falha de processamento de verdade.

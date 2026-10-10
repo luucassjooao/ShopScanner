@@ -9,8 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDataHora } from '@/lib/format';
-import { emAndamento, orientacaoDoErro, recusaLocal, resumoDoResultado } from '@/lib/import';
-import { IMPORT_KIND_LABEL, IMPORT_STATUS_LABEL } from '@/lib/labels';
+import {
+  emAndamento,
+  falhou,
+  orientacaoDoErro,
+  recusaLocal,
+  resumoDoResultado,
+} from '@/lib/import';
+import { IMPORT_KIND_LABEL, rotuloDoLote } from '@/lib/labels';
 import { cn } from '@/lib/utils';
 
 /**
@@ -395,7 +401,7 @@ function LinhaHistorico({ batch }: { batch: ImportBatch }) {
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-card border border-borda bg-superficie px-4 py-3">
-      <Badge variant={batch.status === 'FAILED' ? 'reembolsado' : 'neutro'}>
+      <Badge variant={falhou(batch) ? 'reembolsado' : 'neutro'}>
         {IMPORT_KIND_LABEL[batch.kind]}
       </Badge>
       <span className="flex min-w-48 flex-1 flex-col gap-0.5">
@@ -411,12 +417,12 @@ function LinhaHistorico({ batch }: { batch: ImportBatch }) {
           'text-[13px] font-semibold',
           batch.status === 'DONE'
             ? 'text-status-liquidado'
-            : batch.status === 'FAILED'
+            : falhou(batch)
               ? 'text-status-reembolsado'
               : 'text-status-a-liquidar',
         )}
       >
-        {IMPORT_STATUS_LABEL[batch.status]}
+        {rotuloDoLote(batch)}
       </span>
     </div>
   );

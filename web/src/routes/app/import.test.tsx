@@ -97,6 +97,18 @@ describe('import do affiliate_orders.xlsx', () => {
     expect(alerta).not.toHaveTextContent('currency USD');
   });
 
+  it('arquivo aceito sem parser: diz que o formato está sendo mapeado, sem pedir reenvio', async () => {
+    db.shopConnected = false;
+    abrir('/configuracoes?secao=import');
+    await enviar('relatorio-novo-formato.xlsx');
+
+    const alerta = await screen.findByRole('alert', {}, { timeout: 4000 });
+    expect(alerta).toHaveTextContent('ainda não sabemos ler este formato');
+    expect(alerta).toHaveTextContent('Você não precisa enviar de novo');
+    expect(alerta).not.toHaveTextContent('Tente enviar de novo');
+    expect(alerta).not.toHaveTextContent('PARSER_UNAVAILABLE');
+  });
+
   it('colunas desconhecidas mostram quais faltam e quais vieram', async () => {
     db.shopConnected = false;
     abrir('/configuracoes?secao=import');
@@ -136,6 +148,8 @@ describe('import do affiliate_orders.xlsx', () => {
     // Import que falhou mostra o motivo, não só "falhou".
     expect(within(historico).getByText(/Não achamos o cabeçalho/)).toBeInTheDocument();
     expect(within(historico).getByText('Falhou')).toBeInTheDocument();
+    // Lote que o parser ainda não lê: status FAILED, mas o rótulo não diz falha.
+    expect(within(historico).getByText('Em mapeamento')).toBeInTheDocument();
   });
 });
 

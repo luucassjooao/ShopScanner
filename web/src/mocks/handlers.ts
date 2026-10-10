@@ -111,6 +111,16 @@ function importsDemo(): ImportBatch[] {
       result: null,
       error: { code: 'NO_HEADER', message: 'header not found on first sheet' },
     },
+    {
+      id: 'imp_demo_3',
+      accountId: ACCOUNT_ID,
+      kind: 'FILE',
+      fileName: 'relatorio-novo-formato.xlsx',
+      createdAt: new Date(Date.now() - 1 * 24 * HORA).toISOString(),
+      status: 'FAILED',
+      result: null,
+      error: { code: 'PARSER_UNAVAILABLE', message: 'parser not implemented yet' },
+    },
   ];
 }
 
@@ -152,6 +162,9 @@ function erroSimulado(nome: string, tamanho: number): ImportBatch['error'] {
     };
   }
   if (n.includes('falha')) return { code: 'FAILED', message: 'parser crashed' };
+  if (n.includes('formato')) {
+    return { code: 'PARSER_UNAVAILABLE', message: 'parser not implemented yet' };
+  }
   return null;
 }
 

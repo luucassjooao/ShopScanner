@@ -23,6 +23,16 @@ describe('orientacaoDoErro', () => {
   });
 });
 
+describe('PARSER_UNAVAILABLE e FAILED não se confundem', () => {
+  it('o parser ausente não convida a reenviar; a falha de processamento convida', () => {
+    const ausente = orientacaoDoErro('PARSER_UNAVAILABLE').comoResolver;
+    const falha = orientacaoDoErro('FAILED').comoResolver;
+    expect(ausente).not.toMatch(/tente/i);
+    expect(ausente).toMatch(/não precisa enviar de novo/);
+    expect(falha).toMatch(/Tente enviar de novo/);
+  });
+});
+
 describe('emAndamento', () => {
   it('só a fila e o processamento seguem sendo consultados', () => {
     expect(emAndamento({ status: 'QUEUED' })).toBe(true);

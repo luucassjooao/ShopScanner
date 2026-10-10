@@ -31,6 +31,15 @@ export const IMPORT_STATUS_LABEL: Record<ImportBatch['status'], string> = {
   FAILED: 'Falhou',
 };
 
+/**
+ * Rótulo do lote. `FAILED` com `PARSER_UNAVAILABLE` não é falha do arquivo: o parser ainda
+ * não existe. O status segue `FAILED` (contrato); só o rótulo muda.
+ */
+export function rotuloDoLote(lote: Pick<ImportBatch, 'status' | 'error'>): string {
+  if (lote.status === 'FAILED' && lote.error?.code === 'PARSER_UNAVAILABLE') return 'Em mapeamento';
+  return IMPORT_STATUS_LABEL[lote.status];
+}
+
 export const CHANNEL_LABEL: Record<Channel, string> = {
   VIDEO: 'Vídeo',
   LIVE: 'Live',
