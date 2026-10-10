@@ -33,6 +33,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-10 · [repo] Tirar o +1 do lineNo: o campo vai cru, a partir de 0
+
+**Fiz:** desfiz uma decisão minha de um commit atrás. `OrderSku.lineNo` passa a ir **cru, a partir de 0**, igual ao banco, em vez de "a partir de 1" com a API somando na leitura. O contrato também passou a dizer que `lineNo` é chave e não rótulo: nunca aparece em tela.
+**Por quê:** eu escrevi "a partir de 1" em `39b8f6a` sem saber que `order_skus.line_no` é gravado a partir de 0, pelo índice do array. A API cumpriu com `line_no + 1 as line_no` na consulta — correto para o que eu pedi, e a sessão fez certo em registrar a consequência: quando o import de arquivo gravar `line_no`, ele tem de usar base 0, senão a conta sai errada. Essa frase é uma mina. Ela mora no caminho de dados mais importante do MVP, num trabalho que ainda não começou, e cobra de todo escritor futuro lembrar que a base é outra do lado de fora.
+**Funcionou:** a troca não custa nada. `lineNo` existe só para identificar a linha — nenhum número do produto depende de onde ela começa, e nenhuma tela mostra o valor. Conferi antes que a soma estava numa consulta só (`itensDosPedidos`, usada pela lista **e** pelo detalhe), então não havia divergência entre os dois endpoints; se houvesse, a chave do front mudaria entre a lista e o painel.
+**Não funcionou:** a alternativa de normalizar o banco para base 1 foi descartada sem tentar: exigiria migração para mudar dado que não precisa mudar, e migração aplicada não se edita.
+**Decidi:** a regra geral, que é o que sobra disso — **aritmética na borda só para o campo ficar bonito é defeito esperando a próxima pessoa.** Campo que serve de chave vai cru. Se um dia algum número do produto passar a depender da base, aí sim se escolhe uma e se escreve.
+**Pendente:** a API tira o `+ 1` da consulta; o front chaveia por `lineNo` sem presumir base.
+**Commit:** a registrar
+
 ### 2026-10-10 · [api] Expor lineNo no item do pedido
 
 **Fiz:** `OrderSku` ganhou `lineNo` em `GET /orders` e `GET /orders/:id`, a posição da linha no pedido a partir de 1. Sem ele o front montava a chave com `pedido.id + sku.id`, que se repete, e o React descartava uma linha de dinheiro sem erro.
