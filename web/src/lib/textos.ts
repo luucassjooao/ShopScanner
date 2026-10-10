@@ -42,6 +42,8 @@ const ERROS: Record<string, string> = {
     'Esse e-mail ainda não foi confirmado no Google. Confirme lá e tente de novo.',
   JA_VINCULADO:
     'Essa conta do Google já está ligada a outro cadastro. Entre com e-mail e senha, ou use outra conta do Google.',
+  CONTA_EXISTENTE:
+    'Já existe um cadastro com esse e-mail. Entre com e-mail e senha e ligue o Google em Configurações.',
   SESSAO_EXPIRADA: 'A sua sessão venceu no meio do caminho. Entre de novo para continuar.',
   // Troca de senha (PUT /me/password)
   SENHA_ATUAL_INCORRETA: 'A senha atual não confere. Confira e tente de novo.',

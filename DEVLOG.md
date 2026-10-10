@@ -34,6 +34,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-10 · [repo] Fechar o pré-sequestro de conta pelo vínculo do Google
+
+**Fiz:** o login com Google só vincula sozinho, pelo e-mail, a cadastro cujo e-mail já é verificado. Com o mesmo e-mail **não** verificado, nada é vinculado e o callback volta em `/entrar?erro=CONTA_EXISTENTE`. Código novo no contrato da raiz e traduzido em `web/src/lib/textos.ts`.
+**Por quê:** auditoria de segurança achou, e provou com teste, um pré-sequestro de conta. O cadastro por senha não confirma e-mail, então qualquer pessoa cadastrava o e-mail de outra; quando a dona entrava pelo Google, o callback vinculava a identidade àquele cadastro e abria sessão nele. Quem cadastrou continuava dentro: a sessão antiga respondia 200 e a senha dele continuava entrando. O mesmo valia trocando o e-mail de uma conta só-Google em `PATCH /me`, que zera a verificação. O `api/CLAUDE.md` já dizia "mesmo e-mail **verificado**"; o código não conferia.
+**Funcionou:** dois testes novos em `google.test.ts`, um por caminho do ataque (cadastro e troca de e-mail), os dois falham sem a trava. O teste "vincula à conta que já existe" passou a marcar o e-mail como verificado antes, que é o caso legítimo. O de desvincular usava o vínculo por e-mail como atalho de preparação e agora vincula pela sessão, como em Configurações.
+**Não funcionou:** vincular e "limpar" o cadastro (apagar a senha e derrubar as sessões) em vez de recusar. Resolvia o ataque, mas tirava de quem é dono de verdade a senha que ele criou, sem aviso. Recusar e mandar vincular logado não tira nada de ninguém.
+**Decidi:** vínculo automático por e-mail exige o e-mail do cadastro verificado. Cadastro não verificado só vincula pela sessão. Quando o envio de e-mail existir, a confirmação no cadastro faz o caminho automático voltar a valer para quem confirmar.
+**Pendente:** confirmação de e-mail no cadastro. Até lá, quem criou conta com senha e tenta entrar pelo Google vê `CONTA_EXISTENTE` e precisa vincular logado. Este commit toca o `CLAUDE.md` da raiz, que é da sessão líder: revisar antes de mesclar.
+**Commit:** a seguir
+
 ### 2026-10-10 · [repo] Corrigir o dano que eu atribuí à chave repetida, e levar `lineNo` para a reconciliação
 
 **Fiz:** duas coisas. (1) Registro aqui que eu afirmei um dano que não se confirmou: disse, ao dono e nas instruções das sessões, que a chave de React repetida fazia **a linha de dinheiro desaparecer da tela**. Não desaparece. (2) `GET /reconciliation` ganhou `lineNo` na linha de divergência, pelo mesmo motivo de `OrderSku`.
