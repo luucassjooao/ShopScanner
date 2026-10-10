@@ -1,69 +1,103 @@
-import { createBrowserRouter, Link, type RouteObject } from 'react-router-dom';
-import { PublicLayout } from './public/PublicLayout';
-import { CriarConta } from './public/CriarConta';
-import { Entrar } from './public/Entrar';
-import { Landing } from './public/Landing';
-import { Privacidade } from './public/Privacidade';
-import { Recuperar } from './public/Recuperar';
-import { Termos } from './public/Termos';
-import { AppLayout } from './app/AppLayout';
-import { Avisos } from './app/Avisos';
-import { Configuracoes } from './app/Configuracoes';
-import { Inicio } from './app/Inicio';
-import { InicioRapido } from './app/InicioRapido';
-import { Planejamento } from './app/Planejamento';
-import { Produtos } from './app/Produtos';
-import { Reconciliacao } from './app/Reconciliacao';
-import { Vendas } from './app/Vendas';
-import { VideoDetalhe, Videos } from './app/Videos';
+import { createBrowserRouter, type RouteObject, type ShouldRevalidateFunction } from 'react-router';
+import type { QueryClient } from '@tanstack/react-query';
+import { queryClient } from '@/api/queryClient';
+import { guarda } from '@/auth/guarda';
+import { AppLayout } from '@/layouts/AppLayout';
+import { CarregandoApp } from '@/layouts/CarregandoApp';
+import { PublicLayout } from '@/layouts/PublicLayout';
+import { Avisos } from '@/pages/avisos';
+import { Configuracoes } from '@/pages/configuracoes';
+import { CriarConta } from '@/pages/criar-conta';
+import { Entrar } from '@/pages/entrar';
+import { Inicio } from '@/pages/inicio';
+import { InicioRapido } from '@/pages/inicio-rapido';
+import { Landing } from '@/pages/landing';
+import { NaoEncontrada } from '@/pages/nao-encontrada';
+import { Planejamento } from '@/pages/planejamento';
+import { Privacidade } from '@/pages/privacidade';
+import { Produtos } from '@/pages/produtos';
+import { Reconciliacao } from '@/pages/reconciliacao';
+import { Recuperar } from '@/pages/recuperar';
+import { Termos } from '@/pages/termos';
+import { Vendas } from '@/pages/vendas';
+import { Videos } from '@/pages/videos';
+import { VideoDetalhe } from '@/pages/videos/VideoDetalhe';
 
 /**
- * Públicas (PublicLayout): /  /entrar  /criar-conta  /recuperar  /termos  /privacidade
- * Onboarding (logado, sem a casca): /inicio-rapido
- * Do app (AppLayout): /inicio  /vendas  /videos  /videos/:id  /produtos  /planejamento
- *                     /configuracoes  /avisos  /reconciliacao
+ * A guarda só precisa correr quando o caminho muda. Os filtros das telas moram na URL
+ * (`?pagina=`, `?venda=`, `?de=`), e sem isto cada troca de filtro voltaria ao backend
+ * perguntando pela sessão e re-renderizaria a árvore inteira no meio do clique — o que
+ * chegou a derrubar o painel de detalhe da venda. Sessão que vence sem navegação nenhuma
+ * é caso de `useSessaoViva`, não do loader.
  */
-export const rotas: RouteObject[] = [
-  {
-    element: <PublicLayout />,
-    children: [
-      { path: '/', element: <Landing /> },
-      { path: '/entrar', element: <Entrar /> },
-      { path: '/criar-conta', element: <CriarConta /> },
-      { path: '/recuperar', element: <Recuperar /> },
-      { path: '/termos', element: <Termos /> },
-      { path: '/privacidade', element: <Privacidade /> },
-    ],
-  },
-  { path: '/inicio-rapido', element: <InicioRapido /> },
-  {
-    element: <AppLayout />,
-    children: [
-      { path: '/inicio', element: <Inicio /> },
-      { path: '/vendas', element: <Vendas /> },
-      { path: '/produtos', element: <Produtos /> },
-      { path: '/videos', element: <Videos /> },
-      { path: '/videos/:id', element: <VideoDetalhe /> },
-      { path: '/avisos', element: <Avisos /> },
-      { path: '/planejamento', element: <Planejamento /> },
-      { path: '/configuracoes', element: <Configuracoes /> },
-      { path: '/reconciliacao', element: <Reconciliacao /> },
-    ],
-  },
-  {
-    path: '*',
-    element: (
-      <main className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-fundo p-6 text-center">
-        <h1 className="text-[26px] font-extrabold tracking-tight text-texto">
-          Esta página não existe
-        </h1>
-        <p className="text-texto-secundario">O endereço pode ter mudado ou estar incompleto.</p>
-        <Link to="/" className="font-semibold">
-          Voltar para o início
-        </Link>
-      </main>
-    ),
-  },
-];
+const soAoTrocarDePagina: ShouldRevalidateFunction = ({ currentUrl, nextUrl }) =>
+  currentUrl.pathname !== nextUrl.pathname;
 
-export const router = createBrowserRouter(rotas);
+/**
+ * Só a definição das rotas e a guarda. Tela nenhuma mora aqui: cada página está em
+ * `src/pages/<pagina>/`, as cascas em `src/layouts/` e a decisão de sessão em `src/auth/`.
+ *
+ * O `queryClient` entra por parâmetro porque o loader e os componentes precisam ser o
+ * **mesmo** cliente: é isso que faz a sessão ser buscada uma vez por navegação em vez de
+ * duas, e é o que deixa cada teste montar o app com um cache limpo.
+ */
+export function criarRotas(queryClient: QueryClient): RouteObject[] {
+  const privada = guarda(queryClient, { privada: true });
+  const deEntrada = guarda(queryClient, { privada: false });
+
+  return [
+    {
+      // Única rota em que `HydrateFallback` vale: a raiz.
+      HydrateFallback: CarregandoApp,
+      children: [
+        {
+          Component: PublicLayout,
+          children: [
+            {
+              // Rotas de entrada: quem já tem sessão vai para o app em vez de ver a landing
+              // ou o formulário de login outra vez.
+              loader: deEntrada,
+              shouldRevalidate: soAoTrocarDePagina,
+              children: [
+                { path: '/', Component: Landing },
+                { path: '/entrar', Component: Entrar },
+                { path: '/criar-conta', Component: CriarConta },
+                { path: '/recuperar', Component: Recuperar },
+              ],
+            },
+            // Exceção deliberada: /termos e /privacidade abrem para qualquer um, com ou sem
+            // sessão, e sem nenhuma leitura de sessão. As duas URLs vão para a revisão do
+            // app no TikTok — expulsar quem está logado quebraria essa exigência.
+            { path: '/termos', Component: Termos },
+            { path: '/privacidade', Component: Privacidade },
+          ],
+        },
+        {
+          path: '/inicio-rapido',
+          loader: privada,
+          shouldRevalidate: soAoTrocarDePagina,
+          Component: InicioRapido,
+        },
+        {
+          loader: privada,
+          shouldRevalidate: soAoTrocarDePagina,
+          Component: AppLayout,
+          children: [
+            { path: '/inicio', Component: Inicio },
+            { path: '/vendas', Component: Vendas },
+            { path: '/produtos', Component: Produtos },
+            { path: '/videos', Component: Videos },
+            { path: '/videos/:id', Component: VideoDetalhe },
+            { path: '/avisos', Component: Avisos },
+            { path: '/planejamento', Component: Planejamento },
+            { path: '/configuracoes', Component: Configuracoes },
+            { path: '/reconciliacao', Component: Reconciliacao },
+          ],
+        },
+        { path: '*', Component: NaoEncontrada },
+      ],
+    },
+  ];
+}
+
+export const router = createBrowserRouter(criarRotas(queryClient));

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { FileSpreadsheet, FileUp, Lock, SearchX, Store, Unplug } from 'lucide-react';
 import { ApiError } from '@/api/client';
 import type { OrderStatus, Source } from '@/api/schemas';

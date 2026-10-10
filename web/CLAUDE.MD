@@ -17,21 +17,40 @@ Leia primeiro o `CLAUDE.md` da raiz: produto, contrato, regras de domínio e def
 
 ## Estrutura
 
+**Uma pasta por página.** `routes/` é só definição de rota; tela nenhuma mora lá.
+
 ```
 web/
   package.json, vite.config.ts, tailwind.config.ts, tsconfig.json
   public/               manifest do PWA (Web Share Target do import)
   src/
-    routes/public/      landing, /entrar, /criar-conta, /recuperar, /termos, /privacidade
-    routes/app/         /inicio, /vendas, /videos, /produtos, /planejamento, /configuracoes
-    routes/app/filtros.ts  useFiltros: filtros que moram na URL
+    main.tsx            só a renderização
+    App.tsx             providers: QueryClientProvider, RouterProvider, Toaster
+    bootstrap.ts        o que precisa estar de pé antes do primeiro render (MSW, service worker)
+    routes/router.tsx   só a definição das rotas e a guarda
+    auth/guarda.ts      a guarda de rota e o único jeito de ler a sessão num loader
+    layouts/            AppLayout (área logada), PublicLayout, CarregandoApp
+    pages/<pagina>/     index.tsx + as peças que só aquela página usa
+                        inicio, vendas, videos (index + VideoDetalhe + Capa + pecas),
+                        produtos, planejamento, configuracoes, avisos, reconciliacao,
+                        inicio-rapido, landing, entrar, criar-conta, recuperar,
+                        termos, privacidade, nao-encontrada
+    components/         peça usada por duas páginas ou mais
     components/ui/      shadcn
     components/charts/  wrappers do Recharts
     components/dados.tsx   peças compartilhadas das telas de dados
     api/                cliente HTTP, tipos e schemas Zod do contrato
+    lib/                money, metrics, labels, formatadores, filtros da URL, useAvisos
     mocks/              handlers do MSW + adaptador dos JSONs em /mocks
-    lib/                money, metrics, labels, formatadores
+    test/               helper `abrir()` e as suítes que montam o app inteiro
 ```
+
+Onde a peça vai: **uma página usa** → pasta daquela página; **duas ou mais** →
+`components/` (ou `lib/`, se não for componente). `lib/filtros.ts` (`useFiltros`,
+`useConta`, `periodo`) e `lib/useAvisos.ts` estão em `lib/` porque quase toda tela os usa.
+
+Importar sempre pelo alias `@/`. O pacote do router é **`react-router`**, não
+`react-router-dom`: na v7 o `-dom` é só casca de compatibilidade e saiu do `package.json`.
 
 Alias `@mocks` aponta para `../mocks` e `server.fs.allow` libera a raiz, para o Vite enxergar os JSONs.
 
@@ -94,7 +113,31 @@ Estados que **toda** tela de dados precisa ter: carregando (skeleton), vazio, er
 
 Nenhuma tela ramifica em `shopConnected`. Venda se mostra por `hasSales` (conta) e pelo `total` do período que a tela já consulta. `shopConnected` descreve só a conexão viva: cartão de Configurações, aviso de "em liberação" e o checklist do Início rápido. Falha de consulta é erro, nunca "envie o relatório".
 
-Guarda de rota: sem sessão vai para `/entrar`; com sessão, abrir `/entrar` manda para `/inicio`.
+## Guarda de rota
+
+Uma só, em `src/auth/guarda.ts`, usada nos dois sentidos. **Quem decide se a sessão vale é o
+backend:** o cookie é `httpOnly`, o front não o lê, e a única resposta que conta é a de
+`GET /auth/session`. Nada de booleano de sessão no cliente.
+
+- `guarda(queryClient, { privada: true })` é o `loader` das rotas do app e de
+  `/inicio-rapido`: sem sessão, `redirect('/entrar?proxima=<rota interrompida>')`.
+- `guarda(queryClient, { privada: false })` é o `loader` das rotas de entrada — `/`,
+  `/entrar`, `/criar-conta`, `/recuperar` —: com sessão, `redirect('/inicio')`.
+- **`/termos` e `/privacidade` não têm guarda nenhuma**, de propósito: abrem com ou sem
+  sessão, e sem nem consultar a sessão. As duas URLs vão para a revisão do app no TikTok.
+- É `loader`, e não componente: roda **antes** da renderização. Nenhum layout e nenhuma
+  tela decide isso por conta própria.
+- `shouldRevalidate` limita a guarda a troca de caminho. Os filtros moram na URL, e
+  revalidar a cada `?pagina=`/`?venda=` re-renderizava a árvore no meio do clique.
+- `?proxima=` passa por `destinoInterno`: só caminho interno, nunca `//host` nem `http://`.
+- Sessão que vence **com a aba aberta**, sem navegação nenhuma, não passa por loader:
+  `useSessaoViva()` (mesmo arquivo) é a rede de segurança dentro do render, e é a que o
+  `AppLayout` e o Início rápido usam. Um lugar só, não um por tela.
+- Quem é o usuário desta sessão: `useSession()` de `src/api/queries.ts` nos componentes,
+  `lerSessao(queryClient)` nos loaders. Nenhuma tela chama `useQuery(sessionQuery)` direto.
+- O loader usa `fetchQuery`, não `ensureQueryData`: dentro do `staleTime` reusa o que já
+  foi buscado, e fora dele pergunta ao backend. Com `ensureQueryData`, sair da conta
+  deixaria a sessão antiga valendo no cache e a guarda abriria o app para quem saiu.
 
 ## Design system
 

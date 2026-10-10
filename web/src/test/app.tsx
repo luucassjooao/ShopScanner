@@ -1,12 +1,17 @@
 import { render } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createMemoryRouter, RouterProvider } from 'react-router-dom';
-import { rotas } from '@/routes/router';
+import { createMemoryRouter, RouterProvider } from 'react-router';
+import { criarRotas } from '@/routes/router';
 
-/** Monta o app inteiro (as rotas de verdade) numa URL, com o MSW respondendo por trás. */
+/**
+ * Monta o app inteiro (as rotas de verdade) numa URL, com o MSW respondendo por trás.
+ *
+ * O `queryClient` é criado aqui e entregue a `criarRotas`: os loaders da guarda e os
+ * componentes têm de compartilhar o mesmo cache, e cada teste começa com ele vazio.
+ */
 export function abrir(url: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const router = createMemoryRouter(rotas, { initialEntries: [url] });
+  const router = createMemoryRouter(criarRotas(queryClient), { initialEntries: [url] });
   render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />

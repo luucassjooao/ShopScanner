@@ -1,5 +1,5 @@
 import { forwardRef, useState, type InputHTMLAttributes, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { CircleCheck, Eye, EyeOff } from 'lucide-react';
 import { entrarComGoogle } from '@/api/queries';
 import { Button } from '@/components/ui/button';
