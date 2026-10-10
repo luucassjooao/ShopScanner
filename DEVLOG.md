@@ -30,6 +30,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-10 · [api] Expor Retry-After no CORS
+
+**Fiz:** o registro do cors passa a declarar `exposedHeaders: ['Retry-After']`. Sem isso o navegador esconde o header da resposta entre origens, e `web/src/api/client.ts` lia `null` no 429.
+**Por quê:** o contrato (`0ca5b0b`) exige que todo header de resposta que o front lê esteja exposto, ou não existe para ele.
+**Funcionou:** 91 de 91 testes. Um teste novo em `cors.test.ts` confere `Access-Control-Expose-Headers` numa resposta real com `Origin`, não só no preflight. Typecheck, lint e prettier limpos.
+**Não funcionou:** nada.
+**Decidi:** conferi os outros headers que o front lê, para não expor o que não é preciso. `X-Nome-Arquivo` vem do cache do service worker, não da API. O front não lê `Content-Disposition` do `GET /me/export`: ele baixa o JSON e monta o nome do arquivo sozinho. Não há mais header de resposta da API que o front precise ler.
+**Pendente:** nada nesta tarefa. A API segue parada: o restante depende de fatores de fora (parser, liberação do Brasil, reconciliação).
+**Commit:** pendente (aguarda sinal para commitar)
+
 ### 2026-10-10 · [repo] Exigir `Retry-After` exposto no CORS
 
 **Fiz:** o contrato passou a exigir `Retry-After` em `Access-Control-Expose-Headers`.

@@ -32,6 +32,8 @@ export async function buildApp() {
     origin: env.WEB_ORIGIN,
     credentials: true,
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    // Header que o navegador esconde do front se não for exposto: Retry-After do 429.
+    exposedHeaders: ['Retry-After'],
   });
   await app.register(cookie, { secret: env.JWT_SECRET });
   await app.register(multipart, { limits: { fileSize: LIMITE_ARQUIVO_BYTES, files: 1 } });

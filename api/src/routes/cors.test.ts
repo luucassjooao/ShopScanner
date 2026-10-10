@@ -32,6 +32,18 @@ describe('CORS', () => {
     expect(permitidos).toContain(metodo);
   });
 
+  it('expõe Retry-After na resposta real, senão o navegador esconde o header do front', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/health',
+      headers: { origin: AMBIENTE_DE_TESTE.WEB_ORIGIN },
+    });
+    const expostos = String(res.headers['access-control-expose-headers'] ?? '')
+      .split(',')
+      .map((h) => h.trim().toLowerCase());
+    expect(expostos).toContain('retry-after');
+  });
+
   it('mantém a origem do front e as credenciais', async () => {
     const res = await preflight('PATCH');
     expect(res.headers['access-control-allow-origin']).toBe(AMBIENTE_DE_TESTE.WEB_ORIGIN);
