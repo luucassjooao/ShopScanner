@@ -73,7 +73,7 @@ export async function enviarAvatar(request: FastifyRequest, reply: FastifyReply)
   } catch (erro) {
     // Passou do teto geral do multipart: é imagem grande demais, não erro de servidor.
     if ((erro as { code?: string }).code === 'FST_REQ_FILE_TOO_LARGE') {
-      throw AppError.validacao('Imagem acima de 2 MB');
+      throw new AppError(400, 'IMAGEM_MUITO_GRANDE', 'Imagem acima de 2 MB');
     }
     throw erro;
   }

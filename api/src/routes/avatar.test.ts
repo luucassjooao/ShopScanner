@@ -80,14 +80,24 @@ describe('avatar', () => {
   it('recusa o que não é imagem, pelos bytes e não pelo nome do arquivo', async () => {
     const res = await enviar('file', 'foto.png', Buffer.from('<html>nao sou imagem</html>'));
     expect(res.statusCode).toBe(400);
-    expect(res.json().code).toBe('VALIDACAO');
+    expect(res.json().code).toBe('IMAGEM_INVALIDA');
   });
 
   it('recusa imagem acima de 2 MB', async () => {
     const grande = Buffer.concat([PNG, Buffer.alloc(2 * 1024 * 1024)]);
     const res = await enviar('file', 'grande.png', grande);
     expect(res.statusCode).toBe(400);
-    expect(res.json().code).toBe('VALIDACAO');
+    expect(res.json().code).toBe('IMAGEM_MUITO_GRANDE');
+  });
+
+  it('imagem grande e imagem inválida são códigos diferentes: a tela pede ações opostas', async () => {
+    const invalida = await enviar('file', 'x.gif', Buffer.from('GIF89a-nao-e-aceito'));
+    const grande = await enviar(
+      'file',
+      'g.png',
+      Buffer.concat([PNG, Buffer.alloc(2 * 1024 * 1024)]),
+    );
+    expect(invalida.json().code).not.toBe(grande.json().code);
   });
 
   it('sem o campo file responde 400', async () => {

@@ -29,6 +29,16 @@ _Atualize esta seção quando o estado mudar. Ela é a primeira coisa que se lê
 
 ## Entradas
 
+### 2026-10-09 · [api] Separar IMAGEM_MUITO_GRANDE de IMAGEM_INVALIDA no avatar
+
+**Fiz:** a foto recusada por tamanho responde `IMAGEM_MUITO_GRANDE` (400) e a que não é JPEG, PNG ou WebP responde `IMAGEM_INVALIDA` (400), no lugar do `VALIDACAO` único. O teto de 2 MB, que era suposição, agora está no contrato (`eb42e6a`).
+**Por quê:** as duas recusas pedem ações opostas (cortar ou trocar a imagem, contra exportar em outro formato). Mesmo motivo do `PARSER_UNAVAILABLE`.
+**Funcionou:** 84 de 84 testes. Um teste novo trava a diferença entre os dois códigos. Typecheck, lint limpos.
+**Não funcionou:** nada.
+**Decidi:** os códigos de rota seguem em português, como `VALIDACAO`; só `ImportBatch.error.code` é em inglês, por ser enum próprio do arquivo.
+**Pendente:** nada nesta tarefa. Próximas da API, todas travadas por fora: `/reconciliation` (precisa de dado real), sincronização com o TikTok (liberação do Brasil) e o parser (o `.xlsx` real).
+**Commit:** pendente (aguarda sinal para commitar)
+
 ### 2026-10-09 · [repo] Escrever os limites do avatar e separar as duas recusas
 
 **Fiz:** o contrato passou a dizer os limites de `POST /me/avatar` — JPEG, PNG ou WebP detectados pelos bytes, no máximo 2 MB — e ganhou dois códigos no lugar de um: `IMAGEM_MUITO_GRANDE` e `IMAGEM_INVALIDA`, ambos 400.
